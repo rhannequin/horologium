@@ -60,10 +60,14 @@ class TestTwoPartFloat < Minitest::Test
   end
 
   def test_two_diff_reconstructs_the_exact_difference_of_its_operands
-    difference, error = Horologium::TwoPartFloat.two_diff(0.3, 0.1)
+    difference, error = Horologium::TwoPartFloat.two_diff(1.0, 1e-16)
 
-    assert_equal Rational(0.3) - Rational(0.1),
+    assert_equal Rational(1.0) - Rational(1e-16),
       Rational(difference) + Rational(error)
+  end
+
+  def test_two_diff_captures_the_error_a_plain_subtraction_would_lose
+    assert_equal [1e16, -1.0], Horologium::TwoPartFloat.two_diff(1e16, 1.0)
   end
 
   def test_fast_two_sum_reconstructs_the_exact_sum_when_the_first_operand_dominates
