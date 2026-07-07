@@ -53,6 +53,23 @@ jobs:
       - name: Verify YARD coverage
         run: bundle exec rake yard_coverage
 
+  coverage:
+    runs-on: ubuntu-latest
+    name: Test coverage
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: 3.4
+          bundler-cache: true
+      - name: Verify test coverage
+        run: bundle exec rake test
+        env:
+          COVERAGE: "true"
+
   build:
     runs-on: ubuntu-latest
     name: Ruby ${{ matrix.ruby }}
