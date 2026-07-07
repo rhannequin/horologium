@@ -5,7 +5,10 @@ require "minitest/test_task"
 require "rubocop/rake_task"
 require "yard"
 
-Minitest::TestTask.create
+Minitest::TestTask.create do |t|
+  t.framework = %(require "test_helper")
+end
+
 RuboCop::RakeTask.new
 YARD::Rake::YardocTask.new
 
