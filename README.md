@@ -25,8 +25,9 @@ gem install horologium
 
 After checking out the repo, run `bin/setup` to install dependencies. Then, run
 `rake` to run the tests and RuboCop, or `rake steep` to type-check the
-signatures in `sig/`. You can also run `bin/console` for an interactive prompt
-that will allow you to experiment.
+signatures in `sig/`. Run `COVERAGE=true rake test` to measure test coverage,
+which is enforced at a 95% line minimum in CI. You can also run `bin/console`
+for an interactive prompt that will allow you to experiment.
 
 To install this gem onto your local machine, run `bundle exec rake install`. To
 release a new version, update the version number in `version.rb`, and then run
