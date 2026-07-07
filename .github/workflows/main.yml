@@ -38,6 +38,21 @@ jobs:
       - name: Run Steep
         run: bundle exec steep check
 
+  docs:
+    runs-on: ubuntu-latest
+    name: Documentation coverage
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: 3.4
+          bundler-cache: true
+      - name: Verify YARD coverage
+        run: bundle exec rake yard_coverage
+
   build:
     runs-on: ubuntu-latest
     name: Ruby ${{ matrix.ruby }}
