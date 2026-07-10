@@ -1,8 +1,6 @@
 module Horologium
   VERSION: String
 
-  PRECISION_SCOPE_KEY: Symbol
-
   def self.configure: () ?{ (Configuration config) -> void } -> Configuration
 
   def self.configuration: () -> Configuration

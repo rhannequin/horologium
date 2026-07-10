@@ -22,7 +22,7 @@ module Horologium
     # @param precision [Object] the unknown precision that was given
     # @param known_precisions [Array<Symbol>] the recognised precisions
     def initialize(precision, known_precisions)
-      @known_precisions = known_precisions
+      @known_precisions = known_precisions.dup.freeze
       super(
         "unknown precision #{precision.inspect}, " \
         "expected one of #{known_precisions.map(&:inspect).join(", ")}"
