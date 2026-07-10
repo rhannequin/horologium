@@ -1,6 +1,29 @@
 module Horologium
   VERSION: String
 
+  PRECISION_SCOPE_KEY: Symbol
+
+  def self.configure: () ?{ (Configuration config) -> void } -> Configuration
+
+  def self.configuration: () -> Configuration
+
+  def self.default_precision: () -> Symbol
+
+  def self.current_precision: () -> Symbol
+
+  def self.with_precision: [T] (Symbol precision) { () -> T } -> T
+
+  def self.reset_configuration!: () -> void
+
   class Error < StandardError
+  end
+
+  class ConfigurationError < Error
+  end
+
+  class UnknownPrecisionError < Error
+    attr_reader known_precisions: Array[Symbol]
+
+    def initialize: (untyped precision, Array[Symbol] known_precisions) -> void
   end
 end

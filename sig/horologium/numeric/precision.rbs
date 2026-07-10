@@ -1,0 +1,13 @@
+module Horologium
+  module Numeric
+    module Precision
+      NAMES: Array[Symbol]
+
+      def self.validate!: (Symbol precision) -> Symbol
+
+      def self.resolve: (Symbol left, Symbol right) -> Symbol
+
+      def self.coerce: (TwoPartFloat | Exact value, to: Symbol) -> (TwoPartFloat | Exact)
+    end
+  end
+end
