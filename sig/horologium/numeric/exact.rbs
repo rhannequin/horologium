@@ -1,0 +1,15 @@
+module Horologium
+  module Numeric
+    class Exact
+      def initialize: (Integer | Float | Rational value) -> void
+
+      def ==: (untyped other) -> bool
+
+      def eql?: (untyped other) -> bool
+
+      def hash: () -> Integer
+
+      attr_reader value: Rational
+    end
+  end
+end
