@@ -29,6 +29,11 @@ signatures in `sig/`. Run `COVERAGE=true rake test` to measure test coverage,
 which is enforced at a 95% line minimum in CI. You can also run `bin/console`
 for an interactive prompt that will allow you to experiment.
 
+Run `bin/ci` to run every check that GitHub Actions runs (RuboCop, Steep, YARD
+documentation coverage, and the tests with coverage) in a single pass. It runs
+each check even when an earlier one fails, so you see everything that needs
+fixing at once.
+
 To install this gem onto your local machine, run `bundle exec rake install`. To
 release a new version, update the version number in `version.rb`, and then run
 `bundle exec rake release`, which will create a git tag for the version, push
