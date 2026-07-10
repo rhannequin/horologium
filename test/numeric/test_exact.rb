@@ -58,4 +58,9 @@ class TestExact < Minitest::Test
 
     assert_equal :value, store[Horologium::Numeric::Exact.new(1)]
   end
+
+  def test_it_returns_its_value_as_a_rational
+    assert_equal Rational(1, 3),
+      Horologium::Numeric::Exact.new(Rational(1, 3)).to_r
+  end
 end
