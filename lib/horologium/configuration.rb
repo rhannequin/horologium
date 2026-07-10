@@ -28,11 +28,6 @@ module Horologium
     end
   end
 
-  # The key under which the scoped precision is stored. Thread#[] is per-fiber,
-  # so a scope entered in one fiber or thread does not affect another.
-  PRECISION_SCOPE_KEY = :horologium_current_precision
-  private_constant :PRECISION_SCOPE_KEY
-
   class << self
     # Configures the library. The yielded configuration is frozen when the
     # block returns, so it can be set once at boot and not changed again.
@@ -66,7 +61,7 @@ module Horologium
     #
     # @return [Symbol] +:standard+ or +:exact+
     def current_precision
-      Thread.current[PRECISION_SCOPE_KEY] || default_precision
+      Thread.current[:horologium_current_precision] || default_precision
     end
 
     # Runs the block with a chosen precision in effect, then restores whatever
@@ -83,12 +78,12 @@ module Horologium
     #   end
     def with_precision(precision)
       Numeric::Precision.validate!(precision)
-      previous = Thread.current[PRECISION_SCOPE_KEY]
-      Thread.current[PRECISION_SCOPE_KEY] = precision
+      previous = Thread.current[:horologium_current_precision]
+      Thread.current[:horologium_current_precision] = precision
       begin
         yield
       ensure
-        Thread.current[PRECISION_SCOPE_KEY] = previous
+        Thread.current[:horologium_current_precision] = previous
       end
     end
 
@@ -99,7 +94,7 @@ module Horologium
     # @return [void]
     def reset_configuration!
       @configuration = nil
-      Thread.current[PRECISION_SCOPE_KEY] = nil
+      Thread.current[:horologium_current_precision] = nil
     end
   end
 end
