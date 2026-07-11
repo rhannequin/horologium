@@ -1,11 +1,17 @@
 module Horologium
   module Numeric
     class TwoPartFloat
+      SPLIT_FACTOR: Float
+
       def initialize: (Float high, ?Float low) -> void
 
       def +: (TwoPartFloat other) -> TwoPartFloat
 
       def -: (TwoPartFloat other) -> TwoPartFloat
+
+      def *: (scalar scalar) -> TwoPartFloat
+
+      def /: (scalar scalar) -> TwoPartFloat
 
       def to_r: () -> Rational
 
@@ -17,11 +23,17 @@ module Horologium
 
       def self.normalize: (Float high, ?Float low) -> TwoPartFloat
 
+      def self.from_real: (scalar value) -> TwoPartFloat
+
       def self.two_sum: (Float left, Float right) -> [ Float, Float ]
 
       def self.two_diff: (Float left, Float right) -> [ Float, Float ]
 
       def self.fast_two_sum: (Float larger, Float smaller) -> [ Float, Float ]
+
+      def self.two_product: (Float left, Float right) -> [ Float, Float ]
+
+      def self.split: (Float value) -> [ Float, Float ]
 
       attr_reader high: Float
 
@@ -34,6 +46,8 @@ module Horologium
       def two_diff: (Float left, Float right) -> [ Float, Float ]
 
       def fast_two_sum: (Float larger, Float smaller) -> [ Float, Float ]
+
+      def two_product: (Float left, Float right) -> [ Float, Float ]
     end
   end
 end

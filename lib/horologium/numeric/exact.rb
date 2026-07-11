@@ -28,6 +28,59 @@ module Horologium
         freeze
       end
 
+      # Adds another exact value. Both are Rationals, so the sum is exact.
+      #
+      # @param other [Horologium::Numeric::Exact] value to add
+      # @return [Horologium::Numeric::Exact] the sum
+      # @example
+      #   Horologium::Numeric::Exact.new(Rational(1, 3)) +
+      #     Horologium::Numeric::Exact.new(Rational(1, 6)) ==
+      #     Horologium::Numeric::Exact.new(Rational(1, 2))
+      #   # => true
+      def +(other)
+        self.class.new(value + other.value)
+      end
+
+      # Subtracts another exact value. Both are Rationals, so the difference is
+      # exact.
+      #
+      # @param other [Horologium::Numeric::Exact] value to subtract
+      # @return [Horologium::Numeric::Exact] the difference
+      # @example
+      #   Horologium::Numeric::Exact.new(Rational(1, 2)) -
+      #     Horologium::Numeric::Exact.new(Rational(1, 6)) ==
+      #     Horologium::Numeric::Exact.new(Rational(1, 3))
+      #   # => true
+      def -(other)
+        self.class.new(value - other.value)
+      end
+
+      # Multiplies by a plain number. The number becomes an exact Rational, so
+      # the product stays exact.
+      #
+      # @param scalar [Numeric] the number to multiply by
+      # @return [Horologium::Numeric::Exact] the product
+      # @example
+      #   Horologium::Numeric::Exact.new(Rational(1, 3)) * 6 ==
+      #     Horologium::Numeric::Exact.new(2)
+      #   # => true
+      def *(scalar) # rubocop:disable Naming/BinaryOperatorParameterName
+        self.class.new(value * scalar.to_r)
+      end
+
+      # Divides by a plain number. The number becomes an exact Rational, so
+      # the quotient stays exact.
+      #
+      # @param scalar [Numeric] the number to divide by
+      # @return [Horologium::Numeric::Exact] the quotient
+      # @example
+      #   Horologium::Numeric::Exact.new(2) / 6 ==
+      #     Horologium::Numeric::Exact.new(Rational(1, 3))
+      #   # => true
+      def /(scalar) # rubocop:disable Naming/BinaryOperatorParameterName
+        self.class.new(value / scalar.to_r)
+      end
+
       # Two values are equal when their Rationals are equal.
       #
       # @param other [Object] the object to compare

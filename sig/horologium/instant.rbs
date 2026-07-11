@@ -1,0 +1,22 @@
+module Horologium
+  class Instant
+    include PreciseValue
+
+    def self.from_tai_julian_date: (Float high, ?Float low, ?precision: Symbol) -> Instant
+
+    def +: (Duration duration) -> Instant
+
+    def -: (Duration) -> Instant
+         | (Instant) -> Duration
+
+    def equal_within?: (Instant other, Duration tolerance) -> bool
+
+    private
+
+    def seconds_to_days: (Duration duration, Symbol precision) -> (Numeric::TwoPartFloat | Numeric::Exact)
+
+    def add: (Numeric::TwoPartFloat | Numeric::Exact left, Numeric::TwoPartFloat | Numeric::Exact right) -> (Numeric::TwoPartFloat | Numeric::Exact)
+
+    def subtract: (Numeric::TwoPartFloat | Numeric::Exact left, Numeric::TwoPartFloat | Numeric::Exact right) -> (Numeric::TwoPartFloat | Numeric::Exact)
+  end
+end
