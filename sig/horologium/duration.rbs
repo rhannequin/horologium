@@ -12,7 +12,7 @@ module Horologium
 
     def self.nanoseconds: (Numeric::scalar count, ?precision: Symbol) -> Duration
 
-    def self.from_seconds: (Numeric::scalar seconds, Symbol precision) -> Duration
+    private def self.from_seconds: (Numeric::scalar seconds, Symbol precision) -> Duration
 
     def abs: () -> Duration
   end
