@@ -7,7 +7,11 @@ module Horologium
 
       def self.resolve: (Symbol left, Symbol right) -> Symbol
 
-      def self.coerce: (TwoPartFloat | Exact value, to: Symbol) -> (TwoPartFloat | Exact)
+      def self.coerce: (TwoPartFloat | Exact value, to: :exact) -> Exact
+                     | (TwoPartFloat | Exact value, to: :standard) -> TwoPartFloat
+                     | (TwoPartFloat | Exact value, to: Symbol) -> (TwoPartFloat | Exact)
+
+      def self.value_type: (Symbol precision) -> Class
     end
   end
 end

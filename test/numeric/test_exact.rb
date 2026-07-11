@@ -63,4 +63,47 @@ class TestExact < Minitest::Test
     assert_equal Rational(1, 3),
       Horologium::Numeric::Exact.new(Rational(1, 3)).to_r
   end
+
+  def test_addition_adds_two_exact_values
+    assert_equal Horologium::Numeric::Exact.new(Rational(1, 2)),
+      Horologium::Numeric::Exact.new(Rational(1, 3)) +
+        Horologium::Numeric::Exact.new(Rational(1, 6))
+  end
+
+  def test_subtraction_subtracts_two_exact_values
+    assert_equal Horologium::Numeric::Exact.new(Rational(1, 3)),
+      Horologium::Numeric::Exact.new(Rational(1, 2)) -
+        Horologium::Numeric::Exact.new(Rational(1, 6))
+  end
+
+  def test_multiplication_multiplies_by_an_integer_scalar
+    assert_equal Horologium::Numeric::Exact.new(2),
+      Horologium::Numeric::Exact.new(Rational(1, 3)) * 6
+  end
+
+  def test_multiplication_by_a_negative_scalar
+    assert_equal Horologium::Numeric::Exact.new(-2),
+      Horologium::Numeric::Exact.new(Rational(1, 3)) * -6
+  end
+
+  def test_multiplication_by_a_rational_scalar_stays_exact
+    assert_equal Horologium::Numeric::Exact.new(Rational(1, 6)),
+      Horologium::Numeric::Exact.new(Rational(1, 2)) * Rational(1, 3)
+  end
+
+  def test_division_divides_by_a_scalar
+    assert_equal Horologium::Numeric::Exact.new(Rational(1, 3)),
+      Horologium::Numeric::Exact.new(2) / 6
+  end
+
+  def test_arithmetic_matches_raw_rational_arithmetic
+    left = Rational(2, 7)
+    right = Rational(3, 11)
+
+    assert_equal Horologium::Numeric::Exact.new(left + right),
+      Horologium::Numeric::Exact.new(left) +
+        Horologium::Numeric::Exact.new(right)
+    assert_equal Horologium::Numeric::Exact.new(left / 4),
+      Horologium::Numeric::Exact.new(left) / 4
+  end
 end

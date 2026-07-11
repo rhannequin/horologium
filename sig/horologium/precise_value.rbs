@@ -1,0 +1,25 @@
+module Horologium
+  module PreciseValue
+    include Comparable
+
+    @value: Numeric::TwoPartFloat | Numeric::Exact
+
+    @precision: Symbol
+
+    @rational: Rational
+
+    def initialize: (Numeric::TwoPartFloat | Numeric::Exact value, Symbol precision) -> void
+
+    attr_reader value: Numeric::TwoPartFloat | Numeric::Exact
+
+    attr_reader precision: Symbol
+
+    attr_reader rational: Rational
+
+    def <=>: (untyped other) -> Integer?
+
+    def eql?: (untyped other) -> bool
+
+    def hash: () -> Integer
+  end
+end
