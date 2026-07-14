@@ -1,9 +1,27 @@
 module Horologium
   class Configuration
+    BUILT_IN_SCALES: Hash[Symbol, singleton(Scales::Base)]
+
+    @default_precision: Symbol
+
+    @scales: Hash[Symbol, singleton(Scales::Base)]
+
     attr_reader default_precision: Symbol
 
     def initialize: () -> void
 
+    def scale_names: () -> Array[Symbol]
+
     def default_precision=: (Symbol precision) -> Symbol
+
+    def register_scale: (Symbol name, singleton(Scales::Base) scale) -> singleton(Scales::Base)
+
+    def scale: (Symbol name) -> singleton(Scales::Base)
+
+    def freeze: () -> self
+
+    private
+
+    def validate_scale!: (untyped scale) -> void
   end
 end

@@ -212,4 +212,51 @@ class TestTwoPartFloat < Minitest::Test
       Horologium::Numeric::TwoPartFloat.new(3.0) / 0
     end
   end
+
+  def test_it_exposes_its_two_parts
+    value = Horologium::Numeric::TwoPartFloat.new(2_443_144.5, 3.725e-4)
+
+    assert_in_delta 2_443_144.5, value.high, 1e-9
+    assert_in_delta 3.725e-4, value.low, 1e-12
+  end
+
+  def test_it_collapses_into_the_nearest_float
+    value = Horologium::Numeric::TwoPartFloat.new(2_443_144.5, 3.725e-4)
+
+    assert_in_delta 2_443_144.500_372_5, value.to_f, 1e-9
+  end
+
+  def test_collapsing_keeps_the_low_part_the_high_part_alone_would_lose
+    value = Horologium::Numeric::TwoPartFloat.new(2_443_144.5, 3.725e-4)
+
+    refute_in_delta value.high, value.to_f, 1e-9
+    assert_equal value.to_r.to_f, value.to_f
+  end
+
+  def test_collapsing_drops_what_a_single_float_cannot_hold
+    value = Horologium::Numeric::TwoPartFloat.new(1.0, 1e-20)
+
+    assert_in_delta 1.0, value.to_f, 1e-12
+    refute_equal value.to_r, value.to_f.to_r
+  end
+
+  def test_collapsing_an_infinite_value_stays_infinite
+    value = Horologium::Numeric::TwoPartFloat.new(Float::INFINITY)
+
+    assert_predicate value.to_f, :infinite?
+  end
+
+  def test_multiplication_rejects_a_two_part_float
+    assert_raises(ArgumentError) do
+      Horologium::Numeric::TwoPartFloat.new(3.0) *
+        Horologium::Numeric::TwoPartFloat.new(2.0)
+    end
+  end
+
+  def test_division_rejects_a_two_part_float
+    assert_raises(ArgumentError) do
+      Horologium::Numeric::TwoPartFloat.new(3.0) /
+        Horologium::Numeric::TwoPartFloat.new(2.0)
+    end
+  end
 end

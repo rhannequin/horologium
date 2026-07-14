@@ -106,4 +106,24 @@ class TestExact < Minitest::Test
     assert_equal Horologium::Numeric::Exact.new(left / 4),
       Horologium::Numeric::Exact.new(left) / 4
   end
+
+  def test_it_collapses_into_the_nearest_float
+    value = Horologium::Numeric::Exact.new(
+      Rational(24_431_445_003_725, 10_000_000)
+    )
+
+    assert_in_delta 2_443_144.500_372_5, value.to_f, 1e-9
+  end
+
+  def test_multiplication_rejects_an_exact_value
+    assert_raises(ArgumentError) do
+      Horologium::Numeric::Exact.new(3) * Horologium::Numeric::Exact.new(2)
+    end
+  end
+
+  def test_division_rejects_an_exact_value
+    assert_raises(ArgumentError) do
+      Horologium::Numeric::Exact.new(3) / Horologium::Numeric::Exact.new(2)
+    end
+  end
 end

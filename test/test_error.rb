@@ -26,4 +26,38 @@ class TestError < Minitest::Test
 
     assert_includes error.message, ":fast"
   end
+
+  def test_unknown_scale_error_descends_from_the_base_error
+    assert_operator Horologium::UnknownScaleError, :<, Horologium::Error
+  end
+
+  def test_unknown_scale_error_names_the_given_scale
+    error = Horologium::UnknownScaleError.new(:sundial, %i[tai tt])
+
+    assert_includes error.message, ":sundial"
+  end
+
+  def test_unknown_representation_error_descends_from_the_base_error
+    assert_operator Horologium::UnknownRepresentationError, :<,
+      Horologium::Error
+  end
+
+  def test_unknown_representation_error_names_the_given_representation
+    error = Horologium::UnknownRepresentationError.new(
+      :sundial,
+      %i[julian_date]
+    )
+
+    assert_includes error.message, ":sundial"
+  end
+
+  def test_unknown_output_error_descends_from_the_base_error
+    assert_operator Horologium::UnknownOutputError, :<, Horologium::Error
+  end
+
+  def test_unknown_output_error_carries_the_known_outputs
+    error = Horologium::UnknownOutputError.new(:decimal, %i[float rational])
+
+    assert_equal %i[float rational], error.known_outputs
+  end
 end

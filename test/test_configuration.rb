@@ -2,6 +2,34 @@
 
 require "test_helper"
 
+# A scale to register in the tests below. It is one minute ahead of TAI.
+class MinuteAheadOfTAI < Horologium::Scales::Base
+  OFFSET = Rational(60, 86_400)
+
+  class << self
+    def from_reference(value, precision)
+      Horologium::Numeric::Precision.add(
+        value,
+        Horologium::Numeric::Precision.build(OFFSET, precision)
+      )
+    end
+
+    def to_reference(value, precision)
+      Horologium::Numeric::Precision.subtract(
+        value,
+        Horologium::Numeric::Precision.build(OFFSET, precision)
+      )
+    end
+  end
+end
+
+# A scale that implements only half the contract. Registering it is refused.
+class HalfBuiltScale < Horologium::Scales::Base
+  def self.from_reference(value, precision)
+    value
+  end
+end
+
 class TestConfiguration < Minitest::Test
   def teardown
     Horologium.reset_configuration!
@@ -98,5 +126,105 @@ class TestConfiguration < Minitest::Test
     end
 
     assert_equal :standard, seen
+  end
+
+  def test_the_built_in_scales_are_registered
+    assert_equal Horologium::Scales::TAI, Horologium.configuration.scale(:tai)
+    assert_equal Horologium::Scales::TT, Horologium.configuration.scale(:tt)
+  end
+
+  def test_an_unregistered_scale_raises_an_unknown_scale_error
+    assert_raises(Horologium::UnknownScaleError) do
+      Horologium.configuration.scale(:sundial)
+    end
+  end
+
+  def test_the_unknown_scale_error_carries_the_registered_scales
+    error = assert_raises(Horologium::UnknownScaleError) do
+      Horologium.configuration.scale(:sundial)
+    end
+
+    assert_equal %i[tai tt], error.known_scales
+  end
+
+  def test_register_scale_adds_a_scale_an_instant_can_be_read_in
+    Horologium.configure do |c|
+      c.register_scale(:minute_ahead, MinuteAheadOfTAI)
+    end
+    instant = Horologium::Instant.from_tai_julian_date(2_443_144.5)
+
+    assert_in_delta 2_443_144.500_694_444,
+      instant.to(:minute_ahead).as(:julian_date),
+      1e-9
+  end
+
+  def test_register_scale_replaces_a_scale_registered_under_the_same_name
+    Horologium.configure do |c|
+      c.register_scale(:tt, MinuteAheadOfTAI)
+    end
+
+    assert_equal MinuteAheadOfTAI, Horologium.configuration.scale(:tt)
+  end
+
+  def test_register_scale_rejects_anything_but_a_scale
+    assert_raises(Horologium::ConfigurationError) do
+      Horologium.configure do |c|
+        c.register_scale(:sundial, :sundial)
+      end
+    end
+  end
+
+  def test_register_scale_rejects_a_scale_missing_half_the_contract
+    assert_raises(Horologium::ConfigurationError) do
+      Horologium.configure do |c|
+        c.register_scale(:half_built, HalfBuiltScale)
+      end
+    end
+  end
+
+  def test_register_scale_rejects_a_name_that_is_not_a_symbol
+    assert_raises(Horologium::ConfigurationError) do
+      Horologium.configure do |c|
+        c.register_scale("minute_ahead", MinuteAheadOfTAI)
+      end
+    end
+  end
+
+  def test_the_registered_scales_cannot_be_changed_through_scale_names
+    Horologium.configuration.scale_names << :sundial
+
+    assert_raises(Horologium::UnknownScaleError) do
+      Horologium.configuration.scale(:sundial)
+    end
+  end
+
+  def test_a_scale_cannot_be_registered_after_configuring
+    Horologium.configure
+
+    assert_raises(Horologium::ConfigurationError) do
+      Horologium.configuration.register_scale(:minute_ahead, MinuteAheadOfTAI)
+    end
+  end
+
+  def test_configure_freezes_the_configuration_when_the_block_raises
+    assert_raises(Horologium::ConfigurationError) do
+      Horologium.configure do |c|
+        c.register_scale(:sundial, :sundial)
+      end
+    end
+
+    assert_predicate Horologium.configuration, :frozen?
+  end
+
+  def test_configure_freezes_the_scale_registry
+    Horologium.configure
+
+    assert_raises(Horologium::ConfigurationError) do
+      Horologium.configuration.register_scale(:minute_ahead, MinuteAheadOfTAI)
+    end
+  end
+
+  def test_the_scale_names_list_the_registered_scales
+    assert_equal %i[tai tt], Horologium.configuration.scale_names
   end
 end

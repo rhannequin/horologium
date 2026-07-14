@@ -58,27 +58,31 @@ module Horologium
       # Multiplies by a plain number. The number becomes an exact Rational, so
       # the product stays exact.
       #
-      # @param scalar [Numeric] the number to multiply by
+      # @param scalar [Integer, Float, Rational] the number to multiply by
       # @return [Horologium::Numeric::Exact] the product
+      # @raise [ArgumentError] when given anything but a plain number, such
+      #   as another exact value
       # @example
       #   Horologium::Numeric::Exact.new(Rational(1, 3)) * 6 ==
       #     Horologium::Numeric::Exact.new(2)
       #   # => true
       def *(scalar) # rubocop:disable Naming/BinaryOperatorParameterName
-        self.class.new(value * scalar.to_r)
+        self.class.new(value * scalar_rational(scalar))
       end
 
       # Divides by a plain number. The number becomes an exact Rational, so
       # the quotient stays exact.
       #
-      # @param scalar [Numeric] the number to divide by
+      # @param scalar [Integer, Float, Rational] the number to divide by
       # @return [Horologium::Numeric::Exact] the quotient
+      # @raise [ArgumentError] when given anything but a plain number, such
+      #   as another exact value
       # @example
       #   Horologium::Numeric::Exact.new(2) / 6 ==
       #     Horologium::Numeric::Exact.new(Rational(1, 3))
       #   # => true
       def /(scalar) # rubocop:disable Naming/BinaryOperatorParameterName
-        self.class.new(value / scalar.to_r)
+        self.class.new(value / scalar_rational(scalar))
       end
 
       # Two values are equal when their Rationals are equal.
@@ -117,6 +121,18 @@ module Horologium
         value
       end
 
+      # The value as a single Float. A Float cannot hold what a Rational
+      # holds, so the extra precision is dropped here. Do it at the end, once
+      # the arithmetic is done.
+      #
+      # @return [Float] the nearest Float to the value
+      # @example
+      #   Horologium::Numeric::Exact.new(Rational(1, 3)).to_f
+      #   # => 0.3333333333333333
+      def to_f
+        value.to_f
+      end
+
       protected
 
       # The stored Rational. It is protected so == and eql? can read another
@@ -125,6 +141,25 @@ module Horologium
       # @api private
       # @return [Rational]
       attr_reader :value
+
+      private
+
+      # A plain number, as a Rational. An exact value is not a scalar, and
+      # passing one where a number belongs is a mistake, so it is refused.
+      #
+      # @param scalar [Integer, Float, Rational] the number to check
+      # @return [Rational] the number as a Rational
+      # @raise [ArgumentError] when it is not a plain number
+      def scalar_rational(scalar)
+        case scalar
+        when Integer, Float, Rational
+          scalar.to_r
+        else
+          raise ArgumentError,
+            "an Exact multiplies and divides by a plain number, " \
+            "got a #{scalar.class}"
+        end
+      end
     end
   end
 end
