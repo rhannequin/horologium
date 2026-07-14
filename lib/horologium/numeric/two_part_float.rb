@@ -69,6 +69,19 @@ module Horologium
         self.class.new(result_high, result_low)
       end
 
+      # The value as a Rational: the two parts added with no loss. Each Float
+      # is an exact rational, so their sum is exact and keeps the low part's
+      # extra precision.
+      #
+      # @return [Rational] the sum of the high and low parts
+      # @example
+      #   Horologium::Numeric::TwoPartFloat.new(1.0, 1e-16).to_r ==
+      #     1.to_r + Rational(1e-16)
+      #   # => true
+      def to_r
+        high.to_r + low.to_r
+      end
+
       # Two values are equal when their high and low parts are both equal. This
       # compares the stored parts, not the number they add up to.
       #

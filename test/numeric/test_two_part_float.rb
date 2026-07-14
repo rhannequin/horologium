@@ -96,6 +96,21 @@ class TestTwoPartFloat < Minitest::Test
     )
   end
 
+  def test_it_returns_the_exact_sum_of_its_parts_as_a_rational
+    assert_equal Rational(7, 4),
+      Horologium::Numeric::TwoPartFloat.new(1.5, 0.25).to_r
+  end
+
+  def test_to_r_keeps_precision_a_plain_float_would_lose
+    assert_equal 1.to_r + Rational(1e-16),
+      Horologium::Numeric::TwoPartFloat.new(1.0, 1e-16).to_r
+  end
+
+  def test_to_r_handles_a_negative_low_part
+    assert_equal Rational(7, 4),
+      Horologium::Numeric::TwoPartFloat.new(2.0, -0.25).to_r
+  end
+
   def test_normalize_keeps_the_high_part_on_the_integer_grid
     assert_equal Horologium::Numeric::TwoPartFloat.new(2.0, 0.3),
       Horologium::Numeric::TwoPartFloat.normalize(2.0, 0.3)

@@ -7,6 +7,8 @@ module Horologium
 
       def -: (TwoPartFloat other) -> TwoPartFloat
 
+      def to_r: () -> Rational
+
       def ==: (untyped other) -> bool
 
       def eql?: (untyped other) -> bool

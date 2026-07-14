@@ -1,0 +1,9 @@
+module Horologium
+  class Configuration
+    attr_reader default_precision: Symbol
+
+    def initialize: () -> void
+
+    def default_precision=: (Symbol precision) -> Symbol
+  end
+end

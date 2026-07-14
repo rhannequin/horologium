@@ -54,6 +54,16 @@ module Horologium
         value.hash
       end
 
+      # The stored value as a Rational.
+      #
+      # @return [Rational]
+      # @example
+      #   Horologium::Numeric::Exact.new(Rational(1, 3)).to_r == Rational(1, 3)
+      #   # => true
+      def to_r
+        value
+      end
+
       protected
 
       # The stored Rational. It is protected so == and eql? can read another
