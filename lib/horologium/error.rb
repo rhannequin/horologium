@@ -10,8 +10,13 @@ module Horologium
   # afterwards.
   class ConfigurationError < Error; end
 
-  # Raised when a precision that is not a known backend is given, either to the
-  # configuration or to the numeric backend. It carries the known precisions so
+  # Raised when an operation mixes quantities that do not combine, such as
+  # adding two instants. Only a point plus or minus a duration, and the
+  # difference of two points, are meaningful.
+  class DimensionalError < Error; end
+
+  # Raised when a precision the library does not recognise is given, to the
+  # configuration or when building a value. It carries the known precisions so
   # the caller can see the valid choices.
   class UnknownPrecisionError < Error
     # The precisions the library recognises.

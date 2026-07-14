@@ -1,0 +1,19 @@
+module Horologium
+  class Duration
+    include PreciseValue
+
+    SECONDS_PER_DAY: Integer
+
+    NANOSECONDS_PER_SECOND: Integer
+
+    def self.seconds: (Numeric::scalar count, ?precision: Symbol) -> Duration
+
+    def self.days: (Numeric::scalar count, ?precision: Symbol) -> Duration
+
+    def self.nanoseconds: (Numeric::scalar count, ?precision: Symbol) -> Duration
+
+    private def self.from_seconds: (Numeric::scalar seconds, Symbol precision) -> Duration
+
+    def abs: () -> Duration
+  end
+end

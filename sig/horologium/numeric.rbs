@@ -1,0 +1,5 @@
+module Horologium
+  module Numeric
+    type scalar = Integer | Float | Rational
+  end
+end

@@ -11,6 +11,10 @@ class TestError < Minitest::Test
     assert_operator Horologium::UnknownPrecisionError, :<, Horologium::Error
   end
 
+  def test_dimensional_error_descends_from_the_base_error
+    assert_operator Horologium::DimensionalError, :<, Horologium::Error
+  end
+
   def test_unknown_precision_error_carries_the_known_precisions
     error = Horologium::UnknownPrecisionError.new(:fast, %i[standard exact])
 

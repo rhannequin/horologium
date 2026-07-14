@@ -125,4 +125,91 @@ class TestTwoPartFloat < Minitest::Test
     assert_equal Horologium::Numeric::TwoPartFloat.new(1.0, 0.25),
       Horologium::Numeric::TwoPartFloat.normalize(2.0, -0.75)
   end
+
+  def test_multiplication_multiplies_by_a_scalar
+    assert_equal Horologium::Numeric::TwoPartFloat.new(3.0),
+      Horologium::Numeric::TwoPartFloat.new(1.5) * 2
+  end
+
+  def test_multiplication_retains_precision_a_plain_float_would_lose
+    value = Horologium::Numeric::TwoPartFloat.new(1.0, 1e-16)
+
+    assert_equal value.to_r * 2, (value * 2).to_r
+  end
+
+  def test_multiplication_by_a_scalar_matches_the_exact_product
+    value = Horologium::Numeric::TwoPartFloat.new(2_460_000.5, 1e-9)
+
+    assert_in_delta value.to_r * 86_400, (value * 86_400).to_r, 1e-6
+  end
+
+  def test_division_divides_by_a_scalar
+    assert_equal Horologium::Numeric::TwoPartFloat.new(1.5),
+      Horologium::Numeric::TwoPartFloat.new(3.0) / 2
+  end
+
+  def test_division_is_exact_when_the_value_divides_evenly
+    assert_equal Horologium::Numeric::TwoPartFloat.new(3.5),
+      Horologium::Numeric::TwoPartFloat.new(7.0) / 2
+  end
+
+  def test_division_retains_precision_a_plain_float_would_lose
+    value = Horologium::Numeric::TwoPartFloat.new(1.0, 1e-16)
+
+    assert_equal value.to_r / 2, (value / 2).to_r
+  end
+
+  def test_division_by_a_scalar_matches_the_exact_quotient
+    value = Horologium::Numeric::TwoPartFloat.new(2_460_000.5, 1e-9)
+
+    assert_in_delta value.to_r / 86_400, (value / 86_400).to_r, 1e-9
+  end
+
+  def test_two_product_reconstructs_the_exact_product_of_its_operands
+    product, error = Horologium::Numeric::TwoPartFloat.two_product(0.1, 0.2)
+
+    assert_equal Rational(0.1) * Rational(0.2),
+      Rational(product) + Rational(error)
+  end
+
+  def test_two_product_leaves_no_error_for_exactly_representable_operands
+    assert_equal [6.0, 0.0],
+      Horologium::Numeric::TwoPartFloat.two_product(2.0, 3.0)
+  end
+
+  def test_split_halves_add_back_to_the_original_value
+    high, low = Horologium::Numeric::TwoPartFloat.split(0.1)
+
+    assert_equal Rational(0.1), Rational(high) + Rational(low)
+  end
+
+  def test_split_returns_the_value_and_zero_for_a_small_integer
+    assert_equal [3.0, 0.0], Horologium::Numeric::TwoPartFloat.split(3.0)
+  end
+
+  def test_from_real_keeps_precision_a_single_float_would_lose
+    assert_equal 2**53 + 1,
+      Horologium::Numeric::TwoPartFloat.from_real(2**53 + 1).to_r
+  end
+
+  def test_multiplication_keeps_double_precision_for_an_unnormalized_pair
+    value = Horologium::Numeric::TwoPartFloat.new(0.1, -0.25)
+    exact = value.to_r * 1_000_000_000
+
+    assert_operator ((value * 1_000_000_000).to_r - exact).abs, :<,
+      exact.abs / 10**20
+  end
+
+  def test_division_keeps_double_precision_for_an_unnormalized_pair
+    value = Horologium::Numeric::TwoPartFloat.new(1e-9, 0.3)
+    exact = value.to_r / 7
+
+    assert_operator ((value / 7).to_r - exact).abs, :<, exact.abs / 10**20
+  end
+
+  def test_division_raises_when_dividing_by_zero
+    assert_raises(ZeroDivisionError) do
+      Horologium::Numeric::TwoPartFloat.new(3.0) / 0
+    end
+  end
 end
