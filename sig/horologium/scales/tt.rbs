@@ -1,0 +1,17 @@
+module Horologium
+  module Scales
+    class TT < Base
+      SECONDS_AHEAD_OF_TAI: Rational
+
+      DAYS_AHEAD_OF_TAI: Rational
+
+      OFFSETS: Hash[Symbol, Numeric::TwoPartFloat | Numeric::Exact]
+
+      def self.from_reference: (Numeric::TwoPartFloat | Numeric::Exact value, Symbol precision) -> (Numeric::TwoPartFloat | Numeric::Exact)
+
+      def self.to_reference: (Numeric::TwoPartFloat | Numeric::Exact value, Symbol precision) -> (Numeric::TwoPartFloat | Numeric::Exact)
+
+      private def self.offset: (Symbol precision) -> (Numeric::TwoPartFloat | Numeric::Exact)
+    end
+  end
+end

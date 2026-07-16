@@ -237,4 +237,44 @@ class TestInstant < Minitest::Test
 
     assert_equal Rational(2_460_000.5) + Rational(1e-16), instant.value.to_r
   end
+
+  def test_it_reads_in_a_scale
+    instant = Horologium::Instant.from_tai_julian_date(2_443_144.5)
+
+    assert_instance_of Horologium::ScaleReading, instant.to(:tt)
+  end
+
+  def test_reading_in_tt_moves_the_julian_date_32_point_184_seconds_ahead
+    instant = Horologium::Instant.from_tai_julian_date(2_443_144.5)
+
+    assert_in_delta 2_443_144.500_372_5,
+      instant.to(:tt).as(:julian_date),
+      1e-9
+  end
+
+  def test_reading_in_an_unregistered_scale_raises_an_unknown_scale_error
+    instant = Horologium::Instant.from_tai_julian_date(2_443_144.5)
+
+    assert_raises(Horologium::UnknownScaleError) do
+      instant.to(:sundial)
+    end
+  end
+
+  def test_as_is_the_shorthand_for_reading_in_a_scale_then_representing_it
+    instant = Horologium::Instant.from_tai_julian_date(2_443_144.5)
+
+    assert_in_delta instant.to(:tt).as(:julian_date),
+      instant.as(:julian_date, scale: :tt),
+      1e-9
+  end
+
+  def test_as_passes_the_output_type_on_to_the_representation
+    instant = Horologium::Instant.from_tai_julian_date(
+      2_443_144.5,
+      precision: :exact
+    )
+
+    assert_equal Rational(24_431_445_003_725, 10_000_000),
+      instant.as(:julian_date, scale: :tt, as: :rational)
+  end
 end

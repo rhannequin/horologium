@@ -71,14 +71,7 @@ module Horologium
       # @param precision [Symbol] the precision to build
       # @return [Horologium::Duration]
       def from_seconds(seconds, precision)
-        value =
-          case Numeric::Precision.validate!(precision)
-          when :exact
-            Numeric::Exact.new(seconds)
-          else
-            Numeric::TwoPartFloat.from_real(seconds)
-          end
-        new(value, precision)
+        new(Numeric::Precision.build(seconds, precision), precision)
       end
     end
 

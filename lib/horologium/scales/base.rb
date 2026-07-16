@@ -1,0 +1,70 @@
+# frozen_string_literal: true
+
+module Horologium
+  # The time scales an instant can be read in. Every scale converts to and
+  # from TAI, the scale the library stores instants in, so a conversion from
+  # one scale to another goes through TAI. {Scales::Base} is what a scale
+  # implements, and {Configuration#register_scale} adds one.
+  module Scales
+    # The two methods a time scale implements. One reads a TAI Julian Date in
+    # the scale, the other reads a Julian Date in the scale back in TAI. Every
+    # scale converts to and from TAI, so a scale does not need to know about
+    # the other scales.
+    #
+    # The values are Julian Dates in days. They come at the precision of the
+    # instant, a {Numeric::TwoPartFloat} at +:standard+ and a
+    # {Numeric::Exact} at +:exact+. A scale keeps that precision, and builds
+    # what it adds at the precision it is given.
+    #
+    # @abstract Implement {from_reference} and {to_reference} in a subclass.
+    # @example A scale one minute ahead of TAI
+    #   class MyScale < Horologium::Scales::Base
+    #     OFFSET = Rational(60, 86_400)
+    #
+    #     class << self
+    #       def from_reference(value, precision)
+    #         Horologium::Numeric::Precision.add(
+    #           value,
+    #           Horologium::Numeric::Precision.build(OFFSET, precision)
+    #         )
+    #       end
+    #
+    #       def to_reference(value, precision)
+    #         Horologium::Numeric::Precision.subtract(
+    #           value,
+    #           Horologium::Numeric::Precision.build(OFFSET, precision)
+    #         )
+    #       end
+    #     end
+    #   end
+    class Base
+      class << self
+        # A TAI Julian Date, read in this scale.
+        #
+        # @param _value [Horologium::Numeric::TwoPartFloat,
+        #   Horologium::Numeric::Exact] the Julian Date in TAI, in days
+        # @param _precision [Symbol] +:standard+ or +:exact+
+        # @return [Horologium::Numeric::TwoPartFloat,
+        #   Horologium::Numeric::Exact] the Julian Date in this scale, in days
+        # @raise [NotImplementedError] until a subclass implements it
+        def from_reference(_value, _precision)
+          raise NotImplementedError, "#{self} must implement .from_reference"
+        end
+
+        # A Julian Date in this scale, read back in TAI. It undoes
+        # {from_reference}. Calling one after the other returns the value
+        # given.
+        #
+        # @param _value [Horologium::Numeric::TwoPartFloat,
+        #   Horologium::Numeric::Exact] the Julian Date in this scale, in days
+        # @param _precision [Symbol] +:standard+ or +:exact+
+        # @return [Horologium::Numeric::TwoPartFloat,
+        #   Horologium::Numeric::Exact] the Julian Date in TAI, in days
+        # @raise [NotImplementedError] until a subclass implements it
+        def to_reference(_value, _precision)
+          raise NotImplementedError, "#{self} must implement .to_reference"
+        end
+      end
+    end
+  end
+end

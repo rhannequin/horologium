@@ -31,11 +31,7 @@ module Horologium
     # @raise [UnknownPrecisionError] when the precision is not recognised
     # @raise [ArgumentError] when the value does not match the precision
     def initialize(value, precision)
-      expected = Numeric::Precision.value_type(precision)
-      unless value.is_a?(expected)
-        raise ArgumentError,
-          "a #{precision} value must be a #{expected}, got a #{value.class}"
-      end
+      Numeric::Precision.validate_value!(value, precision)
 
       @value = value
       @precision = precision

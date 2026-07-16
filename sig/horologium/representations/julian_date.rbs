@@ -1,0 +1,11 @@
+module Horologium
+  module Representations
+    class JulianDate
+      OUTPUTS: Array[Symbol]
+
+      def self.render: (ScaleReading reading, Symbol output) -> (Float | Rational | Numeric::TwoPartFloat)
+
+      private def self.two_part: (Numeric::TwoPartFloat | Numeric::Exact value) -> Numeric::TwoPartFloat
+    end
+  end
+end

@@ -15,6 +15,8 @@ module Horologium
 
       def to_r: () -> Rational
 
+      def to_f: () -> Float
+
       def ==: (untyped other) -> bool
 
       def eql?: (untyped other) -> bool
@@ -40,6 +42,8 @@ module Horologium
       attr_reader low: Float
 
       private
+
+      def scalar_float: (untyped scalar) -> Float
 
       def two_sum: (Float left, Float right) -> [ Float, Float ]
 

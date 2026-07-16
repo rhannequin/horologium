@@ -19,7 +19,13 @@ module Horologium
 
       def to_r: () -> Rational
 
+      def to_f: () -> Float
+
       attr_reader value: Rational
+
+      private
+
+      def scalar_rational: (untyped scalar) -> Rational
     end
   end
 end

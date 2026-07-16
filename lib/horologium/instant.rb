@@ -64,7 +64,7 @@ module Horologium
 
       precision = Numeric::Precision.resolve(self.precision, duration.precision)
       days = seconds_to_days(duration, precision)
-      self.class.new(add(value, days), precision)
+      self.class.new(Numeric::Precision.add(value, days), precision)
     end
 
     # Subtracts a duration to get an earlier instant, or another instant to
@@ -85,16 +85,54 @@ module Horologium
       when Duration
         precision = Numeric::Precision.resolve(self.precision, other.precision)
         days = seconds_to_days(other, precision)
-        self.class.new(subtract(value, days), precision)
+        self.class.new(
+          Numeric::Precision.subtract(value, days),
+          precision
+        )
       when Instant
         precision = Numeric::Precision.resolve(self.precision, other.precision)
-        gap = subtract(value, other.value)
+        gap = Numeric::Precision.subtract(value, other.value)
         Duration.new(gap * Duration::SECONDS_PER_DAY, precision)
       else
         raise DimensionalError,
           "cannot subtract a #{other.class} from an Instant; " \
           "subtract a Duration or another Instant"
       end
+    end
+
+    # The instant read in a time scale. An instant has no scale of its own, so
+    # the scale is chosen here. Take the representation from the reading it
+    # returns.
+    #
+    # @param scale [Symbol] the name of a registered scale, such as +:tt+
+    # @return [Horologium::ScaleReading]
+    # @raise [UnknownScaleError] when no scale is registered under that name
+    # @example
+    #   instant = Horologium::Instant.from_tai_julian_date(2_443_144.5)
+    #   instant.to(:tt).as(:julian_date) # => 2443144.5003725
+    def to(scale)
+      reading = Horologium.configuration
+        .scale(scale)
+        .from_reference(value, precision)
+
+      ScaleReading.new(scale, reading, precision)
+    end
+
+    # The instant in a representation, read in a scale. This is the shorthand
+    # for +to(scale).as(representation)+.
+    #
+    # @param representation [Symbol] the representation, such as +:julian_date+
+    # @param scale [Symbol] the name of a registered scale, such as +:tt+
+    # @param as [Symbol] the type to come out as
+    # @return [Object] the instant, in that representation
+    # @raise [UnknownScaleError] when no scale is registered under that name
+    # @raise [UnknownRepresentationError] when the representation is not one
+    #   the library has
+    # @example
+    #   instant = Horologium::Instant.from_tai_julian_date(2_443_144.5)
+    #   instant.as(:julian_date, scale: :tt, as: :rational)
+    def as(representation, scale:, as: :float)
+      to(scale).as(representation, as: as)
     end
 
     # Whether two instants fall within a tolerance of each other. Use this
@@ -131,27 +169,6 @@ module Horologium
     def seconds_to_days(duration, precision)
       Numeric::Precision.coerce(duration.value, to: precision) /
         Duration::SECONDS_PER_DAY
-    end
-
-    # Adds two values. Two standard values add as two-part floats; if either
-    # is exact, both are promoted to exact Rationals first.
-    def add(left, right)
-      if left.is_a?(Numeric::TwoPartFloat) && right.is_a?(Numeric::TwoPartFloat)
-        left + right
-      else
-        Numeric::Precision.coerce(left, to: :exact) +
-          Numeric::Precision.coerce(right, to: :exact)
-      end
-    end
-
-    # Subtracts two values, promoting to exact the same way {add} does.
-    def subtract(left, right)
-      if left.is_a?(Numeric::TwoPartFloat) && right.is_a?(Numeric::TwoPartFloat)
-        left - right
-      else
-        Numeric::Precision.coerce(left, to: :exact) -
-          Numeric::Precision.coerce(right, to: :exact)
-      end
     end
   end
 end

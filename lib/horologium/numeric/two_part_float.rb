@@ -77,14 +77,16 @@ module Horologium
       # Multiplies by a plain number, keeping the precision a single Float would
       # lose. The number is a scalar, not another two-part value.
       #
-      # @param scalar [Numeric] the number to multiply by
+      # @param scalar [Integer, Float, Rational] the number to multiply by
       # @return [Horologium::Numeric::TwoPartFloat] the product
+      # @raise [ArgumentError] when given anything but a plain number, such
+      #   as another two-part value
       # @example
       #   Horologium::Numeric::TwoPartFloat.new(1.5) * 2 ==
       #     Horologium::Numeric::TwoPartFloat.new(3.0)
       #   # => true
       def *(scalar) # rubocop:disable Naming/BinaryOperatorParameterName
-        factor = scalar.to_f
+        factor = scalar_float(scalar)
         high, low = two_sum(@high, @low)
         product, product_error = two_product(high, factor)
         result_high, result_low =
@@ -95,14 +97,17 @@ module Horologium
       # Divides by a plain number, keeping the precision a single Float would
       # lose. The number is a scalar, not another two-part value.
       #
-      # @param scalar [Numeric] the number to divide by
+      # @param scalar [Integer, Float, Rational] the number to divide by
       # @return [Horologium::Numeric::TwoPartFloat] the quotient
+      # @raise [ArgumentError] when given anything but a plain number, such
+      #   as another two-part value
+      # @raise [ZeroDivisionError] when dividing by zero
       # @example
       #   Horologium::Numeric::TwoPartFloat.new(3.0) / 2 ==
       #     Horologium::Numeric::TwoPartFloat.new(1.5)
       #   # => true
       def /(scalar) # rubocop:disable Naming/BinaryOperatorParameterName
-        divisor = scalar.to_f
+        divisor = scalar_float(scalar)
         raise ZeroDivisionError, "divided by 0" if divisor.zero?
 
         high, low = two_sum(@high, @low)
@@ -126,6 +131,22 @@ module Horologium
       #   # => true
       def to_r
         high.to_r + low.to_r
+      end
+
+      # The value as a single Float. One Float cannot hold what two hold, so
+      # the extra precision the split carries is dropped here. Do it at the
+      # end, once the arithmetic is done.
+      #
+      # Adding the two parts is what a Float addition already does: it returns
+      # the Float nearest to the exact sum, which is the same answer as
+      # rounding {#to_r}, without building the Rationals.
+      #
+      # @return [Float] the nearest Float to the value
+      # @example
+      #   Horologium::Numeric::TwoPartFloat.new(2_443_144.5, 3.725e-4).to_f
+      #   # => 2443144.5003725
+      def to_f
+        high + low
       end
 
       # Two values are equal when their high and low parts are both equal. This
@@ -283,16 +304,32 @@ module Horologium
         [high, low]
       end
 
-      protected
-
-      # The two parts. They are protected so the operators can read another
-      # value's parts without exposing them publicly.
+      # The two parts. Read them to pass the value to a foreign kernel that
+      # takes a day and a fraction of a day, such as an ERFA binding or a
+      # Chebyshev ephemeris segment. To add them together, use {#to_f}.
       #
-      # @api private
       # @return [Float]
       attr_reader :high, :low
 
       private
+
+      # A plain number, as a Float. Multiplying or dividing by another
+      # two-part value would collapse it to one Float and lose the low part,
+      # so it is refused rather than silently rounded.
+      #
+      # @param scalar [Integer, Float, Rational] the number to check
+      # @return [Float] the number as a Float
+      # @raise [ArgumentError] when it is not a plain number
+      def scalar_float(scalar)
+        case scalar
+        when Integer, Float, Rational
+          scalar.to_f
+        else
+          raise ArgumentError,
+            "a TwoPartFloat multiplies and divides by a plain number, " \
+            "got a #{scalar.class}"
+        end
+      end
 
       def two_sum(left, right)
         self.class.two_sum(left, right)

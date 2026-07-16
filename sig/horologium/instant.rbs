@@ -9,14 +9,14 @@ module Horologium
     def -: (Duration) -> Instant
          | (Instant) -> Duration
 
+    def to: (Symbol scale) -> ScaleReading
+
+    def as: (Symbol representation, scale: Symbol, ?as: Symbol) -> untyped
+
     def equal_within?: (Instant other, Duration tolerance) -> bool
 
     private
 
     def seconds_to_days: (Duration duration, Symbol precision) -> (Numeric::TwoPartFloat | Numeric::Exact)
-
-    def add: (Numeric::TwoPartFloat | Numeric::Exact left, Numeric::TwoPartFloat | Numeric::Exact right) -> (Numeric::TwoPartFloat | Numeric::Exact)
-
-    def subtract: (Numeric::TwoPartFloat | Numeric::Exact left, Numeric::TwoPartFloat | Numeric::Exact right) -> (Numeric::TwoPartFloat | Numeric::Exact)
   end
 end

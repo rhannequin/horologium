@@ -11,7 +11,17 @@ module Horologium
                      | (TwoPartFloat | Exact value, to: :standard) -> TwoPartFloat
                      | (TwoPartFloat | Exact value, to: Symbol) -> (TwoPartFloat | Exact)
 
+      def self.build: (scalar value, Symbol precision) -> (TwoPartFloat | Exact)
+
+      def self.add: (TwoPartFloat | Exact left, TwoPartFloat | Exact right) -> (TwoPartFloat | Exact)
+
+      def self.subtract: (TwoPartFloat | Exact left, TwoPartFloat | Exact right) -> (TwoPartFloat | Exact)
+
+      def self.validate_value!: (TwoPartFloat | Exact value, Symbol precision) -> (TwoPartFloat | Exact)
+
       def self.value_type: (Symbol precision) -> Class
+
+      private def self.promote: (TwoPartFloat | Exact value) -> Exact
     end
   end
 end

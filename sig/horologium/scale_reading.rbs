@@ -1,0 +1,21 @@
+module Horologium
+  class ScaleReading
+    REPRESENTATIONS: Hash[Symbol, singleton(Representations::JulianDate)]
+
+    @scale: Symbol
+
+    @value: Numeric::TwoPartFloat | Numeric::Exact
+
+    @precision: Symbol
+
+    attr_reader scale: Symbol
+
+    attr_reader precision: Symbol
+
+    attr_reader value: Numeric::TwoPartFloat | Numeric::Exact
+
+    def initialize: (Symbol scale, Numeric::TwoPartFloat | Numeric::Exact value, Symbol precision) -> void
+
+    def as: (Symbol representation, ?as: Symbol) -> untyped
+  end
+end

@@ -83,4 +83,96 @@ class TestPrecision < Minitest::Test
       )
     end
   end
+
+  def test_build_holds_a_standard_value_as_a_two_part_float
+    value = Horologium::Numeric::Precision.build(Rational(1, 3), :standard)
+
+    assert_instance_of Horologium::Numeric::TwoPartFloat, value
+  end
+
+  def test_build_holds_an_exact_value_as_a_rational
+    value = Horologium::Numeric::Precision.build(Rational(1, 3), :exact)
+
+    assert_equal Rational(1, 3), value.to_r
+  end
+
+  def test_build_rejects_an_unrecognised_precision
+    assert_raises(Horologium::UnknownPrecisionError) do
+      Horologium::Numeric::Precision.build(1, :fast)
+    end
+  end
+
+  def test_two_standard_values_add_in_the_split
+    sum = Horologium::Numeric::Precision.add(
+      Horologium::Numeric::TwoPartFloat.new(1.0),
+      Horologium::Numeric::TwoPartFloat.new(0.5)
+    )
+
+    assert_instance_of Horologium::Numeric::TwoPartFloat, sum
+    assert_equal Rational(3, 2), sum.to_r
+  end
+
+  def test_adding_an_exact_value_to_a_standard_one_promotes_the_sum
+    sum = Horologium::Numeric::Precision.add(
+      Horologium::Numeric::TwoPartFloat.new(1.0),
+      Horologium::Numeric::Exact.new(Rational(1, 3))
+    )
+
+    assert_instance_of Horologium::Numeric::Exact, sum
+    assert_equal Rational(4, 3), sum.to_r
+  end
+
+  def test_two_standard_values_subtract_in_the_split
+    difference = Horologium::Numeric::Precision.subtract(
+      Horologium::Numeric::TwoPartFloat.new(1.5),
+      Horologium::Numeric::TwoPartFloat.new(0.5)
+    )
+
+    assert_instance_of Horologium::Numeric::TwoPartFloat, difference
+    assert_equal 1, difference.to_r
+  end
+
+  def test_subtracting_an_exact_value_from_a_standard_one_promotes_the_result
+    difference = Horologium::Numeric::Precision.subtract(
+      Horologium::Numeric::TwoPartFloat.new(1.0),
+      Horologium::Numeric::Exact.new(Rational(1, 3))
+    )
+
+    assert_instance_of Horologium::Numeric::Exact, difference
+    assert_equal Rational(2, 3), difference.to_r
+  end
+
+  def test_adding_a_plain_number_is_refused_rather_than_promoted
+    assert_raises(ArgumentError) do
+      Horologium::Numeric::Precision.add(
+        Horologium::Numeric::TwoPartFloat.new(1.0),
+        Rational(1, 3)
+      )
+    end
+  end
+
+  def test_subtracting_a_plain_number_is_refused_rather_than_promoted
+    assert_raises(ArgumentError) do
+      Horologium::Numeric::Precision.subtract(
+        Horologium::Numeric::TwoPartFloat.new(1.0),
+        0.5
+      )
+    end
+  end
+
+  def test_validate_value_accepts_a_value_that_matches_its_precision
+    value = Horologium::Numeric::TwoPartFloat.new(1.0)
+
+    assert_same value,
+      Horologium::Numeric::Precision.validate_value!(value, :standard)
+  end
+
+  def test_validate_value_rejects_a_value_that_does_not_match_its_precision
+    assert_raises(ArgumentError) do
+      Horologium::Numeric::Precision.validate_value!(
+        Horologium::Numeric::Exact.new(1),
+        :standard
+      )
+    end
+  end
 end

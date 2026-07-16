@@ -14,7 +14,8 @@ module Horologium
     # exact Rational. What +:exact+ guarantees is Horologium's own arithmetic.
     # It cannot bring back precision an input already lost when it was built.
     #
-    # @api private
+    # A scale registered with {Horologium::Configuration#register_scale} builds
+    # and combines its values here, so this module is public API.
     module Precision
       # The recognised precisions.
       NAMES = %i[standard exact].freeze
@@ -74,6 +75,73 @@ module Horologium
           end
         end
 
+        # Builds a value at a precision, from a plain number: an {Exact} for
+        # +:exact+, a {TwoPartFloat} for +:standard+.
+        #
+        # @param value [Integer, Float, Rational] the number to hold
+        # @param precision [Symbol] the precision to hold it at
+        # @return [TwoPartFloat, Exact] the number at that precision
+        # @raise [UnknownPrecisionError] when the precision is not recognised
+        def build(value, precision)
+          case validate!(precision)
+          when :exact
+            Exact.new(value)
+          else
+            TwoPartFloat.from_real(value)
+          end
+        end
+
+        # Adds two values. Two standard values add as two-part floats; if
+        # either is exact, both are promoted to exact Rationals first. Build a
+        # plain number into a value with {build} before adding it: a bare
+        # Float or Rational is refused, because promoting it would quietly
+        # move the result to +:exact+.
+        #
+        # @param left [TwoPartFloat, Exact] one value
+        # @param right [TwoPartFloat, Exact] the other value
+        # @return [TwoPartFloat, Exact] the sum
+        # @raise [ArgumentError] when either side is not a value
+        def add(left, right)
+          if left.is_a?(TwoPartFloat) && right.is_a?(TwoPartFloat)
+            left + right
+          else
+            promote(left) + promote(right)
+          end
+        end
+
+        # Subtracts two values, promoting to exact the same way {add} does.
+        #
+        # @param left [TwoPartFloat, Exact] the value to subtract from
+        # @param right [TwoPartFloat, Exact] the value to subtract
+        # @return [TwoPartFloat, Exact] the difference
+        # @raise [ArgumentError] when either side is not a value
+        def subtract(left, right)
+          if left.is_a?(TwoPartFloat) && right.is_a?(TwoPartFloat)
+            left - right
+          else
+            promote(left) - promote(right)
+          end
+        end
+
+        # Checks that a value matches a precision: a {TwoPartFloat} for
+        # +:standard+, an {Exact} for +:exact+.
+        #
+        # @param value [TwoPartFloat, Exact] the value to check
+        # @param precision [Symbol] the precision it claims
+        # @return [TwoPartFloat, Exact] the same value
+        # @raise [UnknownPrecisionError] when the precision is not recognised
+        # @raise [ArgumentError] when the value does not match the precision
+        def validate_value!(value, precision)
+          expected = value_type(precision)
+          unless value.is_a?(expected)
+            raise ArgumentError,
+              "a #{precision} value must be a #{expected}, " \
+              "got a #{value.class}"
+          end
+
+          value
+        end
+
         # The numeric type a value takes at a precision: {Exact} for +:exact+
         # and {TwoPartFloat} for +:standard+.
         #
@@ -82,6 +150,23 @@ module Horologium
         # @raise [UnknownPrecisionError] when the precision is not recognised
         def value_type(precision)
           (validate!(precision) == :exact) ? Exact : TwoPartFloat
+        end
+
+        private
+
+        # One side of an operation, as an exact value.
+        #
+        # @param value [TwoPartFloat, Exact] the value to promote
+        # @return [Exact] the value, exactly
+        # @raise [ArgumentError] when it is not a value
+        def promote(value)
+          unless value.is_a?(TwoPartFloat) || value.is_a?(Exact)
+            raise ArgumentError,
+              "arithmetic takes a TwoPartFloat or an Exact, " \
+              "got a #{value.class}; build it with .build first"
+          end
+
+          coerce(value, to: :exact)
         end
       end
     end

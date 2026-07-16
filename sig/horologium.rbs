@@ -27,4 +27,22 @@ module Horologium
 
     def initialize: (untyped precision, Array[Symbol] known_precisions) -> void
   end
+
+  class UnknownScaleError < Error
+    attr_reader known_scales: Array[Symbol]
+
+    def initialize: (untyped scale, Array[Symbol] known_scales) -> void
+  end
+
+  class UnknownRepresentationError < Error
+    attr_reader known_representations: Array[Symbol]
+
+    def initialize: (untyped representation, Array[Symbol] known_representations) -> void
+  end
+
+  class UnknownOutputError < Error
+    attr_reader known_outputs: Array[Symbol]
+
+    def initialize: (untyped output, Array[Symbol] known_outputs) -> void
+  end
 end
