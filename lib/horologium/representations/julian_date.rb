@@ -79,7 +79,8 @@ module Horologium
         #
         # @param value [String, Rational, Integer, Float] the Julian Date, in
         #   days, or its high part when a low part follows
-        # @param low [Float, nil] the low part of the Julian Date, in days
+        # @param low [Float, Integer, nil] the low part of the Julian Date, in
+        #   days
         # @param precision [Symbol] +:standard+ or +:exact+
         # @return [Horologium::Numeric::TwoPartFloat,
         #   Horologium::Numeric::Exact] the Julian Date, in days
@@ -146,7 +147,8 @@ module Horologium
           else
             raise ArgumentError,
               "a Julian Date is a String, a Rational, an Integer, a Float, " \
-              "or a high and a low Float, got a #{value.class}"
+              "or a high and a low part each a Float or an Integer, got a " \
+              "#{value.class}"
           end
         end
 
@@ -184,9 +186,9 @@ module Horologium
             value.to_f
           else
             raise ArgumentError,
-              "the two parts of a Julian Date are Floats, got a " \
-              "#{value.class}; pass a String or a Rational to give a Julian " \
-              "Date exactly"
+              "the two parts of a Julian Date are each a Float or an " \
+              "Integer, got a #{value.class}; pass a String or a Rational to " \
+              "give a Julian Date exactly"
           end
         end
 

@@ -38,7 +38,8 @@ module Horologium
       #
       # @param value [String, Rational, Integer, Float] the Julian Date, in
       #   days, or its high part when a low part follows
-      # @param low [Float, nil] the low part of the Julian Date, in days
+      # @param low [Float, Integer, nil] the low part of the Julian Date, in
+      #   days
       # @param scale [Symbol] the scale the Julian Date is read in, such as
       #   +:tt+
       # @param precision [Symbol] +:standard+ or +:exact+, taken from the
@@ -82,7 +83,7 @@ module Horologium
       #
       # @param value [String, Rational, Integer, Float] the Modified Julian
       #   Date, in days, or its high part when a low part follows
-      # @param low [Float, nil] the low part, in days
+      # @param low [Float, Integer, nil] the low part, in days
       # @param scale [Symbol] the scale it is read in, such as +:tt+
       # @param precision [Symbol] +:standard+ or +:exact+, taken from the
       #   precision in effect when omitted
@@ -117,7 +118,7 @@ module Horologium
       #
       # @param representation [Class] the representation the value is given in
       # @param value [Object] the value, in that representation
-      # @param low [Float, nil] its low part, when it has one
+      # @param low [Float, Integer, nil] its low part, when it has one
       # @param scale [Symbol] the scale it is read in
       # @param precision [Symbol] +:standard+ or +:exact+
       # @return [Horologium::Instant]

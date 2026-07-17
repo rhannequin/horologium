@@ -65,7 +65,7 @@ module Horologium
         #
         # @param value [String, Rational, Integer, Float] the Modified Julian
         #   Date, in days, or its high part when a low part follows
-        # @param low [Float, nil] the low part, in days
+        # @param low [Float, Integer, nil] the low part, in days
         # @param precision [Symbol] +:standard+ or +:exact+
         # @return [Horologium::Numeric::TwoPartFloat,
         #   Horologium::Numeric::Exact] the Julian Date, in days
