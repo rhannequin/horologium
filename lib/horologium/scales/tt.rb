@@ -12,7 +12,10 @@ module Horologium
     # two when TAI took over.
     #
     # @example At the origin epoch, TT is 32.184 s ahead of TAI
-    #   instant = Horologium::Instant.from_tai_julian_date(2_443_144.5)
+    #   instant = Horologium::Instant.from_julian_date(
+    #     2_443_144.5,
+    #     scale: :tai
+    #   )
     #   instant.to(:tt).as(:julian_date) # => 2443144.5003725
     class TT < Base
       # The SI seconds TT is ahead of TAI.

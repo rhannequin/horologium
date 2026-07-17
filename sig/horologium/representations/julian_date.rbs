@@ -3,7 +3,21 @@ module Horologium
     class JulianDate
       OUTPUTS: Array[Symbol]
 
+      DECIMAL: Regexp
+
       def self.render: (ScaleReading reading, Symbol output) -> (Float | Rational | Numeric::TwoPartFloat)
+
+      def self.parse: (Instant::julian_date value, Instant::julian_date_part? low, Symbol precision) -> (Numeric::TwoPartFloat | Numeric::Exact)
+
+      def self.render_value: (Numeric::TwoPartFloat | Numeric::Exact value, Symbol output) -> (Float | Rational | Numeric::TwoPartFloat)
+
+      private def self.single: (Instant::julian_date value, Symbol precision) -> (Numeric::TwoPartFloat | Numeric::Exact)
+
+      private def self.two_parts: (Instant::julian_date high, Instant::julian_date low, Symbol precision) -> (Numeric::TwoPartFloat | Numeric::Exact)
+
+      private def self.part: (Instant::julian_date value) -> Float
+
+      private def self.decimal: (String string) -> Rational
 
       private def self.two_part: (Numeric::TwoPartFloat | Numeric::Exact value) -> Numeric::TwoPartFloat
     end

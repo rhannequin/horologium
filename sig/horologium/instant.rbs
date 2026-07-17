@@ -2,7 +2,15 @@ module Horologium
   class Instant
     include PreciseValue
 
-    def self.from_tai_julian_date: (Float high, ?Float low, ?precision: Symbol) -> Instant
+    type julian_date = String | Rational | Integer | Float
+
+    type julian_date_part = Float | Integer
+
+    def self.from_julian_date: (julian_date value, ?julian_date_part? low, scale: Symbol, ?precision: Symbol) -> Instant
+
+    def self.from_modified_julian_date: (julian_date value, ?julian_date_part? low, scale: Symbol, ?precision: Symbol) -> Instant
+
+    private def self.from_representation: (untyped representation, julian_date value, julian_date_part? low, Symbol scale, Symbol precision) -> Instant
 
     def +: (Duration duration) -> Instant
 

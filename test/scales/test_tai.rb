@@ -23,7 +23,7 @@ class TestScalesTAI < Minitest::Test
   end
 
   def test_an_instant_reads_in_tai_as_the_julian_date_it_was_built_from
-    instant = Horologium::Instant.from_tai_julian_date(2_460_000.5)
+    instant = Horologium::Instant.from_julian_date(2_460_000.5, scale: :tai)
 
     assert_in_delta 2_460_000.5, instant.to(:tai).as(:julian_date)
   end

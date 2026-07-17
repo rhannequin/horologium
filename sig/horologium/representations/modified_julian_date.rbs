@@ -1,0 +1,15 @@
+module Horologium
+  module Representations
+    class ModifiedJulianDate
+      DAYS_AFTER_JULIAN_DATE_ORIGIN: Rational
+
+      OFFSETS: Hash[Symbol, Numeric::TwoPartFloat | Numeric::Exact]
+
+      def self.render: (ScaleReading reading, Symbol output) -> (Float | Rational | Numeric::TwoPartFloat)
+
+      def self.parse: (Instant::julian_date value, Instant::julian_date_part? low, Symbol precision) -> (Numeric::TwoPartFloat | Numeric::Exact)
+
+      private def self.offset: (Symbol precision) -> (Numeric::TwoPartFloat | Numeric::Exact)
+    end
+  end
+end

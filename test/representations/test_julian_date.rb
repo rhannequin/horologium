@@ -71,7 +71,9 @@ class TestRepresentationsJulianDate < Minitest::Test
   end
 
   def test_it_is_given_the_reading_so_it_can_see_the_scale
-    reading = Horologium::Instant.from_tai_julian_date(2_443_144.5).to(:tt)
+    reading = Horologium::Instant
+      .from_julian_date(2_443_144.5, scale: :tai)
+      .to(:tt)
 
     assert_equal :tt, reading.scale
     assert_in_delta 2_443_144.500_372_5,
@@ -80,7 +82,9 @@ class TestRepresentationsJulianDate < Minitest::Test
   end
 
   def test_it_rejects_an_unknown_output_type
-    reading = Horologium::Instant.from_tai_julian_date(2_443_144.5).to(:tai)
+    reading = Horologium::Instant
+      .from_julian_date(2_443_144.5, scale: :tai)
+      .to(:tai)
 
     error = assert_raises(Horologium::UnknownOutputError) do
       Horologium::Representations::JulianDate.render(reading, :decimal)
@@ -88,5 +92,116 @@ class TestRepresentationsJulianDate < Minitest::Test
 
     assert_includes error.message, ":decimal"
     assert_equal %i[float rational two_part], error.known_outputs
+  end
+
+  def test_it_parses_a_string_exactly
+    parsed = Horologium::Representations::JulianDate.parse(
+      "2456463.052272",
+      nil,
+      :exact
+    )
+
+    assert_equal Rational(2_456_463_052_272, 1_000_000), parsed.to_r
+  end
+
+  def test_it_parses_a_string_at_the_standard_precision_across_two_floats
+    parsed = Horologium::Representations::JulianDate.parse(
+      "2456463.052272",
+      nil,
+      :standard
+    )
+
+    assert_instance_of Horologium::Numeric::TwoPartFloat, parsed
+    assert_operator (
+      parsed.to_r - Rational(2_456_463_052_272, 1_000_000)
+    ).abs, :<, Rational(1, 86_400 * 1_000_000_000)
+  end
+
+  def test_it_parses_a_rational_exactly
+    parsed = Horologium::Representations::JulianDate.parse(
+      Rational(2_456_463_052_272, 1_000_000),
+      nil,
+      :exact
+    )
+
+    assert_equal Rational(2_456_463_052_272, 1_000_000), parsed.to_r
+  end
+
+  def test_it_parses_an_integer
+    parsed = Horologium::Representations::JulianDate.parse(
+      2_456_463,
+      nil,
+      :exact
+    )
+
+    assert_equal Rational(2_456_463), parsed.to_r
+  end
+
+  def test_it_normalizes_a_float_onto_the_integer_day_grid
+    parsed = Horologium::Representations::JulianDate.parse(
+      2_456_463.9,
+      nil,
+      :standard
+    )
+
+    assert_equal Horologium::Numeric::TwoPartFloat.normalize(2_456_463.9),
+      parsed
+  end
+
+  def test_it_normalizes_two_parts_onto_the_integer_day_grid
+    parsed = Horologium::Representations::JulianDate.parse(
+      2_456_463.0,
+      0.75,
+      :standard
+    )
+
+    assert_equal Horologium::Numeric::TwoPartFloat.normalize(
+      2_456_463.0,
+      0.75
+    ), parsed
+  end
+
+  def test_it_keeps_both_parts_of_a_two_part_julian_date_at_the_exact_precision
+    parsed = Horologium::Representations::JulianDate.parse(
+      2_456_463.0,
+      1e-16,
+      :exact
+    )
+
+    assert_equal Rational(2_456_463.0) + Rational(1e-16), parsed.to_r
+  end
+
+  def test_it_rejects_a_string_that_does_not_spell_a_julian_date
+    error = assert_raises(Horologium::ParseError) do
+      Horologium::Representations::JulianDate.parse("yesterday", nil, :exact)
+    end
+
+    assert_includes error.message, "yesterday"
+  end
+
+  def test_it_rejects_a_value_it_cannot_read_as_a_julian_date
+    error = assert_raises(ArgumentError) do
+      Horologium::Representations::JulianDate.parse(nil, nil, :standard)
+    end
+
+    assert_includes error.message, "NilClass"
+  end
+
+  def test_it_rejects_a_part_that_is_not_a_float
+    error = assert_raises(ArgumentError) do
+      Horologium::Representations::JulianDate.parse(
+        2_456_463.0,
+        Rational(1, 2),
+        :standard
+      )
+    end
+
+    assert_includes error.message, "Rational"
+  end
+
+  def test_it_rejects_an_unknown_precision
+    assert_raises(Horologium::UnknownPrecisionError) do
+      Horologium::Representations::JulianDate.parse(2_456_463.0, nil, :fast)
+    end
   end
 end
