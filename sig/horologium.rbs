@@ -22,6 +22,9 @@ module Horologium
   class DimensionalError < Error
   end
 
+  class ParseError < Error
+  end
+
   class UnknownPrecisionError < Error
     attr_reader known_precisions: Array[Symbol]
 

@@ -8,11 +8,14 @@ module Horologium
   # is frozen, and keeps the precision of the instant it came from.
   #
   # @example
-  #   instant = Horologium::Instant.from_tai_julian_date(2_443_144.5)
+  #   instant = Horologium::Instant.from_julian_date(2_443_144.5, scale: :tai)
   #   instant.to(:tt).as(:julian_date) # => 2443144.5003725
   class ScaleReading
     # The representations a reading can be taken as.
-    REPRESENTATIONS = {julian_date: Representations::JulianDate}.freeze
+    REPRESENTATIONS = {
+      julian_date: Representations::JulianDate,
+      modified_julian_date: Representations::ModifiedJulianDate
+    }.freeze
 
     # The scale the instant is read in.
     #
@@ -61,7 +64,7 @@ module Horologium
     # @raise [UnknownOutputError] when the representation does not come out in
     #   the type asked for
     # @example
-    #   instant = Horologium::Instant.from_tai_julian_date(2_443_144.5)
+    #   instant = Horologium::Instant.from_julian_date(2_443_144.5, scale: :tai)
     #   instant.to(:tt).as(:julian_date, as: :rational)
     def as(representation, as: :float)
       REPRESENTATIONS.fetch(representation) {

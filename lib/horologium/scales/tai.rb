@@ -7,7 +7,10 @@ module Horologium
     # returns the value it already holds.
     #
     # @example
-    #   instant = Horologium::Instant.from_tai_julian_date(2_443_144.5)
+    #   instant = Horologium::Instant.from_julian_date(
+    #     2_443_144.5,
+    #     scale: :tai
+    #   )
     #   instant.to(:tai).as(:julian_date) # => 2443144.5
     class TAI < Base
       class << self

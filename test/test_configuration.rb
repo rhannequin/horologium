@@ -151,7 +151,7 @@ class TestConfiguration < Minitest::Test
     Horologium.configure do |c|
       c.register_scale(:minute_ahead, MinuteAheadOfTAI)
     end
-    instant = Horologium::Instant.from_tai_julian_date(2_443_144.5)
+    instant = Horologium::Instant.from_julian_date(2_443_144.5, scale: :tai)
 
     assert_in_delta 2_443_144.500_694_444,
       instant.to(:minute_ahead).as(:julian_date),

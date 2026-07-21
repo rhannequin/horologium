@@ -4,6 +4,10 @@ module Horologium
   # A single point on the timeline, independent of any scale. It is stored as
   # a TAI Julian Date, in days, at a fixed precision.
   #
+  # An Instant is built from a Julian Date read in a scale, and can be read
+  # back in any scale the library knows: a scale is what turns a number into a
+  # point, and the point itself has none.
+  #
   # An Instant is frozen. Its precision is set when it is built, from the
   # precision in effect unless you pass one. At +:standard+ the Julian Date is
   # a {Numeric::TwoPartFloat}, at +:exact+ a {Numeric::Exact}.
@@ -13,38 +17,120 @@ module Horologium
   # Mixing a +:standard+ and an +:exact+ operand gives an +:exact+ result.
   #
   # @example Shift an instant, then measure back to it
-  #   instant = Horologium::Instant.from_tai_julian_date(2_460_000.5)
+  #   instant = Horologium::Instant.from_julian_date(2_460_000.5, scale: :tai)
   #   later = instant + Horologium::Duration.seconds(3600)
   #   (later - instant) == Horologium::Duration.seconds(3600)
   #   # => true
   class Instant
     include PreciseValue
 
-    # Builds an instant from a TAI Julian Date, split into a high and a low
-    # part in days. At +:exact+ the two parts are kept as a Rational, with no
-    # loss. At +:standard+ they are normalized so the high part sits on the
-    # integer-day grid and the low part holds the fraction, in [-0.5, 0.5].
-    #
-    # @param high [Float] the high part of the Julian Date, in days
-    # @param low [Float] the low part, in days
-    # @param precision [Symbol] +:standard+ or +:exact+, taken from the
-    #   precision in effect when omitted
-    # @return [Horologium::Instant]
-    # @example
-    #   Horologium::Instant.from_tai_julian_date(2_443_144.5, 0.000_372_5)
-    def self.from_tai_julian_date(
-      high,
-      low = 0.0,
-      precision: Horologium.current_precision
-    )
-      value =
-        case Numeric::Precision.validate!(precision)
-        when :exact
-          Numeric::Exact.new(Numeric::TwoPartFloat.new(high, low))
-        else
-          Numeric::TwoPartFloat.normalize(high, low)
-        end
-      new(value, precision)
+    class << self
+      # Builds an instant from a Julian Date read in a scale. The Julian Date
+      # is read back in TAI, the scale an instant is stored in, so a point
+      # given in one scale can be read in another.
+      #
+      # The lossless shapes come first: a String and a Rational say the Julian
+      # Date exactly, and a high and a low Float say it to about twice what one
+      # Float holds. A single Float is the lossy one, worth about 40
+      # microseconds at a modern date, and the loss is already in the literal
+      # by the time the library sees it. See
+      # {Representations::JulianDate.parse}.
+      #
+      # @param value [String, Rational, Integer, Float] the Julian Date, in
+      #   days, or its high part when a low part follows
+      # @param low [Float, Integer, nil] the low part of the Julian Date, in
+      #   days
+      # @param scale [Symbol] the scale the Julian Date is read in, such as
+      #   +:tt+
+      # @param precision [Symbol] +:standard+ or +:exact+, taken from the
+      #   precision in effect when omitted
+      # @return [Horologium::Instant]
+      # @raise [UnknownScaleError] when no scale is registered under that name
+      # @raise [ParseError] when a String does not spell a Julian Date
+      # @raise [ArgumentError] when the Julian Date is none of the shapes above
+      # @raise [UnknownPrecisionError] when the precision is not recognised
+      # @example The same instant, given in TT and read back in TAI
+      #   instant = Horologium::Instant.from_julian_date(
+      #     "2443144.5003725",
+      #     scale: :tt,
+      #     precision: :exact
+      #   )
+      #   instant.as(:julian_date, scale: :tai) # => 2443144.5
+      # @example A Julian Date given as a high and a low part
+      #   Horologium::Instant.from_julian_date(
+      #     2_456_463.0,
+      #     0.052272,
+      #     scale: :tt
+      #   )
+      def from_julian_date(
+        value,
+        low = nil,
+        scale:,
+        precision: Horologium.current_precision
+      )
+        from_representation(
+          Representations::JulianDate,
+          value,
+          low,
+          scale,
+          precision
+        )
+      end
+
+      # Builds an instant from a Modified Julian Date read in a scale. It is
+      # the Julian Date counted from a later origin, and it is given in the
+      # same shapes as {from_julian_date}.
+      #
+      # @param value [String, Rational, Integer, Float] the Modified Julian
+      #   Date, in days, or its high part when a low part follows
+      # @param low [Float, Integer, nil] the low part, in days
+      # @param scale [Symbol] the scale it is read in, such as +:tt+
+      # @param precision [Symbol] +:standard+ or +:exact+, taken from the
+      #   precision in effect when omitted
+      # @return [Horologium::Instant]
+      # @raise [UnknownScaleError] when no scale is registered under that name
+      # @raise [ParseError] when a String does not spell a Modified Julian Date
+      # @raise [ArgumentError] when it is none of the shapes
+      #   {from_julian_date} takes
+      # @raise [UnknownPrecisionError] when the precision is not recognised
+      # @example
+      #   Horologium::Instant.from_modified_julian_date(60_796.0, scale: :tai)
+      def from_modified_julian_date(
+        value,
+        low = nil,
+        scale:,
+        precision: Horologium.current_precision
+      )
+        from_representation(
+          Representations::ModifiedJulianDate,
+          value,
+          low,
+          scale,
+          precision
+        )
+      end
+
+      private
+
+      # Builds an instant from a value given in a representation and read in a
+      # scale. The representation says what the number means, the scale reads
+      # it back in TAI, and the instant holds it from there.
+      #
+      # @param representation [Class] the representation the value is given in
+      # @param value [Object] the value, in that representation
+      # @param low [Float, Integer, nil] its low part, when it has one
+      # @param scale [Symbol] the scale it is read in
+      # @param precision [Symbol] +:standard+ or +:exact+
+      # @return [Horologium::Instant]
+      # @raise [UnknownScaleError] when no scale is registered under that name
+      def from_representation(representation, value, low, scale, precision)
+        in_scale = representation.parse(value, low, precision)
+        in_tai = Horologium.configuration
+          .scale(scale)
+          .to_reference(in_scale, precision)
+
+        new(in_tai, precision)
+      end
     end
 
     # Adds a duration and returns a later instant.
@@ -53,7 +139,7 @@ module Horologium
     # @return [Horologium::Instant]
     # @raise [DimensionalError] when given anything but a Duration
     # @example
-    #   Horologium::Instant.from_tai_julian_date(2_460_000.5) +
+    #   Horologium::Instant.from_julian_date(2_460_000.5, scale: :tai) +
     #     Horologium::Duration.days(1)
     def +(duration) # rubocop:disable Naming/BinaryOperatorParameterName
       unless duration.is_a?(Duration)
@@ -74,11 +160,11 @@ module Horologium
     # @return [Horologium::Instant, Horologium::Duration]
     # @raise [DimensionalError] when given anything else
     # @example An earlier instant
-    #   Horologium::Instant.from_tai_julian_date(2_460_000.5) -
+    #   Horologium::Instant.from_julian_date(2_460_000.5, scale: :tai) -
     #     Horologium::Duration.days(1)
     # @example The Duration between two instants
-    #   a = Horologium::Instant.from_tai_julian_date(2_460_000.5)
-    #   b = Horologium::Instant.from_tai_julian_date(2_460_001.5)
+    #   a = Horologium::Instant.from_julian_date(2_460_000.5, scale: :tai)
+    #   b = Horologium::Instant.from_julian_date(2_460_001.5, scale: :tai)
     #   b - a == Horologium::Duration.days(1) # => true
     def -(other)
       case other
@@ -108,7 +194,7 @@ module Horologium
     # @return [Horologium::ScaleReading]
     # @raise [UnknownScaleError] when no scale is registered under that name
     # @example
-    #   instant = Horologium::Instant.from_tai_julian_date(2_443_144.5)
+    #   instant = Horologium::Instant.from_julian_date(2_443_144.5, scale: :tai)
     #   instant.to(:tt).as(:julian_date) # => 2443144.5003725
     def to(scale)
       reading = Horologium.configuration
@@ -129,7 +215,7 @@ module Horologium
     # @raise [UnknownRepresentationError] when the representation is not one
     #   the library has
     # @example
-    #   instant = Horologium::Instant.from_tai_julian_date(2_443_144.5)
+    #   instant = Horologium::Instant.from_julian_date(2_443_144.5, scale: :tai)
     #   instant.as(:julian_date, scale: :tt, as: :rational)
     def as(representation, scale:, as: :float)
       to(scale).as(representation, as: as)
@@ -142,7 +228,7 @@ module Horologium
     # @param tolerance [Horologium::Duration] the largest gap counted as equal
     # @return [Boolean]
     # @example
-    #   a = Horologium::Instant.from_tai_julian_date(2_460_000.5)
+    #   a = Horologium::Instant.from_julian_date(2_460_000.5, scale: :tai)
     #   b = a + Horologium::Duration.nanoseconds(1)
     #   a.equal_within?(b, Horologium::Duration.nanoseconds(2)) # => true
     def equal_within?(other, tolerance)

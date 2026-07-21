@@ -15,6 +15,11 @@ module Horologium
   # difference of two points, are meaningful.
   class DimensionalError < Error; end
 
+  # Raised when a value the library reads is not written in a shape it
+  # accepts, such as a Julian Date given as a String that does not spell a
+  # number. The message says what the shape is, and shows one.
+  class ParseError < Error; end
+
   # Raised when a precision the library does not recognise is given, to the
   # configuration or when building a value. It carries the known precisions so
   # the caller can see the valid choices.

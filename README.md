@@ -45,14 +45,40 @@ get the duration between them.
 ```rb
 require "horologium"
 
-instant = Horologium::Instant.from_tai_julian_date(2_460_000.5)
+a = Horologium::Instant.from_julian_date(2_460_000.5, scale: :tai)
+b = Horologium::Instant.from_julian_date(2_460_001.5, scale: :tai)
 
-later = instant + Horologium::Duration.days(1)
-later == Horologium::Instant.from_tai_julian_date(2_460_001.5)  # => true
-instant < later                                                 # => true
+a + Horologium::Duration.days(1) == b        # => true
+a < b                                        # => true
+b - a == Horologium::Duration.days(1)        # => true
+```
 
-b = Horologium::Instant.from_tai_julian_date(2_460_001.5)
-b - instant == Horologium::Duration.days(1)                     # => true
+An instant has no scale of its own. You give it a Julian Date read in a scale,
+and you read it back in any scale the library knows: `to` chooses the scale, and
+`as` chooses the shape it comes out in.
+
+```rb
+instant = Horologium::Instant.from_julian_date(2_443_144.5, scale: :tai)
+
+instant.to(:tt).as(:julian_date)               # => 2443144.5003725
+instant.as(:modified_julian_date, scale: :tt)  # => 43144.0003725
+```
+
+A Julian Date is around 2.46 million, which leaves a single `Float` about 40
+microseconds for the fraction of a day, and the loss is already in the literal
+before Horologium sees it. So the lossless shapes come first: a `String` and a
+`Rational` say the Julian Date exactly, and a high and a low part say it to
+about twice what one `Float` holds.
+
+```rb
+Horologium::Instant.from_julian_date("2456463.052272", scale: :tt)
+Horologium::Instant.from_julian_date(
+  Rational(2_456_463_052_272, 1_000_000),
+  scale: :tt
+)
+Horologium::Instant.from_julian_date(2_456_463.0, 0.052272, scale: :tt)
+
+Horologium::Instant.from_modified_julian_date(60_796.0, scale: :tai)
 ```
 
 A `Duration` counts SI seconds, so `Duration.days(1)` is always 86,400 SI
@@ -76,7 +102,7 @@ Exact equality is rarely what scientific code wants, so you can compare within a
 tolerance:
 
 ```rb
-a = Horologium::Instant.from_tai_julian_date(2_460_000.5)
+a = Horologium::Instant.from_julian_date(2_460_000.5, scale: :tai)
 near = a + Horologium::Duration.nanoseconds(1)
 
 a.equal_within?(near, Horologium::Duration.nanoseconds(2))  # => true
@@ -110,7 +136,11 @@ end
 Choose it for a single value, or for a scoped block:
 
 ```rb
-Horologium::Instant.from_tai_julian_date(2_460_000.5, precision: :exact)
+Horologium::Instant.from_julian_date(
+  2_460_000.5,
+  scale: :tai,
+  precision: :exact
+)
 
 Horologium.with_precision(:exact) do
   # instants and durations built here default to :exact
