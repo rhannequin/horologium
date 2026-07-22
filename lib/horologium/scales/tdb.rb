@@ -66,10 +66,8 @@ module Horologium
         # @raise [UnknownPrecisionError] when the precision is not recognised
         def correction(julian_date, precision)
           seconds = Data::BarycentricModel.tdb_minus_tt(julian_date.to_f)
-          Numeric::Precision.build(
-            seconds / Duration::SECONDS_PER_DAY,
-            precision
-          )
+          Numeric::Precision.build(seconds, precision) /
+            Duration::SECONDS_PER_DAY
         end
       end
     end

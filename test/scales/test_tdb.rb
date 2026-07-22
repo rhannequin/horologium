@@ -55,6 +55,16 @@ class TestScalesTDB < Minitest::Test
     assert_instance_of Horologium::Numeric::Exact, reading
   end
 
+  def test_an_exact_reading_keeps_the_model_result_without_extra_rounding
+    tai = Horologium::Numeric::Exact.new(2_451_545.0)
+    in_tt = Horologium::Scales::TT.from_reference(tai, :exact)
+    seconds = Horologium::Data::BarycentricModel.tdb_minus_tt(in_tt.to_f)
+
+    reading = Horologium::Scales::TDB.from_reference(tai, :exact)
+
+    assert_equal in_tt.to_r + Rational(seconds) / 86_400, reading.to_r
+  end
+
   def test_it_rejects_an_unrecognised_precision
     value = Horologium::Numeric::TwoPartFloat.new(2_451_545.0)
 
