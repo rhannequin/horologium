@@ -1,0 +1,19 @@
+module Horologium
+  module Data
+    module BarycentricModel
+      J2000: Float
+
+      DAYS_PER_MILLENNIUM: Float
+
+      TERMS_BY_POWER: Array[Array[[Float, Float, Float]]]
+
+      def self.tdb_minus_tt: (Float tt_julian_date) -> Float
+
+      private def self.periodic: (Float t) -> Float
+
+      private def self.wave: (Array[[Float, Float, Float]] terms, Float t) -> Float
+
+      private def self.mass_adjustment: (Float t) -> Float
+    end
+  end
+end

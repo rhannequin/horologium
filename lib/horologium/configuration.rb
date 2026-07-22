@@ -11,7 +11,8 @@ module Horologium
     # library is configured.
     BUILT_IN_SCALES = {
       tai: Scales::TAI,
-      tt: Scales::TT
+      tt: Scales::TT,
+      tdb: Scales::TDB
     }.freeze
 
     # @return [Symbol] the default precision, +:standard+ until configured
