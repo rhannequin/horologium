@@ -1,6 +1,9 @@
 # frozen_string_literal: true
 
 module Horologium
+  # The reference data the scales read from, bundled with the library so a
+  # conversion needs no external files. So far it holds the model behind the
+  # TDB scale.
   module Data
     # The difference TDB - TT, in seconds, from the Fairhead & Bretagnon
     # (1990) series that ERFA and astropy use. TDB keeps almost the rate of
