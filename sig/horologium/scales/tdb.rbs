@@ -1,0 +1,11 @@
+module Horologium
+  module Scales
+    class TDB < Base
+      def self.from_reference: (Numeric::TwoPartFloat | Numeric::Exact value, Symbol precision) -> (Numeric::TwoPartFloat | Numeric::Exact)
+
+      def self.to_reference: (Numeric::TwoPartFloat | Numeric::Exact value, Symbol precision) -> (Numeric::TwoPartFloat | Numeric::Exact)
+
+      private def self.correction: (Numeric::TwoPartFloat | Numeric::Exact julian_date, Symbol precision) -> (Numeric::TwoPartFloat | Numeric::Exact)
+    end
+  end
+end
