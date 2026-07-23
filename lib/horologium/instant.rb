@@ -110,6 +110,72 @@ module Horologium
         )
       end
 
+      # Builds an instant from a calendar date and a time of day read in a
+      # scale. Nothing is lost: the date becomes a whole number of days and the
+      # time of day an exact fraction of one, so this is an exact way to build
+      # an instant where a Julian Date given as a single Float is not.
+      #
+      # The second may carry a fraction under it. Give that fraction as a
+      # Rational to say it exactly; a Float second says only what a Float
+      # holds, which at this magnitude is far more than a clock reads.
+      #
+      # A {Representations::CivilTime} may be passed on its own, which is what
+      # a reading taken with +as(:civil)+ returns, so a civil time reads back
+      # into the instant it came from.
+      #
+      # @param year [Integer, Horologium::Representations::CivilTime] the year,
+      #   or a civil time holding every field
+      # @param month [Integer, nil] the month, from 1 to 12
+      # @param day [Integer, nil] the day of the month
+      # @param hour [Integer] the hour, from 0 to 23
+      # @param minute [Integer] the minute, from 0 to 59
+      # @param second [Integer, Float, Rational] the second, whole or with a
+      #   fraction under it
+      # @param scale [Symbol] the scale it is read in, such as +:tt+
+      # @param precision [Symbol] +:standard+ or +:exact+, taken from the
+      #   precision in effect when omitted
+      # @return [Horologium::Instant]
+      # @raise [UnknownScaleError] when no scale is registered under that name
+      # @raise [InvalidCivilTimeError] when the fields are not a real date and
+      #   time
+      # @raise [ArgumentError] when a field is not a number the library reads
+      # @raise [UnknownPrecisionError] when the precision is not recognised
+      # @example
+      #   Horologium::Instant.from_civil(2025, 5, 1, 12, 0, 0, scale: :tt)
+      # @example A fractional second, said exactly
+      #   Horologium::Instant.from_civil(
+      #     2025, 5, 1, 12, 0, Rational(1, 4), scale: :tt
+      #   )
+      # @example A civil time, read back into the instant it came from
+      #   civil = instant.as(:civil, scale: :tt, as: :rational)
+      #   Horologium::Instant.from_civil(civil, scale: :tt) == instant # => true
+      def from_civil(
+        year,
+        month = nil,
+        day = nil,
+        hour = 0,
+        minute = 0,
+        second = 0,
+        scale:,
+        precision: Horologium.current_precision
+      )
+        civil =
+          if year.is_a?(Representations::CivilTime)
+            year
+          else
+            Representations::Civil
+              .from_fields(year, month, day, hour, minute, second)
+          end
+
+        from_representation(
+          Representations::Civil,
+          civil,
+          nil,
+          scale,
+          precision
+        )
+      end
+
       private
 
       # Builds an instant from a value given in a representation and read in a

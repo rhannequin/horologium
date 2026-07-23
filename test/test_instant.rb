@@ -420,4 +420,81 @@ class TestInstant < Minitest::Test
     assert_equal Rational(24_431_445_003_725, 10_000_000),
       instant.as(:julian_date, scale: :tt, as: :rational)
   end
+
+  def test_a_civil_date_marks_the_point_that_calendar_date_names
+    assert_equal Horologium::Instant.from_julian_date(
+      2_443_144.5,
+      scale: :tai
+    ),
+      Horologium::Instant.from_civil(1977, 1, 1, scale: :tai)
+  end
+
+  def test_a_civil_date_given_in_tt_is_stored_in_tai
+    instant = Horologium::Instant.from_civil(1977, 1, 1, scale: :tt)
+
+    assert_in_delta 2_443_144.499_627_5,
+      instant.as(:julian_date, scale: :tai),
+      1e-9
+  end
+
+  def test_a_civil_date_reads_back_as_the_fields_it_was_given
+    civil = Horologium::Instant
+      .from_civil(2025, 5, 1, 12, 34, 56, scale: :tt)
+      .as(:civil, scale: :tt)
+
+    assert_equal 2025, civil.year
+    assert_equal 5, civil.month
+    assert_equal 1, civil.day
+    assert_equal 12, civil.hour
+    assert_equal 34, civil.minute
+    assert_equal 56, civil.second
+  end
+
+  def test_the_time_of_day_of_a_civil_date_defaults_to_midnight
+    assert_equal Horologium::Instant.from_civil(2025, 5, 1, 0, 0, 0,
+      scale: :tai),
+      Horologium::Instant.from_civil(2025, 5, 1, scale: :tai)
+  end
+
+  def test_a_civil_date_takes_a_fraction_of_a_second_exactly
+    Horologium.with_precision(:exact) do
+      assert_equal Horologium::Instant.from_civil(2025, 5, 1, scale: :tai) +
+        Horologium::Duration.nanoseconds(250_000_000),
+        Horologium::Instant.from_civil(
+          2025, 5, 1, 0, 0, Rational(1, 4),
+          scale: :tai
+        )
+    end
+  end
+
+  def test_a_civil_time_reads_back_into_the_instant_it_came_from
+    instant = Horologium::Instant.from_civil(
+      2025, 5, 1, 12, 34, Rational(111, 2),
+      scale: :tt,
+      precision: :exact
+    )
+    civil = instant.as(:civil, scale: :tt, as: :rational)
+
+    assert_equal instant,
+      Horologium::Instant.from_civil(civil, scale: :tt, precision: :exact)
+  end
+
+  def test_the_same_civil_date_in_two_scales_marks_two_points
+    refute_equal Horologium::Instant.from_civil(2025, 5, 1, scale: :tai),
+      Horologium::Instant.from_civil(2025, 5, 1, scale: :tt)
+  end
+
+  def test_building_from_a_civil_date_in_an_unregistered_scale_is_refused
+    assert_raises(Horologium::UnknownScaleError) do
+      Horologium::Instant.from_civil(2025, 5, 1, scale: :sundial)
+    end
+  end
+
+  def test_it_takes_the_precision_in_effect_when_built_from_a_civil_date
+    instant = Horologium.with_precision(:exact) do
+      Horologium::Instant.from_civil(2025, 5, 1, scale: :tai)
+    end
+
+    assert_equal :exact, instant.precision
+  end
 end

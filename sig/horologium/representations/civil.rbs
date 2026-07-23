@@ -1,0 +1,53 @@
+module Horologium
+  module Representations
+    class Civil
+      type second = Integer | Float | Rational
+
+      OUTPUTS: Array[Symbol]
+
+      MINIMUM_YEAR: Integer
+
+      HALF_DAY: Rational
+
+      DAYS_IN_MONTH: Array[Integer]
+
+      SECONDS_PER_HOUR: Integer
+
+      SECONDS_PER_MINUTE: Integer
+
+      def self.render: (ScaleReading reading, Symbol output) -> CivilTime
+
+      def self.parse: (untyped value, nil _low, Symbol precision) -> (Numeric::TwoPartFloat | Numeric::Exact)
+
+      def self.from_fields: (untyped year, untyped month, untyped day, untyped hour, untyped minute, untyped second) -> CivilTime
+
+      private def self.civil_at: (Integer day_number, Rational seconds, Integer seconds_in_day, Symbol output) -> CivilTime
+
+      private def self.calendar: (Integer day_number) -> [Integer, Integer, Integer]
+
+      private def self.day_number: (Integer year, Integer month, Integer day) -> Integer
+
+      private def self.seconds_of_day: (CivilTime civil) -> Rational
+
+      private def self.render_fraction: (Rational | Integer fraction, Symbol output) -> CivilTime::fraction
+
+      private def self.split_second: (untyped second) -> [Integer, untyped]
+
+      private def self.validate!: (untyped civil) -> CivilTime
+
+      private def self.validate_whole_fields!: (CivilTime civil) -> void
+
+      private def self.validate_date!: (CivilTime civil) -> void
+
+      private def self.validate_time!: (CivilTime civil) -> void
+
+      private def self.validate_second!: (CivilTime civil) -> void
+
+      private def self.days_in_month: (Integer year, Integer month) -> Integer
+
+      private def self.leap_year?: (Integer year) -> bool
+
+      private def self.validate_output!: (Symbol output) -> Symbol
+    end
+  end
+end

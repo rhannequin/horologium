@@ -1,0 +1,47 @@
+module Horologium
+  module Representations
+    class CivilTime
+      type fraction = Float | Rational | Integer
+
+      @year: Integer
+
+      @month: Integer
+
+      @day: Integer
+
+      @hour: Integer
+
+      @minute: Integer
+
+      @second: Integer
+
+      @second_fraction: fraction
+
+      attr_reader year: Integer
+
+      attr_reader month: Integer
+
+      attr_reader day: Integer
+
+      attr_reader hour: Integer
+
+      attr_reader minute: Integer
+
+      attr_reader second: Integer
+
+      attr_reader second_fraction: fraction
+
+      def initialize: (untyped year, untyped month, untyped day, ?untyped hour, ?untyped minute, ?untyped second, ?untyped second_fraction) -> void
+
+      def ==: (untyped other) -> bool
+
+      def eql?: (untyped other) -> bool
+
+      def hash: () -> Integer
+
+      def inspect: () -> String
+
+      def fields: () -> Array[untyped]
+    end
+  end
+end

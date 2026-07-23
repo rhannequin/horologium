@@ -14,7 +14,8 @@ module Horologium
     # The representations a reading can be taken as.
     REPRESENTATIONS = {
       julian_date: Representations::JulianDate,
-      modified_julian_date: Representations::ModifiedJulianDate
+      modified_julian_date: Representations::ModifiedJulianDate,
+      civil: Representations::Civil
     }.freeze
 
     # The scale the instant is read in.
