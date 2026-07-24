@@ -30,10 +30,11 @@ module Horologium
       # The strict subset of ISO 8601 the parser reads: a full calendar date,
       # and an optional time of day after a +T+, down to an optional fraction
       # of a second and an optional +Z+ or numeric offset. The year is four
-      # digits or more, with an optional sign for a year before 1 or after
-      # 9999. Anything outside this shape — a week date, an ordinal date, a
-      # bare hour, a comma for the decimal point, a space for the +T+ — is
-      # refused, rather than read part way.
+      # digits or more, with a minus sign for a year before 1. A numeric offset
+      # runs from -23:59 to +23:59. Anything outside this shape — a week date,
+      # an ordinal date, a bare hour, a comma for the decimal point, a space
+      # for the +T+, an offset out of range — is refused, rather than read part
+      # way.
       #
       # @api private
       PATTERN = /
@@ -43,7 +44,7 @@ module Horologium
           T
           (?<hour>\d{2}):(?<minute>\d{2})
           (?::(?<second>\d{2})(?:\.(?<fraction>\d+))?)?
-          (?<zone>Z|[+-]\d{2}:\d{2})?
+          (?<zone>Z|[+-](?:[01]\d|2[0-3]):[0-5]\d)?
         )?
         \z
       /x

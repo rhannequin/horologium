@@ -58,6 +58,14 @@ class TestRepresentationsIso8601 < Minitest::Test
     assert_equal "-0044-03-15T00:00:00.000000000", string
   end
 
+  def test_a_year_after_9999_is_written_with_more_digits_and_no_sign
+    string = Horologium::Instant
+      .from_civil(10_000, 1, 1, scale: :tai)
+      .as(:iso8601, scale: :tai)
+
+    assert_equal "10000-01-01T00:00:00.000000000", string
+  end
+
   def test_the_as_type_does_not_apply_and_a_string_comes_out_regardless
     instant = Horologium::Instant.from_civil(2025, 5, 1, 12, scale: :tai)
 
@@ -211,6 +219,24 @@ class TestRepresentationsIso8601 < Minitest::Test
   def test_a_space_for_the_t_separator_is_refused
     assert_raises(Horologium::ParseError) do
       Horologium::Instant.from_iso8601("2025-05-01 12:00:00", scale: :tai)
+    end
+  end
+
+  def test_an_offset_with_an_out_of_range_hour_is_refused
+    assert_raises(Horologium::ParseError) do
+      Horologium::Instant.from_iso8601(
+        "2025-05-01T12:00:00+25:00",
+        scale: :tai
+      )
+    end
+  end
+
+  def test_an_offset_with_an_out_of_range_minute_is_refused
+    assert_raises(Horologium::ParseError) do
+      Horologium::Instant.from_iso8601(
+        "2025-05-01T12:00:00+00:99",
+        scale: :tai
+      )
     end
   end
 
