@@ -6,11 +6,10 @@ module Horologium
   # TDB scale.
   module Data
     # The difference TDB - TT, in seconds, from the Fairhead & Bretagnon
-    # (1990) series that ERFA and astropy use. TDB keeps almost the rate of
-    # TT, apart from periodic terms that come from the Earth's motion through
-    # the Sun's gravity. The largest is an annual term of about 1.7
-    # milliseconds, and the two scales never drift more than about 2
-    # milliseconds apart.
+    # (1990) series that ERFA uses. TDB keeps almost the rate of TT, apart from
+    # periodic terms that come from the Earth's motion through the Sun's
+    # gravity. The largest is an annual term of about 1.7 milliseconds, and the
+    # two scales never drift more than about 2 milliseconds apart.
     #
     # The value is geocentric. The full model has a further part that depends
     # on where on the Earth the observer stands, worth a few microseconds.

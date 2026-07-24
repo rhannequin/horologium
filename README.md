@@ -93,6 +93,23 @@ Horologium::Instant.from_civil(1900, 2, 29, scale: :tt)
 # => raises Horologium::InvalidCivilTimeError
 ```
 
+The same date and time write out as an extended ISO 8601 string, and read back
+from one. The scale is not written into the string: there is no ISO 8601
+designator for TAI or TT, and `Z` means UTC, so a bare time is a coordinate in
+the scale you asked for.
+
+```rb
+instant.as(:iso8601, scale: :tt)   # => "1977-01-01T00:00:32.184000000"
+
+Horologium::Instant.from_iso8601("2025-05-01T12:00:00", scale: :tt)
+Horologium::Instant.from_iso8601("2025-05-01", scale: :tt)  # midnight
+```
+
+The parser reads a strict subset: a calendar date, an optional time of day
+after a `T`, a fraction of a second kept to every digit, and an optional `Z` or
+numeric offset applied as plain arithmetic, not a time zone. A week date, an
+ordinal date, or anything outside the subset is refused with a `ParseError`.
+
 A Julian Date is around 2.46 million, which leaves a single `Float` about 40
 microseconds for the fraction of a day, and the loss is already in the literal
 before Horologium sees it. So the lossless shapes come first: a `String` and a

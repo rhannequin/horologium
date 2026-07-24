@@ -1,0 +1,27 @@
+module Horologium
+  module Representations
+    class Iso8601
+      PATTERN: Regexp
+
+      NANOSECONDS_PER_DAY: Integer
+
+      def self.render: (ScaleReading reading, ?Symbol _output) -> String
+
+      def self.parse: (untyped value, nil _low, Symbol precision) -> (Numeric::TwoPartFloat | Numeric::Exact)
+
+      private def self.nanosecond_reading: (ScaleReading reading) -> ScaleReading
+
+      private def self.date: (CivilTime civil) -> String
+
+      private def self.fields: (untyped value) -> Hash[Symbol, untyped]
+
+      private def self.digits: (String? group) -> Integer
+
+      private def self.fraction: (String? group) -> (Rational | Integer)
+
+      private def self.offset_seconds: (String? zone) -> Integer
+
+      private def self.refuse: (String value) -> bot
+    end
+  end
+end
