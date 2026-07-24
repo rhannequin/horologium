@@ -176,6 +176,44 @@ module Horologium
         )
       end
 
+      # Builds an instant from an ISO 8601 date and time read in a scale. The
+      # string is read in the strict subset {Representations::Iso8601} parses:
+      # a calendar date, an optional time of day after a +T+ down to a fraction
+      # of a second, and an optional +Z+ or numeric offset. A date on its own
+      # is midnight in the scale.
+      #
+      # The string names no scale of its own, so +scale+ says which one it is
+      # read in. A numeric offset is subtracted as plain arithmetic, not a time
+      # zone: it consults no zone data, and +Z+ is a zero offset.
+      #
+      # @param value [String] the date and time, in extended ISO 8601
+      # @param scale [Symbol] the scale it is read in, such as +:tt+
+      # @param precision [Symbol] +:standard+ or +:exact+, taken from the
+      #   precision in effect when omitted
+      # @return [Horologium::Instant]
+      # @raise [UnknownScaleError] when no scale is registered under that name
+      # @raise [ParseError] when the string is not in the subset the parser
+      #   reads
+      # @raise [InvalidCivilTimeError] when the date and time do not exist
+      # @raise [ArgumentError] when the value is not a String
+      # @raise [UnknownPrecisionError] when the precision is not recognised
+      # @example
+      #   Horologium::Instant.from_iso8601("2025-05-01T12:00:00", scale: :tt)
+      # @example A numeric offset, subtracted to reach the scale
+      #   Horologium::Instant.from_iso8601(
+      #     "2025-05-01T13:00:00+01:00",
+      #     scale: :tt
+      #   )
+      def from_iso8601(value, scale:, precision: Horologium.current_precision)
+        from_representation(
+          Representations::Iso8601,
+          value,
+          nil,
+          scale,
+          precision
+        )
+      end
+
       private
 
       # Builds an instant from a value given in a representation and read in a

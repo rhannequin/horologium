@@ -102,7 +102,7 @@ class TestScaleReading < Minitest::Test
       reading.as(:sundial)
     end
 
-    assert_equal %i[julian_date modified_julian_date civil],
+    assert_equal %i[julian_date modified_julian_date civil iso8601],
       error.known_representations
   end
 

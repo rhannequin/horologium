@@ -1,6 +1,6 @@
 module Horologium
   class ScaleReading
-    REPRESENTATIONS: Hash[Symbol, singleton(Representations::JulianDate) | singleton(Representations::ModifiedJulianDate) | singleton(Representations::Civil)]
+    REPRESENTATIONS: Hash[Symbol, singleton(Representations::JulianDate) | singleton(Representations::ModifiedJulianDate) | singleton(Representations::Civil) | singleton(Representations::Iso8601)]
 
     @scale: Symbol
 
