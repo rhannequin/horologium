@@ -99,4 +99,24 @@ class TestRepresentationsCivilTime < Minitest::Test
       "00:00:32.5>",
       civil.inspect
   end
+
+  def test_a_small_fraction_of_a_second_shows_as_digits_in_a_console
+    civil = Horologium::Representations::CivilTime.new(
+      1977, 1, 1, 0, 0, 32, 0.000001
+    )
+
+    assert_equal "#<Horologium::Representations::CivilTime 1977-01-01 " \
+      "00:00:32.000001>",
+      civil.inspect
+  end
+
+  def test_a_small_fraction_of_a_second_keeps_the_digits_under_it
+    civil = Horologium::Representations::CivilTime.new(
+      1977, 1, 1, 0, 0, 32, 1.2345e-07
+    )
+
+    assert_equal "#<Horologium::Representations::CivilTime 1977-01-01 " \
+      "00:00:32.00000012345>",
+      civil.inspect
+  end
 end

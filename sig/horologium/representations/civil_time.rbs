@@ -42,6 +42,8 @@ module Horologium
       def inspect: () -> String
 
       def fields: () -> Array[untyped]
+
+      def fraction_digits: () -> String
     end
   end
 end

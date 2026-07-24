@@ -136,7 +136,7 @@ module Horologium
           hour,
           minute,
           second,
-          (second_fraction.zero? ? "" : second_fraction.to_f.to_s[1..])
+          fraction_digits
         )
       end
 
@@ -148,6 +148,29 @@ module Horologium
       # @return [Array]
       def fields
         [year, month, day, hour, minute, second, second_fraction.to_r]
+      end
+
+      private
+
+      # The fraction of a second, as the digits that follow the second, the
+      # leading decimal point among them. It is empty when there is no
+      # fraction, so that a whole second reads as a whole second.
+      #
+      # Float#to_s writes a number under 0.0001 in scientific notation, which
+      # is not a shape a time of day has, so the digits are put back where
+      # they belong. The digits themselves are the ones Float#to_s picks, the
+      # shortest that read back as the same Float.
+      #
+      # @return [String]
+      def fraction_digits
+        return "" if second_fraction.zero?
+
+        mantissa, marker, exponent = second_fraction.to_f.to_s.partition("e")
+        return mantissa[1..] || "" if marker.empty?
+
+        digits = mantissa.delete(".").sub(/0+\z/, "")
+
+        ".#{"0" * (-Integer(exponent, 10) - 1)}#{digits}"
       end
     end
   end
