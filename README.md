@@ -64,6 +64,35 @@ instant.to(:tt).as(:julian_date)               # => 2443144.5003725
 instant.as(:modified_julian_date, scale: :tt)  # => 43144.0003725
 ```
 
+A calendar date is a shape too, and the one a person reads. It comes out as a
+`CivilTime`, whose fields are the ones a clock and a calendar show, in the
+proleptic Gregorian calendar.
+
+```rb
+civil = instant.as(:civil, scale: :tt)
+
+civil.year    # => 1977
+civil.month   # => 1
+civil.second  # => 32
+```
+
+You can build an instant from those fields as well, and nothing is lost on the
+way in: the date becomes a whole number of days and the time of day an exact
+fraction of one. Give a fractional second as a `Rational` to say it exactly.
+
+```rb
+Horologium::Instant.from_civil(2025, 5, 1, 12, 0, 0, scale: :tt)
+Horologium::Instant.from_civil(2025, 5, 1, 12, 0, Rational(1, 4), scale: :tt)
+```
+
+A date that does not exist is refused rather than rolled over, and the message
+says which field is wrong.
+
+```rb
+Horologium::Instant.from_civil(1900, 2, 29, scale: :tt)
+# => raises Horologium::InvalidCivilTimeError
+```
+
 A Julian Date is around 2.46 million, which leaves a single `Float` about 40
 microseconds for the fraction of a day, and the loss is already in the literal
 before Horologium sees it. So the lossless shapes come first: a `String` and a

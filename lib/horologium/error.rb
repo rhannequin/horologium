@@ -40,6 +40,12 @@ module Horologium
     end
   end
 
+  # Raised when a calendar date and time of day do not exist: a day the month
+  # does not have, an hour past the end of the day, a second 60 where no leap
+  # second was inserted, or a year before the calendar conversion starts. The
+  # message says which field is wrong and what it may hold.
+  class InvalidCivilTimeError < Error; end
+
   # Raised when a time scale that is not registered is asked for. It carries
   # the registered scales so the caller can see the valid choices.
   class UnknownScaleError < Error
