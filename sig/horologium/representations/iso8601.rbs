@@ -7,7 +7,7 @@ module Horologium
 
       def self.render: (ScaleReading reading, ?Symbol _output) -> String
 
-      def self.parse: (untyped value, nil _low, Symbol precision) -> (Numeric::TwoPartFloat | Numeric::Exact)
+      def self.parse: (untyped value, nil _low, singleton(Scales::Base) scale, Symbol precision) -> (Numeric::TwoPartFloat | Numeric::Exact)
 
       private def self.nanosecond_reading: (ScaleReading reading) -> ScaleReading
 

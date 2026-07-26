@@ -64,6 +64,29 @@ module Horologium
         def to_reference(_value, _precision)
           raise NotImplementedError, "#{self} must implement .to_reference"
         end
+
+        # The SI seconds in a day of this scale, on the day at +day_number+.
+        # A day is 86,400 seconds in every scale the library reads by
+        # continuous time. UTC is the exception: a day that holds a leap
+        # second is 86,401 seconds long, so UTC overrides this. A
+        # representation asks the scale this to map a fraction of a day to a
+        # time of day, and to know whether a 61-second final minute is legal.
+        #
+        # @param _day_number [Integer] the Julian Day Number of the day
+        # @return [Integer] the seconds in that day
+        def seconds_in_day(_day_number)
+          Duration::SECONDS_PER_DAY
+        end
+
+        # The ISO 8601 zone designator this scale writes. Empty for a
+        # continuous scale, where the string carries no scale of its own and a
+        # bare time is a coordinate in the scale it was read in. UTC writes
+        # +"Z"+, where a zero offset is a real thing.
+        #
+        # @return [String]
+        def zone_designator
+          ""
+        end
       end
     end
   end

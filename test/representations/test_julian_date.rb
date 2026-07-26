@@ -98,6 +98,7 @@ class TestRepresentationsJulianDate < Minitest::Test
     parsed = Horologium::Representations::JulianDate.parse(
       "2456463.052272",
       nil,
+      Horologium::Scales::TAI,
       :exact
     )
 
@@ -108,6 +109,7 @@ class TestRepresentationsJulianDate < Minitest::Test
     parsed = Horologium::Representations::JulianDate.parse(
       "2456463.052272",
       nil,
+      Horologium::Scales::TAI,
       :standard
     )
 
@@ -121,6 +123,7 @@ class TestRepresentationsJulianDate < Minitest::Test
     parsed = Horologium::Representations::JulianDate.parse(
       Rational(2_456_463_052_272, 1_000_000),
       nil,
+      Horologium::Scales::TAI,
       :exact
     )
 
@@ -131,6 +134,7 @@ class TestRepresentationsJulianDate < Minitest::Test
     parsed = Horologium::Representations::JulianDate.parse(
       2_456_463,
       nil,
+      Horologium::Scales::TAI,
       :exact
     )
 
@@ -141,6 +145,7 @@ class TestRepresentationsJulianDate < Minitest::Test
     parsed = Horologium::Representations::JulianDate.parse(
       2_456_463.9,
       nil,
+      Horologium::Scales::TAI,
       :standard
     )
 
@@ -152,6 +157,7 @@ class TestRepresentationsJulianDate < Minitest::Test
     parsed = Horologium::Representations::JulianDate.parse(
       2_456_463.0,
       0.75,
+      Horologium::Scales::TAI,
       :standard
     )
 
@@ -165,6 +171,7 @@ class TestRepresentationsJulianDate < Minitest::Test
     parsed = Horologium::Representations::JulianDate.parse(
       2_456_463.0,
       1e-16,
+      Horologium::Scales::TAI,
       :exact
     )
 
@@ -173,7 +180,12 @@ class TestRepresentationsJulianDate < Minitest::Test
 
   def test_it_rejects_a_string_that_does_not_spell_a_julian_date
     error = assert_raises(Horologium::ParseError) do
-      Horologium::Representations::JulianDate.parse("yesterday", nil, :exact)
+      Horologium::Representations::JulianDate.parse(
+        "yesterday",
+        nil,
+        Horologium::Scales::TAI,
+        :exact
+      )
     end
 
     assert_includes error.message, "yesterday"
@@ -181,7 +193,12 @@ class TestRepresentationsJulianDate < Minitest::Test
 
   def test_it_rejects_a_value_it_cannot_read_as_a_julian_date
     error = assert_raises(ArgumentError) do
-      Horologium::Representations::JulianDate.parse(nil, nil, :standard)
+      Horologium::Representations::JulianDate.parse(
+        nil,
+        nil,
+        Horologium::Scales::TAI,
+        :standard
+      )
     end
 
     assert_includes error.message, "NilClass"
@@ -192,6 +209,7 @@ class TestRepresentationsJulianDate < Minitest::Test
       Horologium::Representations::JulianDate.parse(
         2_456_463.0,
         Rational(1, 2),
+        Horologium::Scales::TAI,
         :standard
       )
     end
@@ -201,7 +219,12 @@ class TestRepresentationsJulianDate < Minitest::Test
 
   def test_it_rejects_an_unknown_precision
     assert_raises(Horologium::UnknownPrecisionError) do
-      Horologium::Representations::JulianDate.parse(2_456_463.0, nil, :fast)
+      Horologium::Representations::JulianDate.parse(
+        2_456_463.0,
+        nil,
+        Horologium::Scales::TAI,
+        :fast
+      )
     end
   end
 end

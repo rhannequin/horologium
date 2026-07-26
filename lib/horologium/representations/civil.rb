@@ -87,11 +87,12 @@ module Horologium
         def render(reading, output)
           validate_output!(output)
 
-          # A leap second makes a UTC day one second longer, and this is where
-          # the scale on the reading will say so.
-          seconds_in_day = Duration::SECONDS_PER_DAY
+          scale = Horologium.configuration.scale(reading.scale)
           shifted = reading.value.to_r + HALF_DAY
           day_number = shifted.floor
+          # A leap second makes a UTC day 86,401 seconds long; the scale says
+          # so, and every other scale answers 86,400.
+          seconds_in_day = scale.seconds_in_day(day_number)
           seconds = (shifted - day_number) * seconds_in_day
 
           civil_at(day_number, seconds, seconds_in_day, output)
@@ -109,6 +110,8 @@ module Horologium
         #
         # @param value [Horologium::Representations::CivilTime] the civil time
         # @param _low [nil] unused; a civil time has no low part
+        # @param scale [Class] the scale the civil time is read in, asked how
+        #   long the day is so a leap second falls in the right place
         # @param precision [Symbol] +:standard+ or +:exact+
         # @return [Horologium::Numeric::TwoPartFloat,
         #   Horologium::Numeric::Exact] the Julian Date, in days
@@ -117,13 +120,14 @@ module Horologium
         # @raise [ArgumentError] when the value is not a
         #   {Horologium::Representations::CivilTime}
         # @raise [UnknownPrecisionError] when the precision is not recognised
-        def parse(value, _low, precision)
+        def parse(value, _low, scale, precision)
           civil = validate!(value)
-          seconds_in_day = Duration::SECONDS_PER_DAY
+          day = day_number(civil.year, civil.month, civil.day)
+          seconds_in_day = scale.seconds_in_day(day)
+          validate_time!(civil, seconds_in_day)
 
           Numeric::Precision.build(
-            day_number(civil.year, civil.month, civil.day) - HALF_DAY +
-              seconds_of_day(civil) / seconds_in_day,
+            day - HALF_DAY + seconds_of_day(civil) / seconds_in_day,
             precision
           )
         end
@@ -281,14 +285,13 @@ module Horologium
         end
 
         # Checks that a civil time is one the library reads, and that its
-        # fields make a date and a time that exist. Both entrances go through
-        # here, so a civil time built by hand is read as strictly as one
-        # {Instant.from_civil} assembled.
+        # fields make a calendar date that exists. The time of day is left to
+        # {validate_time!}, which {parse} calls once it has asked the scale how
+        # long the day is: whether a second 60 is legal depends on the day.
         #
         # @param civil [Horologium::Representations::CivilTime] the civil time
         # @return [Horologium::Representations::CivilTime] the same civil time
-        # @raise [InvalidCivilTimeError] when the fields are not a real date
-        #   and time
+        # @raise [InvalidCivilTimeError] when the date does not exist
         # @raise [ArgumentError] when it is not a CivilTime, or a whole field
         #   is not an Integer
         def validate!(civil)
@@ -300,7 +303,6 @@ module Horologium
 
           validate_whole_fields!(civil)
           validate_date!(civil)
-          validate_time!(civil)
 
           civil
         end
@@ -355,12 +357,14 @@ module Horologium
             "day #{civil.day} in it"
         end
 
-        # Checks the clock half of a civil time.
+        # Checks the clock half of a civil time, against how long the day is.
         #
         # @param civil [Horologium::Representations::CivilTime] the civil time
+        # @param seconds_in_day [Integer] the seconds in the day, the scale's
+        #   answer for this day: 86,401 on a day that holds a leap second
         # @return [void]
         # @raise [InvalidCivilTimeError] when the time does not exist
-        def validate_time!(civil)
+        def validate_time!(civil, seconds_in_day)
           unless (0..23).cover?(civil.hour)
             raise InvalidCivilTimeError,
               "#{civil.hour} is not an hour; an hour runs from 0 to 23"
@@ -371,26 +375,24 @@ module Horologium
               "#{civil.minute} is not a minute; a minute runs from 0 to 59"
           end
 
-          validate_second!(civil)
+          validate_second!(civil, seconds_in_day)
         end
 
-        # Checks the second of a civil time. Second 60 is a leap second, and
-        # no scale the library reads yet has one, so it is refused here rather
-        # than read as the start of the next minute.
+        # Checks the second of a civil time. A minute holds 60 seconds, 0 to
+        # 59, except the last minute of a day that holds a leap second, which
+        # holds 61 and reaches second 60. The extra second the day carries over
+        # 86,400 lands there, so the top of the range comes from the day
+        # length rather than being fixed.
         #
         # @param civil [Horologium::Representations::CivilTime] the civil time
+        # @param seconds_in_day [Integer] the seconds in the day
         # @return [void]
         # @raise [InvalidCivilTimeError] when the second does not exist
-        def validate_second!(civil)
-          if civil.second == 60
-            raise InvalidCivilTimeError,
-              "second 60 is a leap second, and none of the scales the " \
-              "library reads has one; TAI, TT, and TDB run without them"
-          end
+        def validate_second!(civil, seconds_in_day)
+          highest = highest_second(civil, seconds_in_day)
 
-          unless (0..59).cover?(civil.second)
-            raise InvalidCivilTimeError,
-              "#{civil.second} is not a second; a second runs from 0 to 59"
+          unless (0..highest).cover?(civil.second)
+            raise InvalidCivilTimeError, second_out_of_range(civil, highest)
           end
 
           return if (0...1).cover?(civil.second_fraction)
@@ -398,6 +400,45 @@ module Horologium
           raise InvalidCivilTimeError,
             "#{civil.second_fraction} is not a fraction of a second; it runs " \
             "from 0 up to but not including 1"
+        end
+
+        # The highest second the minute of a civil time reaches: 59, unless it
+        # is the last minute of a day longer than 86,400 seconds, where the
+        # leap second lands. On a 86,401-second day the last minute reaches 60.
+        #
+        # @param civil [Horologium::Representations::CivilTime] the civil time
+        # @param seconds_in_day [Integer] the seconds in the day
+        # @return [Integer] the highest legal second
+        def highest_second(civil, seconds_in_day)
+          return SECONDS_PER_MINUTE - 1 unless last_minute?(civil)
+
+          SECONDS_PER_MINUTE - 1 + (seconds_in_day - Duration::SECONDS_PER_DAY)
+        end
+
+        # Whether a civil time is in the last minute of its day, the only
+        # minute a leap second can fall in.
+        #
+        # @param civil [Horologium::Representations::CivilTime] the civil time
+        # @return [Boolean]
+        def last_minute?(civil)
+          civil.hour == 23 && civil.minute == 59
+        end
+
+        # The message for a second outside its minute. A second 60 that the day
+        # does not reach is named as the leap second it would be, since that is
+        # the mistake worth explaining; anything else states the range.
+        #
+        # @param civil [Horologium::Representations::CivilTime] the civil time
+        # @param highest [Integer] the highest second the minute reaches
+        # @return [String]
+        def second_out_of_range(civil, highest)
+          if civil.second == 60
+            "second 60 is a leap second, and this day holds none; a minute " \
+            "reaches 60 only at the end of a day that does"
+          else
+            "#{civil.second} is not a second; this minute runs from 0 to " \
+            "#{highest}"
+          end
         end
 
         # The days in a month, in the proleptic Gregorian calendar.

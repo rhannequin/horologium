@@ -17,7 +17,7 @@ module Horologium
 
       def self.render: (ScaleReading reading, Symbol output) -> CivilTime
 
-      def self.parse: (untyped value, nil _low, Symbol precision) -> (Numeric::TwoPartFloat | Numeric::Exact)
+      def self.parse: (untyped value, nil _low, singleton(Scales::Base) scale, Symbol precision) -> (Numeric::TwoPartFloat | Numeric::Exact)
 
       def self.from_fields: (untyped year, untyped month, untyped day, untyped hour, untyped minute, untyped second) -> CivilTime
 
@@ -39,9 +39,15 @@ module Horologium
 
       private def self.validate_date!: (CivilTime civil) -> void
 
-      private def self.validate_time!: (CivilTime civil) -> void
+      private def self.validate_time!: (CivilTime civil, Integer seconds_in_day) -> void
 
-      private def self.validate_second!: (CivilTime civil) -> void
+      private def self.validate_second!: (CivilTime civil, Integer seconds_in_day) -> void
+
+      private def self.highest_second: (CivilTime civil, Integer seconds_in_day) -> Integer
+
+      private def self.last_minute?: (CivilTime civil) -> bool
+
+      private def self.second_out_of_range: (CivilTime civil, Integer highest) -> String
 
       private def self.days_in_month: (Integer year, Integer month) -> Integer
 

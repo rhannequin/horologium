@@ -73,6 +73,7 @@ class TestRepresentationsModifiedJulianDate < Minitest::Test
     parsed = Horologium::Representations::ModifiedJulianDate.parse(
       60_796.0,
       nil,
+      Horologium::Scales::TAI,
       :exact
     )
 
@@ -83,6 +84,7 @@ class TestRepresentationsModifiedJulianDate < Minitest::Test
     parsed = Horologium::Representations::ModifiedJulianDate.parse(
       "60796.052272",
       nil,
+      Horologium::Scales::TAI,
       :exact
     )
 
@@ -96,6 +98,7 @@ class TestRepresentationsModifiedJulianDate < Minitest::Test
     parsed = Horologium::Representations::ModifiedJulianDate.parse(
       60_796.0,
       0.5,
+      Horologium::Scales::TAI,
       :standard
     )
 
@@ -107,6 +110,7 @@ class TestRepresentationsModifiedJulianDate < Minitest::Test
       Horologium::Representations::ModifiedJulianDate.parse(
         60_796.0,
         nil,
+        Horologium::Scales::TAI,
         :fast
       )
     end

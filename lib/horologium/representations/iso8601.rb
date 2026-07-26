@@ -83,9 +83,12 @@ module Horologium
           nanoseconds =
             (civil.second_fraction * Duration::NANOSECONDS_PER_SECOND).round
 
-          # No scale the library reads yet writes a zone designator; a bare
-          # time is a coordinate in the scale asked for. UTC will write "Z".
-          designator = ""
+          # A continuous scale writes no designator, so a bare time is a
+          # coordinate in the scale it was read in; UTC writes "Z".
+          designator = Horologium
+            .configuration
+            .scale(reading.scale)
+            .zone_designator
 
           format(
             "%<date>sT%<hour>02d:%<minute>02d:%<second>02d.%<nanoseconds>09d" \
@@ -112,6 +115,8 @@ module Horologium
         #
         # @param value [String] the date and time, in extended ISO 8601
         # @param _low [nil] unused; an ISO 8601 string has no low part
+        # @param scale [Class] the scale the string is read in, passed on to
+        #   {Civil.parse} to place a leap second
         # @param precision [Symbol] +:standard+ or +:exact+
         # @return [Horologium::Numeric::TwoPartFloat,
         #   Horologium::Numeric::Exact] the Julian Date, in days
@@ -124,11 +129,12 @@ module Horologium
         #   Horologium::Representations::Iso8601.parse(
         #     "2016-12-31T23:59:59.5Z",
         #     nil,
+        #     Horologium::Scales::TAI,
         #     :exact
         #   )
-        def parse(value, _low, precision)
+        def parse(value, _low, scale, precision)
           fields = fields(value)
-          in_scale = Civil.parse(fields.fetch(:civil), nil, precision)
+          in_scale = Civil.parse(fields.fetch(:civil), nil, scale, precision)
           offset_seconds = fields.fetch(:offset_seconds)
           return in_scale if offset_seconds.zero?
 

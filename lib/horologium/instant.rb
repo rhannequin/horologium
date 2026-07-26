@@ -220,20 +220,23 @@ module Horologium
       # scale. The representation says what the number means, the scale reads
       # it back in TAI, and the instant holds it from there.
       #
+      # The scale is resolved once and passed to the representation as well as
+      # used for the conversion, because a representation may need it to read
+      # the value: a civil time in UTC has to ask the scale how long the day is
+      # before it can place the seconds in it.
+      #
       # @param representation [Class] the representation the value is given in
       # @param value [Object] the value, in that representation
       # @param low [Float, Integer, nil] its low part, when it has one
-      # @param scale [Symbol] the scale it is read in
+      # @param name [Symbol] the scale it is read in
       # @param precision [Symbol] +:standard+ or +:exact+
       # @return [Horologium::Instant]
       # @raise [UnknownScaleError] when no scale is registered under that name
-      def from_representation(representation, value, low, scale, precision)
-        in_scale = representation.parse(value, low, precision)
-        in_tai = Horologium.configuration
-          .scale(scale)
-          .to_reference(in_scale, precision)
+      def from_representation(representation, value, low, name, precision)
+        scale = Horologium.configuration.scale(name)
+        in_scale = representation.parse(value, low, scale, precision)
 
-        new(in_tai, precision)
+        new(scale.to_reference(in_scale, precision), precision)
       end
     end
 

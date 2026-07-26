@@ -4,6 +4,10 @@ module Horologium
       def self.from_reference: (Numeric::TwoPartFloat | Numeric::Exact value, Symbol precision) -> (Numeric::TwoPartFloat | Numeric::Exact)
 
       def self.to_reference: (Numeric::TwoPartFloat | Numeric::Exact value, Symbol precision) -> (Numeric::TwoPartFloat | Numeric::Exact)
+
+      def self.seconds_in_day: (Integer day_number) -> Integer
+
+      def self.zone_designator: () -> String
     end
   end
 end
