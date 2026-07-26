@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require "iers"
-
 require_relative "horologium/error"
 require_relative "horologium/numeric/exact"
 require_relative "horologium/numeric/two_part_float"

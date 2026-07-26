@@ -74,6 +74,16 @@ class TestConfiguration < Minitest::Test
       Horologium.configuration.leap_second_source
   end
 
+  def test_a_leap_second_source_that_cannot_answer_is_refused
+    error = assert_raises(Horologium::ConfigurationError) do
+      Horologium.configure do |config|
+        config.leap_second_source = Object.new
+      end
+    end
+
+    assert_includes error.message, "tai_utc_at"
+  end
+
   def test_configure_rejects_an_unrecognised_precision
     assert_raises(Horologium::UnknownPrecisionError) do
       Horologium.configure do |c|

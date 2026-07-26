@@ -54,14 +54,23 @@ module Horologium
       @default_precision = Numeric::Precision.validate!(precision)
     end
 
-    # Sets the source UTC reads its leap seconds from.
+    # Sets the source UTC reads its leap seconds from. A source that does not
+    # answer +tai_utc_at+ is refused here, at configuration time, rather than
+    # when an instant is first read in UTC.
     #
     # @param source [#tai_utc_at] the source to read from
     # @return [#tai_utc_at] the source that was set
-    # @raise [ConfigurationError] once the configuration is frozen
+    # @raise [ConfigurationError] once the configuration is frozen, or when the
+    #   source does not respond to +tai_utc_at+
     def leap_second_source=(source)
       if frozen?
         raise ConfigurationError, "the configuration is already frozen"
+      end
+
+      unless source.respond_to?(:tai_utc_at)
+        raise ConfigurationError,
+          "a leap second source must respond to tai_utc_at, " \
+          "got #{source.inspect}"
       end
 
       @leap_second_source = source
