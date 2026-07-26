@@ -195,7 +195,7 @@ module Horologium
           raise OutOfRangeError,
             "UTC runs from 1972-01-01 on. This moment is before it, so it " \
             "has no UTC label. Read it in a continuous scale instead, such " \
-            "as from_civil with scale: :tt, which has no lower bound."
+            "as with from_tt, which has no lower bound."
         end
       end
     end

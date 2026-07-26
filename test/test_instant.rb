@@ -497,4 +497,51 @@ class TestInstant < Minitest::Test
 
     assert_equal :exact, instant.precision
   end
+
+  def test_from_tai_is_from_civil_read_in_tai
+    assert_equal Horologium::Instant.from_civil(
+      2025, 5, 1, 12, 0, 0,
+      scale: :tai
+    ),
+      Horologium::Instant.from_tai(2025, 5, 1, 12, 0, 0)
+  end
+
+  def test_from_tt_is_from_civil_read_in_tt
+    assert_equal Horologium::Instant.from_civil(
+      2025, 5, 1, 12, 0, 0,
+      scale: :tt
+    ),
+      Horologium::Instant.from_tt(2025, 5, 1, 12, 0, 0)
+  end
+
+  def test_from_tdb_is_from_civil_read_in_tdb
+    assert_equal Horologium::Instant.from_civil(
+      2025, 5, 1, 12, 0, 0,
+      scale: :tdb
+    ),
+      Horologium::Instant.from_tdb(2025, 5, 1, 12, 0, 0)
+  end
+
+  def test_the_scale_named_constructors_read_the_same_fields_back
+    instant = Horologium::Instant.from_tt(2025, 5, 1, 12, 34, 56)
+    civil = instant.as(:civil, scale: :tt)
+
+    assert_equal [2025, 5, 1, 12, 34, 56],
+      [civil.year, civil.month, civil.day, civil.hour, civil.minute,
+        civil.second]
+  end
+
+  def test_a_scale_named_constructor_reaches_a_date_utc_cannot
+    instant = Horologium::Instant.from_tt(1900, 1, 1, precision: :exact)
+
+    assert_equal 1900, instant.as(:civil, scale: :tt).year
+  end
+
+  def test_the_scale_named_constructors_take_the_precision_in_effect
+    instant = Horologium.with_precision(:exact) do
+      Horologium::Instant.from_tt(2025, 5, 1)
+    end
+
+    assert_equal :exact, instant.precision
+  end
 end
