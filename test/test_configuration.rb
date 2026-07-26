@@ -61,6 +61,19 @@ class TestConfiguration < Minitest::Test
     end
   end
 
+  def test_the_leap_second_source_cannot_be_changed_after_configuring
+    Horologium.configure
+
+    assert_raises(Horologium::ConfigurationError) do
+      Horologium.configuration.leap_second_source = Object.new
+    end
+  end
+
+  def test_the_leap_second_source_defaults_to_the_iers_backed_one
+    assert_equal Horologium::Data::LeapSeconds,
+      Horologium.configuration.leap_second_source
+  end
+
   def test_configure_rejects_an_unrecognised_precision
     assert_raises(Horologium::UnknownPrecisionError) do
       Horologium.configure do |c|
@@ -144,7 +157,7 @@ class TestConfiguration < Minitest::Test
       Horologium.configuration.scale(:sundial)
     end
 
-    assert_equal %i[tai tt tdb], error.known_scales
+    assert_equal %i[tai tt tdb utc], error.known_scales
   end
 
   def test_register_scale_adds_a_scale_an_instant_can_be_read_in
@@ -225,6 +238,6 @@ class TestConfiguration < Minitest::Test
   end
 
   def test_the_scale_names_list_the_registered_scales
-    assert_equal %i[tai tt tdb], Horologium.configuration.scale_names
+    assert_equal %i[tai tt tdb utc], Horologium.configuration.scale_names
   end
 end

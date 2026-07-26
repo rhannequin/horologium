@@ -23,6 +23,8 @@ module Horologium
 
       private def self.civil_at: (Integer day_number, Rational seconds, Integer seconds_in_day, Symbol output) -> CivilTime
 
+      private def self.clock: (Integer whole) -> [Integer, Integer, Integer]
+
       private def self.calendar: (Integer day_number) -> [Integer, Integer, Integer]
 
       private def self.day_number: (Integer year, Integer month, Integer day) -> Integer

@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "iers"
+
 require_relative "horologium/error"
 require_relative "horologium/numeric/exact"
 require_relative "horologium/numeric/two_part_float"
@@ -11,6 +13,8 @@ require_relative "horologium/scales/tai"
 require_relative "horologium/scales/tt"
 require_relative "horologium/data/barycentric_model"
 require_relative "horologium/scales/tdb"
+require_relative "horologium/data/leap_seconds"
+require_relative "horologium/scales/utc"
 require_relative "horologium/configuration"
 require_relative "horologium/representations/julian_date"
 require_relative "horologium/representations/modified_julian_date"

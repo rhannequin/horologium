@@ -1,0 +1,11 @@
+# Minimal signatures for the parts of the iers gem Horologium uses. The gem
+# ships no RBS of its own, so this declares only what Data::LeapSeconds calls.
+
+# The iers gem, the source of leap second and Earth orientation data.
+module IERS
+  # Leap seconds, TAI - UTC, from the iers gem.
+  module LeapSecond
+    # TAI - UTC in seconds at a moment, given as a Modified Julian Date.
+    def self.at: (?untyped input, ?jd: untyped, ?mjd: untyped) -> (Integer | Rational)
+  end
+end

@@ -1,0 +1,29 @@
+module Horologium
+  module Scales
+    class UTC < Base
+      FIRST_DAY: Integer
+
+      HALF: Rational
+
+      MAX_STEPS: Integer
+
+      def self.from_reference: (Numeric::TwoPartFloat | Numeric::Exact value, Symbol precision) -> (Numeric::TwoPartFloat | Numeric::Exact)
+
+      def self.to_reference: (Numeric::TwoPartFloat | Numeric::Exact value, Symbol precision) -> (Numeric::TwoPartFloat | Numeric::Exact)
+
+      def self.seconds_in_day: (Integer day_number) -> Integer
+
+      def self.zone_designator: () -> String
+
+      private def self.day_seconds: (Integer day_number, Integer offset) -> Integer
+
+      private def self.elapsed_seconds: (Numeric::TwoPartFloat | Numeric::Exact value, Numeric::TwoPartFloat | Numeric::Exact midnight, Integer offset, Symbol precision) -> (Numeric::TwoPartFloat | Numeric::Exact)
+
+      private def self.day_step: (Rational seconds, Integer seclen) -> Integer
+
+      private def self.tai_utc_at: (Integer day_number) -> Integer
+
+      private def self.refuse: () -> bot
+    end
+  end
+end

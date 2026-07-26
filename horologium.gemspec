@@ -40,6 +40,8 @@ Gem::Specification.new do |spec|
   spec.executables = spec.files.grep(%r{\Aexe/}) { |f| File.basename(f) }
   spec.require_paths = ["lib"]
 
+  spec.add_dependency "iers", "~> 0.2"
+
   spec.add_development_dependency "irb"
   spec.add_development_dependency "minitest"
   spec.add_development_dependency "rake"

@@ -50,13 +50,12 @@ module Horologium
       /x
       private_constant :PATTERN
 
-      # The nanoseconds in a day, the grid the rendered time is rounded onto so
-      # its fraction of a second is a whole number of nanoseconds.
+      # Half a day, the gap between a Julian Date, which starts at noon, and
+      # the midnight the calendar counts a day from.
       #
       # @api private
-      NANOSECONDS_PER_DAY =
-        Duration::SECONDS_PER_DAY * Duration::NANOSECONDS_PER_SECOND
-      private_constant :NANOSECONDS_PER_DAY
+      HALF_DAY = Rational(1, 2)
+      private_constant :HALF_DAY
 
       class << self
         # The reading, written as an ISO 8601 string. The +as+ type a Julian
@@ -111,7 +110,9 @@ module Horologium
         # day, and every digit of the fraction of a second is kept, unbounded
         # at +:exact+. A numeric offset is subtracted here, in the scale, as
         # plain arithmetic on the fields; it is not a time zone and consults no
-        # zone data.
+        # zone data. It counts against the day's own length, so on a leap
+        # second day an offset shifts by SI seconds, not by a stretched
+        # fraction of the day.
         #
         # @param value [String] the date and time, in extended ISO 8601
         # @param _low [nil] unused; an ISO 8601 string has no low part
@@ -138,10 +139,11 @@ module Horologium
           offset_seconds = fields.fetch(:offset_seconds)
           return in_scale if offset_seconds.zero?
 
+          day = (in_scale.to_r + HALF_DAY).floor
           Numeric::Precision.subtract(
             in_scale,
             Numeric::Precision.build(
-              Rational(offset_seconds, Duration::SECONDS_PER_DAY),
+              Rational(offset_seconds, scale.seconds_in_day(day)),
               precision
             )
           )
@@ -153,16 +155,34 @@ module Horologium
         # civil fields gives a whole number of nanoseconds and any carry into
         # the next second or the next day has already happened.
         #
+        # The grid is the day's own length, which the scale gives. On a leap
+        # second day that is 86,401 seconds, so the seconds of the day are
+        # rounded to whole nanoseconds against that, not against a fixed
+        # 86,400. A day of the usual length lands on the same grid either way.
+        #
+        # The rounded value is held exactly, whatever the instant's precision,
+        # because the reading is on its way to a String. Holding it as a
+        # two-part float would round the clean grid value again, and near a
+        # whole second that second rounding can push the last minute a
+        # nanosecond the wrong way.
+        #
         # @param reading [Horologium::ScaleReading] the reading to round
-        # @return [Horologium::ScaleReading] the rounded reading
+        # @return [Horologium::ScaleReading] the rounded reading, held exactly
         def nanosecond_reading(reading)
-          nanoseconds = (reading.value.to_r * NANOSECONDS_PER_DAY).round
-          value = Numeric::Precision.build(
-            Rational(nanoseconds, NANOSECONDS_PER_DAY),
-            reading.precision
-          )
+          scale = Horologium.configuration.scale(reading.scale)
+          shifted = reading.value.to_r + HALF_DAY
+          day = shifted.floor
+          seclen = scale.seconds_in_day(day)
 
-          ScaleReading.new(reading.scale, value, reading.precision)
+          seconds = (shifted - day) * seclen
+          nanoseconds = (seconds * Duration::NANOSECONDS_PER_SECOND).round
+          fraction = Rational(
+            nanoseconds,
+            seclen * Duration::NANOSECONDS_PER_SECOND
+          )
+          value = Numeric::Precision.build(day - HALF_DAY + fraction, :exact)
+
+          ScaleReading.new(reading.scale, value, :exact)
         end
 
         # The date part of a civil time, the year written to at least four
