@@ -36,6 +36,16 @@ module Horologium
         def tai_utc_at(day_number)
           IERS::LeapSecond.at(mjd: day_number - MJD_OFFSET)
         end
+
+        # The date the leap second data stops vouching for itself, from the
+        # file's own header, or nil when it states none. A date past it might
+        # miss a leap second announced since the file was made, which is what
+        # marks a UTC reading there +:extrapolated+.
+        #
+        # @return [Date, nil]
+        def expires_on
+          IERS::LeapSecond.expires_on
+        end
       end
     end
   end

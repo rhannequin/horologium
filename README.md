@@ -156,6 +156,23 @@ Horologium::Instant.from_utc(1971, 12, 31)                  # => OutOfRangeError
 Horologium::Instant.from_civil(1971, 12, 31, scale: :tt)    # reaches any date
 ```
 
+Leap seconds are announced about six months ahead, so past the date its data
+vouches for, the last known offset is the best there is. A UTC reading says
+which it rests on: `:measured` up to that date, `:extrapolated` after, where a
+leap second announced since would not be known.
+
+```rb
+instant.to(:utc).provenance   # => :measured, or :extrapolated past the horizon
+```
+
+A pipeline that must not rest on an offset a leap second could overturn sets a
+strict horizon, and a reading past it raises instead.
+
+```rb
+Horologium.configure { |c| c.leap_second_horizon = :raise }
+# => reading a date past the data horizon raises OutOfDataRangeError
+```
+
 A Julian Date is around 2.46 million, which leaves a single `Float` about 40
 microseconds for the fraction of a day, and the loss is already in the literal
 before Horologium sees it. So the lossless shapes come first: a `String` and a

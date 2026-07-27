@@ -56,6 +56,7 @@ module Horologium
         # @return [Horologium::Numeric::TwoPartFloat,
         #   Horologium::Numeric::Exact] the Julian Date in UTC, in days
         # @raise [OutOfRangeError] before 1972-01-01
+        # @raise [OutOfDataRangeError] past the data horizon in strict mode
         # @raise [UnknownPrecisionError] when the precision is not recognised
         def from_reference(value, precision)
           day = (value.to_r + HALF).floor
@@ -70,6 +71,7 @@ module Horologium
 
             step = day_step(seconds.to_r, seclen)
             if step.zero?
+              enforce_horizon(day)
               return Numeric::Precision.add(midnight, seconds / seclen)
             end
 
@@ -89,6 +91,7 @@ module Horologium
         # @return [Horologium::Numeric::TwoPartFloat,
         #   Horologium::Numeric::Exact] the Julian Date in TAI, in days
         # @raise [OutOfRangeError] before 1972-01-01
+        # @raise [OutOfDataRangeError] past the data horizon in strict mode
         # @raise [UnknownPrecisionError] when the precision is not recognised
         def to_reference(value, precision)
           shifted = Numeric::Precision.add(
@@ -97,6 +100,7 @@ module Horologium
           )
           day = shifted.to_r.floor
           refuse unless day >= FIRST_DAY
+          enforce_horizon(day)
 
           offset = tai_utc_at(day)
           seclen = day_seconds(day, offset)
@@ -135,7 +139,74 @@ module Horologium
           "Z"
         end
 
+        # How well founded a UTC reading is. +:measured+ up to the date the
+        # leap second data vouches for, +:extrapolated+ past it, where the
+        # offset is the last known one and a new leap second could overturn
+        # it. A source that states no expiry is taken as +:measured+
+        # throughout, since there is no horizon to be past.
+        #
+        # @param value [Horologium::Numeric::TwoPartFloat,
+        #   Horologium::Numeric::Exact] the Julian Date in UTC, in days
+        # @return [Symbol] +:measured+ or +:extrapolated+
+        def provenance(value)
+          past_horizon?((value.to_r + HALF).floor) ? :extrapolated : :measured
+        end
+
         private
+
+        # Refuses a date past the data horizon when the configuration asks for
+        # it. In the default mode it does nothing, and the reading is marked
+        # +:extrapolated+ instead.
+        #
+        # @param day_number [Integer] the Julian Day Number of the UTC day
+        # @return [void]
+        # @raise [OutOfDataRangeError] in strict mode, past the horizon
+        def enforce_horizon(day_number)
+          return unless past_horizon?(day_number)
+          return unless strict?
+
+          raise OutOfDataRangeError,
+            "the leap second data expires #{horizon_date}, and this moment " \
+            "is after it, where a leap second announced since would not be " \
+            "known. leap_second_horizon is :raise, so it is refused; set it " \
+            "to :extrapolate to read it with the last known offset."
+        end
+
+        # Whether a day is past the point the leap second data vouches for.
+        # False when the source states no expiry, so there is no horizon.
+        #
+        # @param day_number [Integer] the Julian Day Number of the UTC day
+        # @return [Boolean]
+        def past_horizon?(day_number)
+          limit = horizon
+          !limit.nil? && day_number > limit
+        end
+
+        # The Julian Day Number the data vouches through, or nil when the
+        # source states no expiry or cannot say.
+        #
+        # @return [Integer, nil]
+        def horizon
+          horizon_date&.jd
+        end
+
+        # The date the leap second data vouches through, from the source when
+        # it can say, or nil.
+        #
+        # @return [Date, nil]
+        def horizon_date
+          source = Horologium.configuration.leap_second_source
+          return nil unless source.respond_to?(:expires_on)
+
+          source.expires_on
+        end
+
+        # Whether the configuration refuses a date past the horizon.
+        #
+        # @return [Boolean]
+        def strict?
+          Horologium.configuration.leap_second_horizon == :raise
+        end
 
         # The seconds in a day, from the offset at its 0h and the next.
         #

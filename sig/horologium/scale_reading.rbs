@@ -8,13 +8,17 @@ module Horologium
 
     @precision: Symbol
 
+    @provenance: Symbol
+
     attr_reader scale: Symbol
 
     attr_reader precision: Symbol
 
     attr_reader value: Numeric::TwoPartFloat | Numeric::Exact
 
-    def initialize: (Symbol scale, Numeric::TwoPartFloat | Numeric::Exact value, Symbol precision) -> void
+    attr_reader provenance: Symbol
+
+    def initialize: (Symbol scale, Numeric::TwoPartFloat | Numeric::Exact value, Symbol precision, ?Symbol provenance) -> void
 
     def as: (Symbol representation, ?as: Symbol) -> untyped
   end
