@@ -228,6 +228,25 @@ class TestScalesUtc < Minitest::Test
     assert_equal :measured, reading.provenance
   end
 
+  def test_a_source_whose_expiry_is_not_a_date_is_refused
+    source = Class.new do
+      def self.tai_utc_at(_day_number)
+        37
+      end
+
+      def self.expires_on
+        "2026-12-28"
+      end
+    end
+    Horologium.configure { |config| config.leap_second_source = source }
+
+    error = assert_raises(Horologium::ConfigurationError) do
+      Horologium::Instant.from_utc(2035, 1, 1, 0).to(:utc)
+    end
+
+    assert_includes error.message, "expires_on"
+  end
+
   # Naming and shape.
 
   def test_from_utc_is_from_civil_read_in_utc

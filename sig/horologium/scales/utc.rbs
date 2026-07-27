@@ -21,8 +21,6 @@ module Horologium
 
       private def self.past_horizon?: (Integer day_number) -> bool
 
-      private def self.horizon: () -> Integer?
-
       private def self.horizon_date: () -> Date?
 
       private def self.strict?: () -> bool
