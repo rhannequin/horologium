@@ -110,5 +110,17 @@ module Horologium
     def hash
       [self.class, scale, precision, value.to_r].hash
     end
+
+    # @return [String]
+    def inspect
+      format(
+        "#<%s %s JD in %s (%s, %s)>",
+        self.class,
+        value.to_f,
+        scale,
+        precision,
+        provenance
+      )
+    end
   end
 end

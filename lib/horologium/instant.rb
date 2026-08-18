@@ -438,7 +438,12 @@ module Horologium
       time_scale = Horologium.configuration.scale(scale)
       reading = time_scale.from_reference(value, precision)
 
-      ScaleReading.new(scale, reading, precision, time_scale.provenance(reading))
+      ScaleReading.new(
+        scale,
+        reading,
+        precision,
+        time_scale.provenance(reading)
+      )
     end
 
     # The instant in a representation, read in a scale. This is the shorthand
@@ -472,6 +477,14 @@ module Horologium
       end
 
       (self - other).abs <= tolerance
+    end
+
+    # The stored TAI Julian Date, so inspecting an instant needs no scale and
+    # no date the calendar conversion has to reach.
+    #
+    # @return [String]
+    def inspect
+      format("#<%s %s TAI JD (%s)>", self.class, value.to_f, precision)
     end
 
     private

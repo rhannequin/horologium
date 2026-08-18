@@ -181,4 +181,14 @@ class TestScaleReading < Minitest::Test
         .to(:tt)
     ]
   end
+
+  def test_inspect_shows_the_scale_the_precision_and_the_provenance
+    reading = Horologium::Instant
+      .from_julian_date(2_443_144.5, scale: :tai)
+      .to(:tai)
+
+    assert_equal "#<Horologium::ScaleReading 2443144.5 JD in tai " \
+      "(standard, measured)>",
+      reading.inspect
+  end
 end

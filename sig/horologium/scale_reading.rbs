@@ -28,5 +28,6 @@ module Horologium
 
     def hash: () -> Integer
 
+    def inspect: () -> String
   end
 end
