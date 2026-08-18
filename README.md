@@ -3,7 +3,7 @@
 [![Tests](https://github.com/rhannequin/horologium/workflows/CI/badge.svg)](https://github.com/rhannequin/horologium/actions?query=workflow%3ACI)
 
 Horologium is a Ruby library dedicated to **scientific time**: the time scales
-(UTC, TAI, TT, TDB, TCG, TCB, UT1, GPS), high-precision instants, Julian Dates,
+(TAI, TT, TDB, and UTC so far), high-precision instants, Julian Dates,
 intervals, and rigorous conversions between scales that astronomy and physics
 require.
 
@@ -137,13 +137,26 @@ are one SI second apart each. Second 60 on a day with no leap second is
 refused.
 
 ```rb
-before = Horologium::Instant.from_utc(2016, 12, 31, 23, 59, 59)
-before + Horologium::Duration.seconds(1) ==
-  Horologium::Instant.from_utc(2016, 12, 31, 23, 59, 60)  # => true
+before = Horologium::Instant.from_utc(
+  2016, 12, 31, 23, 59, 59, precision: :exact
+)
+leap = Horologium::Instant.from_utc(
+  2016, 12, 31, 23, 59, 60, precision: :exact
+)
+after = Horologium::Instant.from_utc(
+  2017, 1, 1, 0, 0, 0, precision: :exact
+)
+
+leap - before == Horologium::Duration.seconds(1)   # => true
+after - leap == Horologium::Duration.seconds(1)    # => true
 
 Horologium::Instant.from_utc(2020, 6, 15, 23, 59, 60)
 # => raises Horologium::InvalidCivilTimeError
 ```
+
+The `:exact` above is what makes `==` the right question to ask. At the default
+`:standard` precision the same three instants land a rounding step apart, well
+under a zeptosecond but not zero, so compare those with `equal_within?`.
 
 UTC runs from 1972, where it settled into whole leap seconds. An earlier UTC
 date raises `Horologium::OutOfRangeError`. The instant is still reachable, only
@@ -172,6 +185,9 @@ strict horizon, and a reading past it raises instead.
 Horologium.configure { |c| c.leap_second_horizon = :raise }
 # => reading a date past the data horizon raises OutOfDataRangeError
 ```
+
+The configuration is set once, in a single `Horologium.configure` block, and
+frozen when the block returns. See [Precision](#precision).
 
 A Julian Date is around 2.46 million, which leaves a single `Float` about 40
 microseconds for the fraction of a day, and the loss is already in the literal
@@ -246,11 +262,14 @@ Every value carries one of two precisions, fixed when it is built:
 - `:exact` keeps the value as a `Rational`, with no rounding. The test suite
   uses it to check that `:standard` stays within its stated precision.
 
-Set the default once at boot:
+Set the default once at boot. `Horologium.configure` freezes the configuration
+when its block returns, so it is called once and everything is set in the one
+block; a second call raises `Horologium::ConfigurationError`.
 
 ```rb
 Horologium.configure do |c|
   c.default_precision = :exact
+  c.leap_second_horizon = :raise
 end
 ```
 

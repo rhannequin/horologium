@@ -10,9 +10,8 @@ module Horologium
     # The scale is not written into the string. There is no ISO 8601
     # designator for TAI or TT, and +Z+ means UTC, so a bare time here is a
     # coordinate in the scale you asked for, not a claim about which scale that
-    # is. When UTC is added it will write the +Z+ that belongs to it, where a
-    # leap second and a zero offset are real; the continuous scales carry
-    # neither.
+    # is. UTC writes the +Z+ that belongs to it, where a leap second and a zero
+    # offset are real; the continuous scales carry neither.
     #
     # The fraction of a second is written to nanosecond resolution, nine
     # digits, the resolution the example in the design carries. That is display
