@@ -4,6 +4,8 @@ module Horologium
       MJD_OFFSET: Integer
 
       def self.tai_utc_at: (Integer day_number) -> (Integer | Rational)
+
+      def self.expires_on: () -> Date?
     end
   end
 end

@@ -15,6 +15,16 @@ module Horologium
 
       def self.zone_designator: () -> String
 
+      def self.provenance: (Numeric::TwoPartFloat | Numeric::Exact value) -> Symbol
+
+      private def self.enforce_horizon: (Integer day_number) -> void
+
+      private def self.past_horizon?: (Integer day_number) -> bool
+
+      private def self.horizon_date: () -> Date?
+
+      private def self.strict?: () -> bool
+
       private def self.day_seconds: (Integer day_number, Integer offset) -> Integer
 
       private def self.elapsed_seconds: (Numeric::TwoPartFloat | Numeric::Exact value, Numeric::TwoPartFloat | Numeric::Exact midnight, Integer offset, Symbol precision) -> (Numeric::TwoPartFloat | Numeric::Exact)

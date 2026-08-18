@@ -84,6 +84,28 @@ class TestConfiguration < Minitest::Test
     assert_includes error.message, "tai_utc_at"
   end
 
+  def test_the_leap_second_horizon_defaults_to_extrapolate
+    assert_equal :extrapolate, Horologium.configuration.leap_second_horizon
+  end
+
+  def test_the_leap_second_horizon_cannot_be_changed_after_configuring
+    Horologium.configure
+
+    assert_raises(Horologium::ConfigurationError) do
+      Horologium.configuration.leap_second_horizon = :raise
+    end
+  end
+
+  def test_an_unrecognised_leap_second_horizon_is_refused
+    error = assert_raises(Horologium::ConfigurationError) do
+      Horologium.configure do |config|
+        config.leap_second_horizon = :ignore
+      end
+    end
+
+    assert_includes error.message, "leap_second_horizon"
+  end
+
   def test_configure_rejects_an_unrecognised_precision
     assert_raises(Horologium::UnknownPrecisionError) do
       Horologium.configure do |c|

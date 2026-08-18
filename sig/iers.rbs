@@ -7,5 +7,8 @@ module IERS
   module LeapSecond
     # TAI - UTC in seconds at a moment, given as a Modified Julian Date.
     def self.at: (?untyped input, ?jd: untyped, ?mjd: untyped) -> (Integer | Rational)
+
+    # The date the bundled leap second file stops vouching for itself.
+    def self.expires_on: () -> Date?
   end
 end

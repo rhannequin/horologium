@@ -53,6 +53,13 @@ module Horologium
   # reach it.
   class OutOfRangeError < Error; end
 
+  # Raised when a conversion would rest on data past the point its source
+  # vouches for, and the caller has asked for strict handling rather than an
+  # extrapolation. A leap second read for a date beyond the table's expiry is
+  # the case: the offset is the last known one, correct until a new leap
+  # second is announced, and strict mode refuses to lean on it.
+  class OutOfDataRangeError < Error; end
+
   # Raised when a time scale that is not registered is asked for. It carries
   # the registered scales so the caller can see the valid choices.
   class UnknownScaleError < Error

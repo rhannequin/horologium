@@ -37,6 +37,9 @@ module Horologium
   class OutOfRangeError < Error
   end
 
+  class OutOfDataRangeError < Error
+  end
+
   class UnknownScaleError < Error
     attr_reader known_scales: Array[Symbol]
 

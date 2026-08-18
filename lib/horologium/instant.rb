@@ -475,15 +475,18 @@ module Horologium
     # @param scale [Symbol] the name of a registered scale, such as +:tt+
     # @return [Horologium::ScaleReading]
     # @raise [UnknownScaleError] when no scale is registered under that name
+    # @raise [OutOfRangeError] when the scale does not reach the instant, such
+    #   as UTC before 1972
+    # @raise [OutOfDataRangeError] when UTC is past the leap second data
+    #   horizon and +leap_second_horizon+ is +:raise+
     # @example
     #   instant = Horologium::Instant.from_julian_date(2_443_144.5, scale: :tai)
     #   instant.to(:tt).as(:julian_date) # => 2443144.5003725
     def to(scale)
-      reading = Horologium.configuration
-        .scale(scale)
-        .from_reference(value, precision)
+      time_scale = Horologium.configuration.scale(scale)
+      reading = time_scale.from_reference(value, precision)
 
-      ScaleReading.new(scale, reading, precision)
+      ScaleReading.new(scale, reading, precision, time_scale.provenance(reading))
     end
 
     # The instant in a representation, read in a scale. This is the shorthand

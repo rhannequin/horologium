@@ -19,6 +19,9 @@ module Horologium
     # @return [Symbol] the default precision, +:standard+ until configured
     attr_reader :default_precision
 
+    # The recognised ways to handle a leap second past the data's horizon.
+    LEAP_SECOND_HORIZONS = %i[extrapolate raise].freeze
+
     # The source UTC reads its leap seconds from. It answers +tai_utc_at+ with
     # TAI - UTC at a day's 0h. {Data::LeapSeconds}, over the iers gem, is the
     # default; a caller with its own leap second data can set another here.
@@ -26,10 +29,20 @@ module Horologium
     # @return [#tai_utc_at]
     attr_reader :leap_second_source
 
+    # What UTC does with a date past the point the leap second data vouches
+    # for. +:extrapolate+, the default, reads it in UTC with the last known
+    # offset and marks the reading +:extrapolated+. +:raise+ refuses it with
+    # {OutOfDataRangeError}, for a pipeline that must not lean on an offset a
+    # new leap second could overturn.
+    #
+    # @return [Symbol] +:extrapolate+ or +:raise+
+    attr_reader :leap_second_horizon
+
     def initialize
       @default_precision = :standard
       @scales = BUILT_IN_SCALES.dup
       @leap_second_source = Data::LeapSeconds
+      @leap_second_horizon = :extrapolate
     end
 
     # The names an instant can be read in, the built-in scales and any scale
@@ -74,6 +87,26 @@ module Horologium
       end
 
       @leap_second_source = source
+    end
+
+    # Sets how UTC handles a date past the leap second data's horizon.
+    #
+    # @param horizon [Symbol] +:extrapolate+ or +:raise+
+    # @return [Symbol] the horizon that was set
+    # @raise [ConfigurationError] once the configuration is frozen, or when
+    #   the horizon is not recognised
+    def leap_second_horizon=(horizon)
+      if frozen?
+        raise ConfigurationError, "the configuration is already frozen"
+      end
+
+      unless LEAP_SECOND_HORIZONS.include?(horizon)
+        raise ConfigurationError,
+          "leap_second_horizon must be one of " \
+          "#{LEAP_SECOND_HORIZONS.join(", ")}, got #{horizon.inspect}"
+      end
+
+      @leap_second_horizon = horizon
     end
 
     # Registers a time scale under a name, so an instant can be read in it

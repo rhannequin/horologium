@@ -169,6 +169,84 @@ class TestScalesUtc < Minitest::Test
       shifted
   end
 
+  # Provenance and the data horizon.
+
+  def test_a_reading_within_the_data_horizon_is_measured
+    reading = Horologium::Instant.from_utc(2020, 6, 15, 12).to(:utc)
+
+    assert_equal :measured, reading.provenance
+  end
+
+  def test_a_reading_past_the_data_horizon_is_extrapolated
+    reading = Horologium::Instant.from_utc(2035, 1, 1, 0).to(:utc)
+
+    assert_equal :extrapolated, reading.provenance
+  end
+
+  def test_a_continuous_scale_reading_is_measured
+    reading = Horologium::Instant
+      .from_julian_date(2_460_000.5, scale: :tai)
+      .to(:tt)
+
+    assert_equal :measured, reading.provenance
+  end
+
+  def test_strict_mode_refuses_a_projection_past_the_horizon
+    Horologium.configure { |config| config.leap_second_horizon = :raise }
+
+    assert_raises(Horologium::OutOfDataRangeError) do
+      Horologium::Instant.from_utc(2035, 1, 1, 0).to(:utc)
+    end
+  end
+
+  def test_strict_mode_refuses_a_construction_past_the_horizon
+    Horologium.configure { |config| config.leap_second_horizon = :raise }
+
+    assert_raises(Horologium::OutOfDataRangeError) do
+      Horologium::Instant.from_utc(2035, 1, 1, 0)
+    end
+  end
+
+  def test_strict_mode_still_allows_a_date_within_the_horizon
+    Horologium.configure { |config| config.leap_second_horizon = :raise }
+
+    reading = Horologium::Instant.from_utc(2020, 6, 15, 12).to(:utc)
+
+    assert_equal :measured, reading.provenance
+  end
+
+  def test_a_source_with_no_expiry_reads_as_measured_throughout
+    source = Class.new do
+      def self.tai_utc_at(_day_number)
+        37
+      end
+    end
+    Horologium.configure { |config| config.leap_second_source = source }
+
+    reading = Horologium::Instant.from_utc(2035, 1, 1, 0).to(:utc)
+
+    assert_equal :measured, reading.provenance
+  end
+
+  def test_a_source_whose_expiry_is_not_a_date_is_refused
+    source = Class.new do
+      def self.tai_utc_at(_day_number)
+        37
+      end
+
+      def self.expires_on
+        "2026-12-28"
+      end
+    end
+    Horologium.configure { |config| config.leap_second_source = source }
+
+    error = assert_raises(Horologium::ConfigurationError) do
+      Horologium::Instant.from_utc(2035, 1, 1, 0).to(:utc)
+    end
+
+    assert_includes error.message, "expires_on"
+  end
+
   # Naming and shape.
 
   def test_from_utc_is_from_civil_read_in_utc
