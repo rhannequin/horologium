@@ -288,6 +288,10 @@ signatures in `sig/`. Run `COVERAGE=true rake test` to measure test coverage,
 which is enforced at 100% of lines and branches in CI. You can also run
 `bin/console` for an interactive prompt that will allow you to experiment.
 
+`sig/` holds Horologium's own signatures and ships with the gem. `sig-vendor/`
+holds stubs for gems that ship none of their own, and stays out of the gem so
+it cannot clash with a downstream RBS collection.
+
 Run `bin/ci` to run every check that GitHub Actions runs (RuboCop, Steep, YARD
 documentation coverage, and the tests with coverage) in a single pass. It runs
 each check even when an earlier one fails, so you see everything that needs
