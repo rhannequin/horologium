@@ -85,6 +85,15 @@ Horologium::Instant.from_civil(2025, 5, 1, 12, 0, 0, scale: :tt)
 Horologium::Instant.from_civil(2025, 5, 1, 12, 0, Rational(1, 4), scale: :tt)
 ```
 
+Each scale has its own shortcut, so the scale is in the name instead of a
+keyword.
+
+```rb
+Horologium::Instant.from_tt(2025, 5, 1, 12, 0, 0)
+Horologium::Instant.from_tai(2025, 5, 1, 12, 0, 0)
+Horologium::Instant.from_tdb(2025, 5, 1, 12, 0, 0)
+```
+
 A date that does not exist is refused rather than rolled over, and the message
 says which field is wrong.
 
