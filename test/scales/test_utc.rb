@@ -153,6 +153,39 @@ class TestScalesUtc < Minitest::Test
     end
   end
 
+  # A Julian Date reaches to_reference without passing the calendar, where
+  # from_utc is stopped by the day length first.
+  def test_a_pre_1972_julian_date_read_in_utc_is_refused
+    error = assert_raises(Horologium::OutOfRangeError) do
+      Horologium::Instant.from_julian_date(2_441_000.0, scale: :utc)
+    end
+
+    assert_includes error.message, "continuous scale"
+  end
+
+  # The day guessed from TAI is at most a day out either way. Only a source
+  # where UTC runs ahead of TAI guesses a day early, so that is what proves
+  # the refinement steps forwards as well as back.
+  def test_it_steps_forward_when_the_guessed_day_is_early
+    source = Class.new do
+      def self.tai_utc_at(_day_number)
+        -10
+      end
+    end
+    Horologium.configure { |config| config.leap_second_source = source }
+    instant = Horologium::Instant.from_julian_date(
+      Rational(2_460_000) + Rational(1, 2) - Rational(5, 86_400),
+      scale: :tai,
+      precision: :exact
+    )
+
+    civil = instant.as(:civil, scale: :utc, as: :rational)
+
+    assert_equal [2023, 2, 25, 0, 0, 5],
+      [civil.year, civil.month, civil.day, civil.hour, civil.minute,
+        civil.second]
+  end
+
   # A numeric offset shifts by SI seconds, even across a leap second.
 
   def test_an_iso_offset_on_a_leap_day_shifts_by_si_seconds
@@ -219,6 +252,23 @@ class TestScalesUtc < Minitest::Test
     source = Class.new do
       def self.tai_utc_at(_day_number)
         37
+      end
+    end
+    Horologium.configure { |config| config.leap_second_source = source }
+
+    reading = Horologium::Instant.from_utc(2035, 1, 1, 0).to(:utc)
+
+    assert_equal :measured, reading.provenance
+  end
+
+  def test_a_source_that_states_no_expiry_reads_as_measured_throughout
+    source = Class.new do
+      def self.tai_utc_at(_day_number)
+        37
+      end
+
+      def self.expires_on
+        nil
       end
     end
     Horologium.configure { |config| config.leap_second_source = source }

@@ -232,7 +232,8 @@ module Horologium
         def elapsed_seconds(value, midnight, offset, precision)
           tai_at_0h = Numeric::Precision.add(
             midnight,
-            Numeric::Precision.build(offset, precision) / Duration::SECONDS_PER_DAY
+            Numeric::Precision.build(offset, precision) /
+              Duration::SECONDS_PER_DAY
           )
 
           Numeric::Precision.subtract(value, tai_at_0h) *

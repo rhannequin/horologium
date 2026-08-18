@@ -285,8 +285,8 @@ changes until a 1.0 release. Changes are documented in the [CHANGELOG].
 After checking out the repo, run `bin/setup` to install dependencies. Then, run
 `rake` to run the tests and RuboCop, or `rake steep` to type-check the
 signatures in `sig/`. Run `COVERAGE=true rake test` to measure test coverage,
-which is enforced at a 95% line minimum in CI. You can also run `bin/console`
-for an interactive prompt that will allow you to experiment.
+which is enforced at 100% of lines and branches in CI. You can also run
+`bin/console` for an interactive prompt that will allow you to experiment.
 
 Run `bin/ci` to run every check that GitHub Actions runs (RuboCop, Steep, YARD
 documentation coverage, and the tests with coverage) in a single pass. It runs
