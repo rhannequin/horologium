@@ -200,6 +200,18 @@ Horologium::Duration.nanoseconds(1_000_000_000) ==
   Horologium::Duration.seconds(1)                                     # => true
 ```
 
+Durations add, subtract, and negate among themselves, and read back out in SI
+seconds.
+
+```rb
+Horologium::Duration.seconds(30) + Horologium::Duration.seconds(12)
+Horologium::Duration.seconds(30) - Horologium::Duration.seconds(42)  # negative
+-Horologium::Duration.seconds(3)
+
+Horologium::Duration.days(1).to_r  # => (86400/1), the whole value
+Horologium::Duration.days(1).to_f  # => 86400.0
+```
+
 Adding a duration to an instant makes sense, but adding two instants together
 does not, so it raises an error.
 
