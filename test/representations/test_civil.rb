@@ -274,7 +274,12 @@ class TestRepresentationsCivil < Minitest::Test
     civil = Horologium::Representations::CivilTime.new(2025, 5, 1, 0, 0, 0, 1.5)
 
     error = assert_raises(Horologium::InvalidCivilTimeError) do
-      Horologium::Representations::Civil.parse(civil, nil, :standard)
+      Horologium::Representations::Civil.parse(
+        civil,
+        nil,
+        Horologium::Scales::TAI,
+        :standard
+      )
     end
 
     assert_includes error.message, "is not a fraction of a second"
@@ -282,7 +287,12 @@ class TestRepresentationsCivil < Minitest::Test
 
   def test_a_value_that_is_not_a_civil_time_is_refused
     error = assert_raises(ArgumentError) do
-      Horologium::Representations::Civil.parse(2_443_144.5, nil, :standard)
+      Horologium::Representations::Civil.parse(
+        2_443_144.5,
+        nil,
+        Horologium::Scales::TAI,
+        :standard
+      )
     end
 
     assert_includes error.message, "a civil time is a"
@@ -292,7 +302,12 @@ class TestRepresentationsCivil < Minitest::Test
     civil = Horologium::Representations::CivilTime.new(2025.0, 5, 1)
 
     error = assert_raises(ArgumentError) do
-      Horologium::Representations::Civil.parse(civil, nil, :standard)
+      Horologium::Representations::Civil.parse(
+        civil,
+        nil,
+        Horologium::Scales::TAI,
+        :standard
+      )
     end
 
     assert_includes error.message, "the year of a civil time is an Integer"

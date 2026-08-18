@@ -81,6 +81,8 @@ module Horologium
         #   days, or its high part when a low part follows
         # @param low [Float, Integer, nil] the low part of the Julian Date, in
         #   days
+        # @param _scale [Class] the scale the value is read in, unused: a
+        #   Julian Date means the same in every scale
         # @param precision [Symbol] +:standard+ or +:exact+
         # @return [Horologium::Numeric::TwoPartFloat,
         #   Horologium::Numeric::Exact] the Julian Date, in days
@@ -92,9 +94,10 @@ module Horologium
         #   Horologium::Representations::JulianDate.parse(
         #     "2456463.052272",
         #     nil,
+        #     Horologium::Scales::TAI,
         #     :exact
         #   )
-        def parse(value, low, precision)
+        def parse(value, low, _scale, precision)
           return two_parts(value, low, precision) unless low.nil?
 
           single(value, precision)
