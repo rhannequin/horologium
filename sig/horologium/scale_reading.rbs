@@ -21,5 +21,12 @@ module Horologium
     def initialize: (Symbol scale, Numeric::TwoPartFloat | Numeric::Exact value, Symbol precision, ?Symbol provenance) -> void
 
     def as: (Symbol representation, ?as: Symbol) -> untyped
+
+    def ==: (untyped other) -> bool
+
+    def eql?: (untyped other) -> bool
+
+    def hash: () -> Integer
+
   end
 end

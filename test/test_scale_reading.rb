@@ -113,4 +113,72 @@ class TestScaleReading < Minitest::Test
 
     assert_in_delta 60_796.0, reading.as(:modified_julian_date), 1e-9
   end
+
+  # Equality, so a reading behaves as the value object it is.
+
+  def test_two_readings_of_the_same_moment_in_the_same_scale_are_equal
+    assert_equal Horologium::Instant
+      .from_julian_date(2_443_144.5, scale: :tai)
+      .to(:tt),
+      Horologium::Instant
+        .from_julian_date(2_443_144.5, scale: :tai)
+        .to(:tt)
+  end
+
+  def test_readings_of_the_same_moment_in_different_scales_are_not_equal
+    instant = Horologium::Instant.from_julian_date(2_443_144.5, scale: :tai)
+
+    refute_equal instant.to(:tai), instant.to(:tt)
+  end
+
+  def test_readings_of_different_moments_are_not_equal
+    refute_equal Horologium::Instant
+      .from_julian_date(2_443_144.5, scale: :tai)
+      .to(:tt),
+      Horologium::Instant
+        .from_julian_date(2_443_145.5, scale: :tai)
+        .to(:tt)
+  end
+
+  def test_a_reading_is_not_equal_to_a_value_of_another_type
+    reading = Horologium::Instant
+      .from_julian_date(2_443_144.5, scale: :tai)
+      .to(:tt)
+
+    refute_equal reading, Object.new
+  end
+
+  def test_equality_ignores_the_precision
+    assert_equal Horologium::Instant
+      .from_julian_date(2_443_144.5, scale: :tai)
+      .to(:tai),
+      Horologium::Instant
+        .from_julian_date(2_443_144.5, scale: :tai, precision: :exact)
+        .to(:tai)
+  end
+
+  def test_eql_takes_the_precision_into_account
+    standard = Horologium::Instant
+      .from_julian_date(2_443_144.5, scale: :tai)
+      .to(:tai)
+    exact = Horologium::Instant
+      .from_julian_date(2_443_144.5, scale: :tai, precision: :exact)
+      .to(:tai)
+
+    refute standard.eql?(exact)
+  end
+
+  def test_it_works_as_a_hash_key
+    readings = {
+      Horologium::Instant
+        .from_julian_date(2_443_144.5, scale: :tai)
+        .to(:tt) => :found
+    }
+
+    assert_equal :found, readings[
+      Horologium::Instant
+        .from_julian_date(2_443_144.5, scale: :tai)
+        .to(:tt)
+    ]
+  end
 end
