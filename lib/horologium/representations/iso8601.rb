@@ -71,6 +71,8 @@ module Horologium
         #   scale
         # @param _output [Symbol] ignored; an ISO 8601 reading is a String
         # @return [String] the date and time, in extended ISO 8601
+        # @raise [InvalidCivilTimeError] before {Civil::MINIMUM_YEAR}, where
+        #   the calendar conversion stops
         # @example
         #   instant = Horologium::Instant.from_julian_date(
         #     2_443_144.5,

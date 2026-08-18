@@ -36,6 +36,15 @@ module Horologium
       # truncating division the C routines are written in.
       MINIMUM_YEAR = -4799
 
+      # The Julian Day Number of {MINIMUM_YEAR}-01-01, the earliest day the
+      # calendar conversion covers. It bounds the way out as {MINIMUM_YEAR}
+      # bounds the way in, so a reading is never handed back a date that
+      # {parse} would refuse to read.
+      #
+      # @api private
+      MINIMUM_DAY_NUMBER = -31_738
+      private_constant :MINIMUM_DAY_NUMBER
+
       # Half a day, the offset between a Julian Date, which starts at noon,
       # and the day the calendar counts, which starts at midnight.
       #
@@ -76,6 +85,8 @@ module Horologium
         # @return [Horologium::Representations::CivilTime]
         # @raise [UnknownOutputError] when the output type is not one of
         #   {OUTPUTS}
+        # @raise [InvalidCivilTimeError] before {MINIMUM_YEAR}, where the
+        #   calendar conversion stops
         # @example
         #   instant = Horologium::Instant.from_julian_date(
         #     2_443_144.5,
@@ -219,9 +230,21 @@ module Horologium
         # +eraJd2cal+ performs. The intermediate quantities are cycles of the
         # calendar rather than dates, which is why they are named as they are.
         #
+        # A day before {MINIMUM_DAY_NUMBER} is refused, because {parse} stops
+        # at {MINIMUM_YEAR} and a date rendered below it could not be read
+        # back into the instant it came from.
+        #
         # @param day_number [Integer] the Julian Day Number
         # @return [Array(Integer, Integer, Integer)] the year, month, and day
+        # @raise [InvalidCivilTimeError] before {MINIMUM_DAY_NUMBER}
         def calendar(day_number)
+          if day_number < MINIMUM_DAY_NUMBER
+            raise InvalidCivilTimeError,
+              "this instant is before #{MINIMUM_YEAR}-01-01, where the " \
+              "calendar conversion stops; the continuous scales have no such " \
+              "limit, so read it as a Julian Date instead"
+          end
+
           remainder = day_number + 68_569
           cycles = 4 * remainder / 146_097
           remainder -= (146_097 * cycles + 3) / 4
