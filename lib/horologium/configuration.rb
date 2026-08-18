@@ -12,15 +12,24 @@ module Horologium
     BUILT_IN_SCALES = {
       tai: Scales::TAI,
       tt: Scales::TT,
-      tdb: Scales::TDB
+      tdb: Scales::TDB,
+      utc: Scales::UTC
     }.freeze
 
     # @return [Symbol] the default precision, +:standard+ until configured
     attr_reader :default_precision
 
+    # The source UTC reads its leap seconds from. It answers +tai_utc_at+ with
+    # TAI - UTC at a day's 0h. {Data::LeapSeconds}, over the iers gem, is the
+    # default; a caller with its own leap second data can set another here.
+    #
+    # @return [#tai_utc_at]
+    attr_reader :leap_second_source
+
     def initialize
       @default_precision = :standard
       @scales = BUILT_IN_SCALES.dup
+      @leap_second_source = Data::LeapSeconds
     end
 
     # The names an instant can be read in, the built-in scales and any scale
@@ -43,6 +52,28 @@ module Horologium
       end
 
       @default_precision = Numeric::Precision.validate!(precision)
+    end
+
+    # Sets the source UTC reads its leap seconds from. A source that does not
+    # answer +tai_utc_at+ is refused here, at configuration time, rather than
+    # when an instant is first read in UTC.
+    #
+    # @param source [#tai_utc_at] the source to read from
+    # @return [#tai_utc_at] the source that was set
+    # @raise [ConfigurationError] once the configuration is frozen, or when the
+    #   source does not respond to +tai_utc_at+
+    def leap_second_source=(source)
+      if frozen?
+        raise ConfigurationError, "the configuration is already frozen"
+      end
+
+      unless source.respond_to?(:tai_utc_at)
+        raise ConfigurationError,
+          "a leap second source must respond to tai_utc_at, " \
+          "got #{source.inspect}"
+      end
+
+      @leap_second_source = source
     end
 
     # Registers a time scale under a name, so an instant can be read in it

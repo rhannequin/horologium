@@ -46,6 +46,13 @@ module Horologium
   # message says which field is wrong and what it may hold.
   class InvalidCivilTimeError < Error; end
 
+  # Raised when a moment falls outside a scale's domain of validity, such as a
+  # UTC reading before 1972, where UTC does not yet run in whole leap seconds.
+  # The instant itself is still a point on the timeline; it is only the label
+  # in that scale that has no meaning, so the message names a scale that does
+  # reach it.
+  class OutOfRangeError < Error; end
+
   # Raised when a time scale that is not registered is asked for. It carries
   # the registered scales so the caller can see the valid choices.
   class UnknownScaleError < Error

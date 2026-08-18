@@ -28,9 +28,9 @@ module Horologium
       # build it again every time.
       #
       # @api private
-      OFFSETS = Numeric::Precision::NAMES.to_h do |precision|
+      OFFSETS = Numeric::Precision::NAMES.map do |precision|
         [precision, Numeric::Precision.build(DAYS_AHEAD_OF_TAI, precision)]
-      end.freeze
+      end.to_h.freeze
       private_constant :OFFSETS
 
       class << self

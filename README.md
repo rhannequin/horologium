@@ -110,6 +110,43 @@ after a `T`, a fraction of a second kept to every digit, and an optional `Z` or
 numeric offset applied as plain arithmetic, not a time zone. A week date, an
 ordinal date, or anything outside the subset is refused with a `ParseError`.
 
+UTC is the scale of civil clocks, the one that holds a leap second now and
+then to keep step with the Earth's rotation. `from_utc` reads a UTC date, and
+a leap second is a legal reading: the second is 60 on a day that holds one, and
+that moment really existed.
+
+```rb
+Horologium::Instant.from_utc(2025, 5, 1, 12, 0, 0)
+
+leap = Horologium::Instant.from_utc(2016, 12, 31, 23, 59, 60)
+leap.as(:iso8601, scale: :utc)  # => "2016-12-31T23:59:60.000000000Z"
+```
+
+A leap second is a real second on the timeline, so the arithmetic is right
+across it: the second before 23:59:60, the leap second, and the next midnight
+are one SI second apart each. Second 60 on a day with no leap second is
+refused.
+
+```rb
+before = Horologium::Instant.from_utc(2016, 12, 31, 23, 59, 59)
+before + Horologium::Duration.seconds(1) ==
+  Horologium::Instant.from_utc(2016, 12, 31, 23, 59, 60)  # => true
+
+Horologium::Instant.from_utc(2020, 6, 15, 23, 59, 60)
+# => raises Horologium::InvalidCivilTimeError
+```
+
+UTC runs from 1972, where it settled into whole leap seconds. An earlier UTC
+date raises `Horologium::OutOfRangeError`. The instant is still reachable, only
+its UTC label is not, so the error names the continuous scales, which have no
+lower bound. The leap seconds come from the [iers] gem, with no network access:
+the data ships with the gem.
+
+```rb
+Horologium::Instant.from_utc(1971, 12, 31)                  # => OutOfRangeError
+Horologium::Instant.from_civil(1971, 12, 31, scale: :tt)    # reaches any date
+```
+
 A Julian Date is around 2.46 million, which leaves a single `Float` about 40
 microseconds for the fraction of a day, and the loss is already in the literal
 before Horologium sees it. So the lossless shapes come first: a `String` and a

@@ -6,13 +6,19 @@ module Horologium
 
     @scales: Hash[Symbol, singleton(Scales::Base)]
 
+    @leap_second_source: untyped
+
     attr_reader default_precision: Symbol
+
+    attr_reader leap_second_source: untyped
 
     def initialize: () -> void
 
     def scale_names: () -> Array[Symbol]
 
     def default_precision=: (Symbol precision) -> Symbol
+
+    def leap_second_source=: (untyped source) -> untyped
 
     def register_scale: (Symbol name, singleton(Scales::Base) scale) -> singleton(Scales::Base)
 

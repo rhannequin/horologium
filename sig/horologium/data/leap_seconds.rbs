@@ -1,0 +1,9 @@
+module Horologium
+  module Data
+    module LeapSeconds
+      MJD_OFFSET: Integer
+
+      def self.tai_utc_at: (Integer day_number) -> (Integer | Rational)
+    end
+  end
+end

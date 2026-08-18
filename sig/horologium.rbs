@@ -34,6 +34,9 @@ module Horologium
   class InvalidCivilTimeError < Error
   end
 
+  class OutOfRangeError < Error
+  end
+
   class UnknownScaleError < Error
     attr_reader known_scales: Array[Symbol]
 

@@ -159,19 +159,55 @@ module Horologium
         scale:,
         precision: Horologium.current_precision
       )
-        civil =
-          if year.is_a?(Representations::CivilTime)
-            year
-          else
-            Representations::Civil
-              .from_fields(year, month, day, hour, minute, second)
-          end
-
         from_representation(
           Representations::Civil,
-          civil,
+          civil_time(year, month, day, hour, minute, second),
           nil,
           scale,
+          precision
+        )
+      end
+
+      # Builds an instant from a UTC calendar date and time. It is
+      # {from_civil} read in UTC, the scale of civil clocks, so a leap second
+      # is a legal reading: the second may be 60 on a day that holds one.
+      #
+      # UTC runs from 1972-01-01. An earlier date raises {OutOfRangeError} and
+      # names the continuous constructors, which reach any date.
+      #
+      # @param year [Integer, Horologium::Representations::CivilTime] the year,
+      #   or a civil time holding every field
+      # @param month [Integer, nil] the month, from 1 to 12
+      # @param day [Integer, nil] the day of the month
+      # @param hour [Integer] the hour, from 0 to 23
+      # @param minute [Integer] the minute, from 0 to 59
+      # @param second [Integer, Float, Rational] the second, whole or with a
+      #   fraction under it, and 60 in a leap second
+      # @param precision [Symbol] +:standard+ or +:exact+, taken from the
+      #   precision in effect when omitted
+      # @return [Horologium::Instant]
+      # @raise [OutOfRangeError] before 1972-01-01
+      # @raise [InvalidCivilTimeError] when the fields are not a real date and
+      #   time, such as second 60 on a day with no leap second
+      # @raise [UnknownPrecisionError] when the precision is not recognised
+      # @example
+      #   Horologium::Instant.from_utc(2025, 5, 1, 12, 0, 0)
+      # @example The 2016 leap second, a moment that existed
+      #   Horologium::Instant.from_utc(2016, 12, 31, 23, 59, 60)
+      def from_utc(
+        year,
+        month = nil,
+        day = nil,
+        hour = 0,
+        minute = 0,
+        second = 0,
+        precision: Horologium.current_precision
+      )
+        from_representation(
+          Representations::Civil,
+          civil_time(year, month, day, hour, minute, second),
+          nil,
+          :utc,
           precision
         )
       end
@@ -215,6 +251,31 @@ module Horologium
       end
 
       private
+
+      # A civil time from the fields a constructor was called with. A
+      # {Representations::CivilTime} is passed straight through, which is what
+      # a reading taken with +as(:civil)+ returns; anything else is a set of
+      # calendar fields to assemble.
+      #
+      # @param year [Integer, Horologium::Representations::CivilTime]
+      # @param month [Integer, nil]
+      # @param day [Integer, nil]
+      # @param hour [Integer]
+      # @param minute [Integer]
+      # @param second [Integer, Float, Rational]
+      # @return [Horologium::Representations::CivilTime]
+      def civil_time(year, month, day, hour, minute, second)
+        return year if year.is_a?(Representations::CivilTime)
+
+        Representations::Civil.from_fields(
+          year,
+          month,
+          day,
+          hour,
+          minute,
+          second
+        )
+      end
 
       # Builds an instant from a value given in a representation and read in a
       # scale. The representation says what the number means, the scale reads

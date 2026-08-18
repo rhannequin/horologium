@@ -184,16 +184,37 @@ module Horologium
           end
 
           year, month, day = calendar(day_number)
+          hour, minute, second = clock(whole)
 
           CivilTime.new(
             year,
             month,
             day,
-            whole / SECONDS_PER_HOUR,
-            whole % SECONDS_PER_HOUR / SECONDS_PER_MINUTE,
-            whole % SECONDS_PER_MINUTE,
+            hour,
+            minute,
+            second,
             fraction
           )
+        end
+
+        # The hour, minute, and second a count of seconds into the day falls
+        # on. Below 86,400 the count divides into the clock as usual. At or
+        # above it, which only a day holding a leap second reaches, the extra
+        # seconds are the leap second in the last minute, read as 23:59:60 and
+        # up rather than rolling into the next hour.
+        #
+        # @param whole [Integer] the whole seconds into the day
+        # @return [Array(Integer, Integer, Integer)] the hour, minute, second
+        def clock(whole)
+          if whole < Duration::SECONDS_PER_DAY
+            [
+              whole / SECONDS_PER_HOUR,
+              whole % SECONDS_PER_HOUR / SECONDS_PER_MINUTE,
+              whole % SECONDS_PER_MINUTE
+            ]
+          else
+            [23, 59, whole - (Duration::SECONDS_PER_DAY - SECONDS_PER_MINUTE)]
+          end
         end
 
         # The calendar date a Julian Day Number falls on, the conversion

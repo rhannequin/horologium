@@ -3,7 +3,7 @@ module Horologium
     class Iso8601
       PATTERN: Regexp
 
-      NANOSECONDS_PER_DAY: Integer
+      HALF_DAY: Rational
 
       def self.render: (ScaleReading reading, ?Symbol _output) -> String
 
