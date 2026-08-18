@@ -131,14 +131,12 @@ module Horologium
 
         # A Julian Date given as a single number.
         #
-        # @param value [String, Rational, Integer, Float] the Julian Date, in
-        #   days
+        # @param value [String, Rational, Integer, Float]
         # @param precision [Symbol] +:standard+ or +:exact+
         # @return [Horologium::Numeric::TwoPartFloat,
         #   Horologium::Numeric::Exact] the Julian Date, in days
         # @raise [ParseError] when a String does not spell a Julian Date
         # @raise [ArgumentError] when it is not a number the library reads
-        # @raise [UnknownPrecisionError] when the precision is not recognised
         def single(value, precision)
           case value
           when String

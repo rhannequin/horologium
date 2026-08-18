@@ -31,10 +31,10 @@ module Horologium
       # and an optional time of day after a +T+, down to an optional fraction
       # of a second and an optional +Z+ or numeric offset. The year is four
       # digits or more, with a minus sign for a year before 1. A numeric offset
-      # runs from -23:59 to +23:59. Anything outside this shape — a week date,
-      # an ordinal date, a bare hour, a comma for the decimal point, a space
-      # for the +T+, an offset out of range — is refused, rather than read part
-      # way.
+      # runs from -23:59 to +23:59. Anything outside that shape is refused
+      # rather than read part way: a week date, an ordinal date, a bare hour,
+      # a comma for the decimal point, a space for the +T+, an offset out of
+      # range.
       #
       # @api private
       PATTERN = /
@@ -232,19 +232,18 @@ module Horologium
           }
         end
 
-        # A group of digits from the pattern, as an Integer, or 0 when the
-        # group was not there, so an omitted time of day is midnight.
+        # 0 when the group was not there, so an omitted time of day is
+        # midnight.
         #
-        # @param group [String, nil] the digits, or nil
+        # @param group [String, nil]
         # @return [Integer]
         def digits(group)
           group.nil? ? 0 : Integer(group, 10)
         end
 
-        # The fraction of a second the digits after the decimal point spell,
-        # exactly, keeping every digit whatever there is of it.
+        # Exact, keeping every digit there is.
         #
-        # @param group [String, nil] the digits after the decimal point, or nil
+        # @param group [String, nil] the digits after the decimal point
         # @return [Rational, Integer] the fraction, or 0 when there was none
         def fraction(group)
           return 0 if group.nil?

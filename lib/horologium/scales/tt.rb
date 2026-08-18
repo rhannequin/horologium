@@ -41,7 +41,6 @@ module Horologium
         # @param precision [Symbol] +:standard+ or +:exact+
         # @return [Horologium::Numeric::TwoPartFloat,
         #   Horologium::Numeric::Exact] the Julian Date in TT, in days
-        # @raise [UnknownPrecisionError] when the precision is not recognised
         def from_reference(value, precision)
           Numeric::Precision.add(value, offset(precision))
         end
@@ -53,18 +52,15 @@ module Horologium
         # @param precision [Symbol] +:standard+ or +:exact+
         # @return [Horologium::Numeric::TwoPartFloat,
         #   Horologium::Numeric::Exact] the Julian Date in TAI, in days
-        # @raise [UnknownPrecisionError] when the precision is not recognised
         def to_reference(value, precision)
           Numeric::Precision.subtract(value, offset(precision))
         end
 
         private
 
-        # The offset in days, at the given precision.
-        #
         # @param precision [Symbol] +:standard+ or +:exact+
         # @return [Horologium::Numeric::TwoPartFloat,
-        #   Horologium::Numeric::Exact] the offset
+        #   Horologium::Numeric::Exact] the offset in days
         # @raise [UnknownPrecisionError] when the precision is not recognised
         def offset(precision)
           OFFSETS.fetch(Numeric::Precision.validate!(precision))

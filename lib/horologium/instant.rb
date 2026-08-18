@@ -93,8 +93,6 @@ module Horologium
       # @raise [ArgumentError] when it is none of the shapes
       #   {from_julian_date} takes
       # @raise [UnknownPrecisionError] when the precision is not recognised
-      # @example
-      #   Horologium::Instant.from_modified_julian_date(60_796.0, scale: :tai)
       def from_modified_julian_date(
         value,
         low = nil,
@@ -140,8 +138,6 @@ module Horologium
       #   time
       # @raise [ArgumentError] when a field is not a number the library reads
       # @raise [UnknownPrecisionError] when the precision is not recognised
-      # @example
-      #   Horologium::Instant.from_civil(2025, 5, 1, 12, 0, 0, scale: :tt)
       # @example A fractional second, said exactly
       #   Horologium::Instant.from_civil(
       #     2025, 5, 1, 12, 0, Rational(1, 4), scale: :tt
@@ -172,22 +168,14 @@ module Horologium
       # {from_civil} read in TAI, the continuous scale the library stores
       # instants in.
       #
-      # @param year [Integer, Horologium::Representations::CivilTime] the year,
-      #   or a civil time holding every field
-      # @param month [Integer, nil] the month, from 1 to 12
-      # @param day [Integer, nil] the day of the month
-      # @param hour [Integer] the hour, from 0 to 23
-      # @param minute [Integer] the minute, from 0 to 59
-      # @param second [Integer, Float, Rational] the second, whole or with a
-      #   fraction under it
-      # @param precision [Symbol] +:standard+ or +:exact+, taken from the
-      #   precision in effect when omitted
+      # The fields are {from_civil}'s, and a {Representations::CivilTime}
+      # may be passed on its own.
+      #
       # @return [Horologium::Instant]
       # @raise [InvalidCivilTimeError] when the fields are not a real date and
       #   time
       # @raise [UnknownPrecisionError] when the precision is not recognised
-      # @example
-      #   Horologium::Instant.from_tai(2025, 5, 1, 12, 0, 0)
+      # @see from_civil
       def from_tai(
         year,
         month = nil,
@@ -210,22 +198,14 @@ module Horologium
       # read in TT, the scale the theories of the solar system motion are
       # written in.
       #
-      # @param year [Integer, Horologium::Representations::CivilTime] the year,
-      #   or a civil time holding every field
-      # @param month [Integer, nil] the month, from 1 to 12
-      # @param day [Integer, nil] the day of the month
-      # @param hour [Integer] the hour, from 0 to 23
-      # @param minute [Integer] the minute, from 0 to 59
-      # @param second [Integer, Float, Rational] the second, whole or with a
-      #   fraction under it
-      # @param precision [Symbol] +:standard+ or +:exact+, taken from the
-      #   precision in effect when omitted
+      # The fields are {from_civil}'s, and a {Representations::CivilTime}
+      # may be passed on its own.
+      #
       # @return [Horologium::Instant]
       # @raise [InvalidCivilTimeError] when the fields are not a real date and
       #   time
       # @raise [UnknownPrecisionError] when the precision is not recognised
-      # @example
-      #   Horologium::Instant.from_tt(2025, 5, 1, 12, 0, 0)
+      # @see from_civil
       def from_tt(
         year,
         month = nil,
@@ -248,22 +228,14 @@ module Horologium
       # {from_civil} read in TDB, the scale the planetary ephemerides are
       # written in.
       #
-      # @param year [Integer, Horologium::Representations::CivilTime] the year,
-      #   or a civil time holding every field
-      # @param month [Integer, nil] the month, from 1 to 12
-      # @param day [Integer, nil] the day of the month
-      # @param hour [Integer] the hour, from 0 to 23
-      # @param minute [Integer] the minute, from 0 to 59
-      # @param second [Integer, Float, Rational] the second, whole or with a
-      #   fraction under it
-      # @param precision [Symbol] +:standard+ or +:exact+, taken from the
-      #   precision in effect when omitted
+      # The fields are {from_civil}'s, and a {Representations::CivilTime}
+      # may be passed on its own.
+      #
       # @return [Horologium::Instant]
       # @raise [InvalidCivilTimeError] when the fields are not a real date and
       #   time
       # @raise [UnknownPrecisionError] when the precision is not recognised
-      # @example
-      #   Horologium::Instant.from_tdb(2025, 5, 1, 12, 0, 0)
+      # @see from_civil
       def from_tdb(
         year,
         month = nil,
@@ -289,23 +261,14 @@ module Horologium
       # UTC runs from 1972-01-01. An earlier date raises {OutOfRangeError} and
       # names the continuous constructors, which reach any date.
       #
-      # @param year [Integer, Horologium::Representations::CivilTime] the year,
-      #   or a civil time holding every field
-      # @param month [Integer, nil] the month, from 1 to 12
-      # @param day [Integer, nil] the day of the month
-      # @param hour [Integer] the hour, from 0 to 23
-      # @param minute [Integer] the minute, from 0 to 59
-      # @param second [Integer, Float, Rational] the second, whole or with a
-      #   fraction under it, and 60 in a leap second
-      # @param precision [Symbol] +:standard+ or +:exact+, taken from the
-      #   precision in effect when omitted
+      # The fields are {from_civil}'s.
+      #
       # @return [Horologium::Instant]
       # @raise [OutOfRangeError] before 1972-01-01
       # @raise [InvalidCivilTimeError] when the fields are not a real date and
       #   time, such as second 60 on a day with no leap second
       # @raise [UnknownPrecisionError] when the precision is not recognised
-      # @example
-      #   Horologium::Instant.from_utc(2025, 5, 1, 12, 0, 0)
+      # @see from_civil
       # @example The 2016 leap second, a moment that existed
       #   Horologium::Instant.from_utc(2016, 12, 31, 23, 59, 60)
       def from_utc(
@@ -347,8 +310,6 @@ module Horologium
       # @raise [InvalidCivilTimeError] when the date and time do not exist
       # @raise [ArgumentError] when the value is not a String
       # @raise [UnknownPrecisionError] when the precision is not recognised
-      # @example
-      #   Horologium::Instant.from_iso8601("2025-05-01T12:00:00", scale: :tt)
       # @example A numeric offset, subtracted to reach the scale
       #   Horologium::Instant.from_iso8601(
       #     "2025-05-01T13:00:00+01:00",
@@ -420,9 +381,6 @@ module Horologium
     # @param duration [Horologium::Duration] the amount to move forward
     # @return [Horologium::Instant]
     # @raise [DimensionalError] when given anything but a Duration
-    # @example
-    #   Horologium::Instant.from_julian_date(2_460_000.5, scale: :tai) +
-    #     Horologium::Duration.days(1)
     def +(duration) # rubocop:disable Naming/BinaryOperatorParameterName
       unless duration.is_a?(Duration)
         raise DimensionalError,
@@ -441,9 +399,6 @@ module Horologium
     # @param other [Horologium::Duration, Horologium::Instant]
     # @return [Horologium::Instant, Horologium::Duration]
     # @raise [DimensionalError] when given anything else
-    # @example An earlier instant
-    #   Horologium::Instant.from_julian_date(2_460_000.5, scale: :tai) -
-    #     Horologium::Duration.days(1)
     # @example The Duration between two instants
     #   a = Horologium::Instant.from_julian_date(2_460_000.5, scale: :tai)
     #   b = Horologium::Instant.from_julian_date(2_460_001.5, scale: :tai)
@@ -479,9 +434,6 @@ module Horologium
     #   as UTC before 1972
     # @raise [OutOfDataRangeError] when UTC is past the leap second data
     #   horizon and +leap_second_horizon+ is +:raise+
-    # @example
-    #   instant = Horologium::Instant.from_julian_date(2_443_144.5, scale: :tai)
-    #   instant.to(:tt).as(:julian_date) # => 2443144.5003725
     def to(scale)
       time_scale = Horologium.configuration.scale(scale)
       reading = time_scale.from_reference(value, precision)
@@ -499,9 +451,6 @@ module Horologium
     # @raise [UnknownScaleError] when no scale is registered under that name
     # @raise [UnknownRepresentationError] when the representation is not one
     #   the library has
-    # @example
-    #   instant = Horologium::Instant.from_julian_date(2_443_144.5, scale: :tai)
-    #   instant.as(:julian_date, scale: :tt, as: :rational)
     def as(representation, scale:, as: :float)
       to(scale).as(representation, as: as)
     end
@@ -512,10 +461,6 @@ module Horologium
     # @param other [Horologium::Instant] the instant to compare with
     # @param tolerance [Horologium::Duration] the largest gap counted as equal
     # @return [Boolean]
-    # @example
-    #   a = Horologium::Instant.from_julian_date(2_460_000.5, scale: :tai)
-    #   b = a + Horologium::Duration.nanoseconds(1)
-    #   a.equal_within?(b, Horologium::Duration.nanoseconds(2)) # => true
     def equal_within?(other, tolerance)
       unless other.is_a?(Instant)
         raise DimensionalError,

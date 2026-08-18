@@ -16,9 +16,8 @@ module Horologium
     # so nothing is lost on the way in or out, and precision only re-enters
     # when the fraction of a second is rendered in the type asked for. That
     # makes it more accurate than +eraJd2cal+, which does the same work in
-    # double precision. It also makes it slower, which is the right trade here:
-    # reading a civil date is a display step, where the Julian Date and the
-    # Duration are the values arithmetic runs on.
+    # double precision, and slower. Reading a civil date is a display step;
+    # the Julian Date and the Duration are what arithmetic runs on.
     #
     # @example
     #   instant = Horologium::Instant.from_civil(2025, 5, 1, 12, scale: :tt)
@@ -32,10 +31,9 @@ module Horologium
       OUTPUTS = %i[float rational].freeze
 
       # The earliest year the calendar conversion covers, the range ERFA
-      # documents for +eraCal2jd+. It is also where the arithmetic stays
-      # honest: every intermediate is non-negative from here on, so Ruby's
-      # flooring integer division agrees with the truncating division the C
-      # routines are written in.
+      # documents for +eraCal2jd+. Every intermediate is non-negative from
+      # here on, so Ruby's flooring integer division agrees with the
+      # truncating division the C routines are written in.
       MINIMUM_YEAR = -4799
 
       # Half a day, the offset between a Julian Date, which starts at noon,
@@ -218,9 +216,8 @@ module Horologium
         end
 
         # The calendar date a Julian Day Number falls on, the conversion
-        # +eraJd2cal+ performs. The intermediate quantities the algorithm
-        # counts in have no names of their own; they are cycles of the
-        # calendar, not dates.
+        # +eraJd2cal+ performs. The intermediate quantities are cycles of the
+        # calendar rather than dates, which is why they are named as they are.
         #
         # @param day_number [Integer] the Julian Day Number
         # @return [Array(Integer, Integer, Integer)] the year, month, and day
@@ -445,9 +442,9 @@ module Horologium
           civil.hour == 23 && civil.minute == 59
         end
 
-        # The message for a second outside its minute. A second 60 that the day
-        # does not reach is named as the leap second it would be, since that is
-        # the mistake worth explaining; anything else states the range.
+        # The message for a second outside its minute. A second 60 the day does
+        # not reach is named as the leap second it would be; anything else
+        # states the range.
         #
         # @param civil [Horologium::Representations::CivilTime] the civil time
         # @param highest [Integer] the highest second the minute reaches

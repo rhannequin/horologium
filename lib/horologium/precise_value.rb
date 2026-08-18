@@ -52,10 +52,9 @@ module Horologium
       rational <=> other.rational
     end
 
-    # Stricter equality, for Hash keys and Sets. Two values are eql? only when
-    # they are the same kind, share a precision, and denote the same value.
+    # Stricter than +==+: the precision must match too.
     #
-    # @param other [Object] the value to compare with
+    # @param other [Object]
     # @return [Boolean]
     def eql?(other)
       other.is_a?(self.class) &&
@@ -63,8 +62,7 @@ module Horologium
         rational == other.rational
     end
 
-    # @return [Integer] a hash matching {eql?}, from the kind, precision, and
-    #   value
+    # @return [Integer] a hash matching {eql?}
     def hash
       [self.class, precision, rational].hash
     end

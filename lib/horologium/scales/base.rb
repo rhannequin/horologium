@@ -88,13 +88,12 @@ module Horologium
           ""
         end
 
-        # How well founded a reading in this scale is. A continuous scale is
-        # +:measured+ everywhere, its conversions resting on constants and
-        # models rather than revised data. UTC is the exception: it reads
-        # +:extrapolated+ past the point its leap second data vouches for.
+        # A continuous scale is +:measured+ everywhere, its conversions
+        # resting on constants and models rather than revised data. UTC is the
+        # exception; see {UTC.provenance}.
         #
         # @param _value [Horologium::Numeric::TwoPartFloat,
-        #   Horologium::Numeric::Exact] the Julian Date in this scale, in days
+        #   Horologium::Numeric::Exact]
         # @return [Symbol] +:measured+
         def provenance(_value)
           :measured

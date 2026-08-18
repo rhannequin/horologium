@@ -78,10 +78,6 @@ module Horologium
     # The same length, never negative.
     #
     # @return [Horologium::Duration]
-    # @example
-    #   Horologium::Duration.seconds(-3).abs ==
-    #     Horologium::Duration.seconds(3)
-    #   # => true
     def abs
       rational.negative? ? self.class.new(value * -1, precision) : self
     end
