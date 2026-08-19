@@ -1,6 +1,8 @@
 module Horologium
   VERSION: String
 
+  CONFIGURATION_LOCK: Thread::Mutex
+
   def self.configure: () ?{ (Configuration config) -> void } -> Configuration
 
   def self.configuration: () -> Configuration

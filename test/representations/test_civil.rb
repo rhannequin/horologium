@@ -320,4 +320,47 @@ class TestRepresentationsCivil < Minitest::Test
 
     assert_includes error.message, "pass a Rational"
   end
+
+  # The way out stops where the way in does.
+
+  def test_the_earliest_date_it_reads_is_the_earliest_it_writes
+    earliest = Horologium::Instant.from_civil(
+      Horologium::Representations::Civil::MINIMUM_YEAR, 1, 1,
+      scale: :tai,
+      precision: :exact
+    )
+    civil = earliest.as(:civil, scale: :tai, as: :rational)
+
+    assert_equal [Horologium::Representations::Civil::MINIMUM_YEAR, 1, 1],
+      [civil.year, civil.month, civil.day]
+  end
+
+  def test_a_date_before_the_earliest_one_is_refused_on_the_way_out
+    instant = Horologium::Instant.from_julian_date(
+      -31_739.5,
+      scale: :tai,
+      precision: :exact
+    )
+
+    error = assert_raises(Horologium::InvalidCivilTimeError) do
+      instant.as(:civil, scale: :tai)
+    end
+
+    assert_includes error.message, "the calendar conversion stops"
+  end
+
+  def test_a_reading_out_reads_back_into_the_instant_it_came_from
+    instant = Horologium::Instant.from_julian_date(
+      -31_738.5,
+      scale: :tai,
+      precision: :exact
+    )
+
+    assert_equal instant,
+      Horologium::Instant.from_civil(
+        instant.as(:civil, scale: :tai, as: :rational),
+        scale: :tai,
+        precision: :exact
+      )
+  end
 end

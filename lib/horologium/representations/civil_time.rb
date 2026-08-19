@@ -28,41 +28,29 @@ module Horologium
     #   civil.year   # => 2025
     #   civil.hour   # => 12
     class CivilTime
-      # The year, in astronomical numbering.
-      #
-      # @return [Integer]
+      # @return [Integer] the year, in astronomical numbering
       attr_reader :year
 
-      # The month, from 1 to 12.
-      #
-      # @return [Integer]
+      # @return [Integer] the month, from 1 to 12
       attr_reader :month
 
-      # The day of the month, from 1.
-      #
-      # @return [Integer]
+      # @return [Integer] the day of the month, from 1
       attr_reader :day
 
-      # The hour, from 0 to 23.
-      #
-      # @return [Integer]
+      # @return [Integer] the hour, from 0 to 23
       attr_reader :hour
 
-      # The minute, from 0 to 59.
-      #
-      # @return [Integer]
+      # @return [Integer] the minute, from 0 to 59
       attr_reader :minute
 
-      # The whole second, from 0 to 59, and 60 on a day that holds a leap
-      # second.
-      #
-      # @return [Integer]
+      # @return [Integer] the whole second, from 0 to 59, and 60 on a day
+      #   that holds a leap second
       attr_reader :second
 
       # The part of a second under {#second}, from 0 up to but not including
       # 1. Its type is the one asked for when the reading was rendered: a Float
-      # by default, a Rational under +as: :rational+, which is the shape that
-      # keeps the whole value.
+      # by default, a Rational under +as: :rational+, which keeps the whole
+      # value.
       #
       # @return [Float, Rational, Integer]
       attr_reader :second_fraction
@@ -99,8 +87,7 @@ module Horologium
       # one are equal only when they are the same number, so a reading rendered
       # as a Float is not equal to the same reading rendered as a Rational
       # unless the Float happened to hold it exactly. This is how {Instant}
-      # compares too, and it is the library declining to call a rounded value
-      # the value it was rounded from.
+      # compares too.
       #
       # @param other [Object] the object to compare
       # @return [Boolean]
@@ -108,15 +95,13 @@ module Horologium
         other.is_a?(CivilTime) && fields == other.fields
       end
 
-      # The same comparison as {#==}, so a civil time works as a Hash key.
-      #
-      # @param other [Object] the object to compare
+      # @param other [Object]
       # @return [Boolean]
       def eql?(other)
         self == other
       end
 
-      # @return [Integer] a hash matching {#eql?}
+      # @return [Integer]
       def hash
         [self.class, fields].hash
       end

@@ -42,6 +42,8 @@ module Horologium
 
     def equal_within?: (Instant other, Duration tolerance) -> bool
 
+    def inspect: () -> String
+
     private
 
     def seconds_to_days: (Duration duration, Symbol precision) -> (Numeric::TwoPartFloat | Numeric::Exact)

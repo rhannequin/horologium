@@ -10,6 +10,11 @@ module Horologium
   # precision in effect unless you pass one. At +:standard+ it holds the
   # seconds as a {Numeric::TwoPartFloat}, at +:exact+ as a {Numeric::Exact}.
   #
+  # Two durations add and subtract to give another duration, and one negates.
+  # Mixing a +:standard+ and an +:exact+ operand gives an +:exact+ result.
+  # Adding an Instant to a Duration raises {DimensionalError}; it is
+  # {Instant#+} that shifts a point by a span.
+  #
   # @example A day is a fixed number of SI seconds
   #   Horologium::Duration.days(1) == Horologium::Duration.seconds(86_400)
   #   # => true
@@ -75,15 +80,91 @@ module Horologium
       end
     end
 
+    # @param other [Horologium::Duration]
+    # @return [Horologium::Duration]
+    # @raise [DimensionalError] when given anything but a Duration
+    def +(other)
+      unless other.is_a?(Duration)
+        raise DimensionalError,
+          "cannot add a #{other.class} to a Duration; " \
+          "only a Duration combines with a Duration"
+      end
+
+      precision = Numeric::Precision.resolve(self.precision, other.precision)
+
+      self.class.new(
+        Numeric::Precision.add(value, other.value),
+        precision
+      )
+    end
+
+    # Negative when the other is the longer of the two.
+    #
+    # @param other [Horologium::Duration]
+    # @return [Horologium::Duration]
+    # @raise [DimensionalError] when given anything but a Duration
+    def -(other)
+      unless other.is_a?(Duration)
+        raise DimensionalError,
+          "cannot subtract a #{other.class} from a Duration; " \
+          "only a Duration combines with a Duration"
+      end
+
+      precision = Numeric::Precision.resolve(self.precision, other.precision)
+
+      self.class.new(
+        Numeric::Precision.subtract(value, other.value),
+        precision
+      )
+    end
+
+    # The same length, the other way round.
+    #
+    # @return [Horologium::Duration]
+    def -@
+      self.class.new(value * -1, precision)
+    end
+
     # The same length, never negative.
     #
     # @return [Horologium::Duration]
-    # @example
-    #   Horologium::Duration.seconds(-3).abs ==
-    #     Horologium::Duration.seconds(3)
-    #   # => true
     def abs
-      rational.negative? ? self.class.new(value * -1, precision) : self
+      negative? ? -self : self
+    end
+
+    # @return [Boolean]
+    def zero?
+      rational.zero?
+    end
+
+    # @return [Boolean]
+    def negative?
+      rational.negative?
+    end
+
+    # @return [Boolean]
+    def positive?
+      rational.positive?
+    end
+
+    # The duration in SI seconds, exactly.
+    #
+    # @return [Rational]
+    def to_r
+      rational
+    end
+
+    # The duration in SI seconds. A Float has about 15 digits, so a long
+    # duration loses its small end here; use {#to_r} for the whole of it.
+    #
+    # @return [Float]
+    def to_f
+      value.to_f
+    end
+
+    # @return [String]
+    def inspect
+      format("#<%s %s s (%s)>", self.class, to_f, precision)
     end
   end
 end

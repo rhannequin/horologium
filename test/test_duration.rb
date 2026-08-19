@@ -130,4 +130,110 @@ class TestDuration < Minitest::Test
 
     assert_equal count, Horologium::Duration.seconds(count).value.to_r
   end
+
+  # Arithmetic between durations.
+
+  def test_it_adds_another_duration
+    assert_equal Horologium::Duration.seconds(42),
+      Horologium::Duration.seconds(30) + Horologium::Duration.seconds(12)
+  end
+
+  def test_it_subtracts_another_duration
+    assert_equal Horologium::Duration.seconds(30),
+      Horologium::Duration.seconds(42) - Horologium::Duration.seconds(12)
+  end
+
+  def test_subtracting_a_longer_duration_runs_backwards
+    assert_equal Horologium::Duration.seconds(-12),
+      Horologium::Duration.seconds(30) - Horologium::Duration.seconds(42)
+  end
+
+  def test_adding_keeps_standard_when_both_are_standard
+    sum = Horologium::Duration.seconds(1) + Horologium::Duration.seconds(2)
+
+    assert_equal :standard, sum.precision
+  end
+
+  def test_adding_an_exact_duration_promotes_the_result
+    sum = Horologium::Duration.seconds(1) +
+      Horologium::Duration.seconds(2, precision: :exact)
+
+    assert_equal :exact, sum.precision
+  end
+
+  def test_subtracting_an_exact_duration_promotes_the_result
+    difference = Horologium::Duration.seconds(2) -
+      Horologium::Duration.seconds(1, precision: :exact)
+
+    assert_equal :exact, difference.precision
+  end
+
+  def test_it_refuses_to_add_anything_but_a_duration
+    error = assert_raises(Horologium::DimensionalError) do
+      Horologium::Duration.seconds(1) +
+        Horologium::Instant.from_julian_date(2_443_144.5, scale: :tai)
+    end
+
+    assert_includes error.message, "only a Duration combines with a Duration"
+  end
+
+  def test_it_refuses_to_subtract_anything_but_a_duration
+    error = assert_raises(Horologium::DimensionalError) do
+      Horologium::Duration.seconds(1) - 5
+    end
+
+    assert_includes error.message, "only a Duration combines with a Duration"
+  end
+
+  def test_it_negates
+    assert_equal Horologium::Duration.seconds(-3),
+      -Horologium::Duration.seconds(3)
+  end
+
+  def test_negating_keeps_the_precision
+    negated = -Horologium::Duration.seconds(3, precision: :exact)
+
+    assert_equal :exact, negated.precision
+  end
+
+  # Asking a duration about itself.
+
+  def test_zero_is_true_for_no_time_at_all
+    assert_predicate Horologium::Duration.seconds(0), :zero?
+  end
+
+  def test_zero_is_false_for_a_length
+    refute_predicate Horologium::Duration.seconds(1), :zero?
+  end
+
+  def test_negative_is_true_running_backwards
+    assert_predicate Horologium::Duration.seconds(-1), :negative?
+  end
+
+  def test_negative_is_false_running_forwards
+    refute_predicate Horologium::Duration.seconds(1), :negative?
+  end
+
+  def test_positive_is_true_running_forwards
+    assert_predicate Horologium::Duration.seconds(1), :positive?
+  end
+
+  def test_positive_is_false_running_backwards
+    refute_predicate Horologium::Duration.seconds(-1), :positive?
+  end
+
+  def test_to_r_reads_the_seconds_exactly
+    assert_equal Rational(86_400), Horologium::Duration.days(1).to_r
+  end
+
+  def test_to_f_reads_the_seconds_as_a_float
+    assert_in_delta 86_400.0, Horologium::Duration.days(1).to_f
+  end
+
+  def test_inspect_shows_the_seconds_and_the_precision
+    duration = Horologium::Duration.seconds(3600)
+
+    assert_equal "#<Horologium::Duration 3600.0 s (standard)>",
+      duration.inspect
+  end
 end

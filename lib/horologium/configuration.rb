@@ -194,11 +194,21 @@ module Horologium
     end
   end
 
+  # Guards the one-time build of the configuration, so two threads reaching
+  # it at once cannot each build one and lose the other's scales.
+  #
+  # @api private
+  CONFIGURATION_LOCK = Mutex.new
+  private_constant :CONFIGURATION_LOCK
+
   class << self
     # Configures the library. The yielded configuration is frozen when the
     # block returns, so it can be set once at boot and not changed again. It
     # is frozen even when the block raises, so a configuration that failed
     # half way through cannot be quietly finished off later.
+    #
+    # It is called once. A second call finds the configuration already frozen
+    # and raises {ConfigurationError}, so set everything in one block.
     #
     # @yieldparam config [Configuration] the configuration to set
     # @return [Configuration] the frozen configuration
@@ -216,10 +226,15 @@ module Horologium
       config
     end
 
+    # The configuration is built on the first read, under a lock, so that two
+    # threads racing to configure the library end up with the same one.
+    #
     # @return [Configuration] the current configuration, built with defaults if
     #   the library has not been configured yet
     def configuration
-      @configuration ||= Configuration.new
+      @configuration || CONFIGURATION_LOCK.synchronize do
+        @configuration ||= Configuration.new
+      end
     end
 
     # @return [Symbol] the configured default precision

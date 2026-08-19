@@ -28,95 +28,50 @@ module Horologium
         freeze
       end
 
-      # Adds another exact value. Both are Rationals, so the sum is exact.
-      #
-      # @param other [Horologium::Numeric::Exact] value to add
-      # @return [Horologium::Numeric::Exact] the sum
-      # @example
-      #   Horologium::Numeric::Exact.new(Rational(1, 3)) +
-      #     Horologium::Numeric::Exact.new(Rational(1, 6)) ==
-      #     Horologium::Numeric::Exact.new(Rational(1, 2))
-      #   # => true
+      # @param other [Horologium::Numeric::Exact]
+      # @return [Horologium::Numeric::Exact]
       def +(other)
         self.class.new(value + other.value)
       end
 
-      # Subtracts another exact value. Both are Rationals, so the difference is
-      # exact.
-      #
-      # @param other [Horologium::Numeric::Exact] value to subtract
-      # @return [Horologium::Numeric::Exact] the difference
-      # @example
-      #   Horologium::Numeric::Exact.new(Rational(1, 2)) -
-      #     Horologium::Numeric::Exact.new(Rational(1, 6)) ==
-      #     Horologium::Numeric::Exact.new(Rational(1, 3))
-      #   # => true
+      # @param other [Horologium::Numeric::Exact]
+      # @return [Horologium::Numeric::Exact]
       def -(other)
         self.class.new(value - other.value)
       end
 
-      # Multiplies by a plain number. The number becomes an exact Rational, so
-      # the product stays exact.
-      #
-      # @param scalar [Integer, Float, Rational] the number to multiply by
-      # @return [Horologium::Numeric::Exact] the product
-      # @raise [ArgumentError] when given anything but a plain number, such
-      #   as another exact value
-      # @example
-      #   Horologium::Numeric::Exact.new(Rational(1, 3)) * 6 ==
-      #     Horologium::Numeric::Exact.new(2)
-      #   # => true
+      # @param scalar [Integer, Float, Rational]
+      # @return [Horologium::Numeric::Exact]
+      # @raise [ArgumentError] when given anything but a plain number
       def *(scalar) # rubocop:disable Naming/BinaryOperatorParameterName
         self.class.new(value * scalar_rational(scalar))
       end
 
-      # Divides by a plain number. The number becomes an exact Rational, so
-      # the quotient stays exact.
-      #
-      # @param scalar [Integer, Float, Rational] the number to divide by
-      # @return [Horologium::Numeric::Exact] the quotient
-      # @raise [ArgumentError] when given anything but a plain number, such
-      #   as another exact value
-      # @example
-      #   Horologium::Numeric::Exact.new(2) / 6 ==
-      #     Horologium::Numeric::Exact.new(Rational(1, 3))
-      #   # => true
+      # @param scalar [Integer, Float, Rational]
+      # @return [Horologium::Numeric::Exact]
+      # @raise [ArgumentError] when given anything but a plain number
       def /(scalar) # rubocop:disable Naming/BinaryOperatorParameterName
         self.class.new(value / scalar_rational(scalar))
       end
 
-      # Two values are equal when their Rationals are equal.
-      #
-      # @param other [Object] the object to compare
-      # @return [Boolean] true when other is an Exact with an equal value
-      # @example
-      #   Horologium::Numeric::Exact.new(1) == Horologium::Numeric::Exact.new(1)
-      #   # => true
+      # @param other [Object]
+      # @return [Boolean]
       def ==(other)
         other.is_a?(self.class) && value == other.value
       end
 
-      # The stricter equality used for Hash keys and Sets. It matches when the
-      # Rationals are eql?, which for Rational is the same test as ==.
-      #
-      # @param other [Object] the object to compare
-      # @return [Boolean] true when other is an Exact with an eql? value
+      # @param other [Object]
+      # @return [Boolean]
       def eql?(other)
         other.is_a?(self.class) && value.eql?(other.value)
       end
 
-      # @return [Integer] a hash built from the Rational, so equal values share
-      #   a hash and can be used as Hash keys
+      # @return [Integer]
       def hash
         value.hash
       end
 
-      # The stored value as a Rational.
-      #
       # @return [Rational]
-      # @example
-      #   Horologium::Numeric::Exact.new(Rational(1, 3)).to_r == Rational(1, 3)
-      #   # => true
       def to_r
         value
       end
@@ -125,18 +80,14 @@ module Horologium
       # holds, so the extra precision is dropped here. Do it at the end, once
       # the arithmetic is done.
       #
-      # @return [Float] the nearest Float to the value
-      # @example
-      #   Horologium::Numeric::Exact.new(Rational(1, 3)).to_f
-      #   # => 0.3333333333333333
+      # @return [Float]
       def to_f
         value.to_f
       end
 
       protected
 
-      # The stored Rational. It is protected so == and eql? can read another
-      # Exact value's Rational without exposing it publicly.
+      # Protected so == and eql? can read another Exact's Rational.
       #
       # @api private
       # @return [Rational]
@@ -144,11 +95,11 @@ module Horologium
 
       private
 
-      # A plain number, as a Rational. An exact value is not a scalar, and
-      # passing one where a number belongs is a mistake, so it is refused.
+      # An exact value is not a scalar, and passing one where a number belongs
+      # is a mistake, so it is refused.
       #
-      # @param scalar [Integer, Float, Rational] the number to check
-      # @return [Rational] the number as a Rational
+      # @param scalar [Integer, Float, Rational]
+      # @return [Rational]
       # @raise [ArgumentError] when it is not a plain number
       def scalar_rational(scalar)
         case scalar

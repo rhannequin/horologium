@@ -36,15 +36,8 @@ module Horologium
         freeze
       end
 
-      # Adds another value and keeps the extra precision from both parts.
-      #
-      # @param other [Horologium::Numeric::TwoPartFloat] value to add
-      # @return [Horologium::Numeric::TwoPartFloat] the sum
-      # @example
-      #   Horologium::Numeric::TwoPartFloat.new(1.5) +
-      #     Horologium::Numeric::TwoPartFloat.new(2.25) ==
-      #     Horologium::Numeric::TwoPartFloat.new(3.75)
-      #   # => true
+      # @param other [Horologium::Numeric::TwoPartFloat]
+      # @return [Horologium::Numeric::TwoPartFloat]
       def +(other)
         high_sum, high_error = two_sum(@high, other.high)
         low_sum, low_error = two_sum(@low, other.low)
@@ -55,15 +48,8 @@ module Horologium
         self.class.new(result_high, result_low)
       end
 
-      # Subtracts another value and keeps the extra precision from both parts.
-      #
-      # @param other [Horologium::Numeric::TwoPartFloat] value to subtract
-      # @return [Horologium::Numeric::TwoPartFloat] the difference
-      # @example
-      #   Horologium::Numeric::TwoPartFloat.new(1.5) -
-      #     Horologium::Numeric::TwoPartFloat.new(0.25) ==
-      #     Horologium::Numeric::TwoPartFloat.new(1.25)
-      #   # => true
+      # @param other [Horologium::Numeric::TwoPartFloat]
+      # @return [Horologium::Numeric::TwoPartFloat]
       def -(other)
         high_diff, high_error = two_diff(@high, other.high)
         low_diff, low_error = two_diff(@low, other.low)
@@ -74,17 +60,9 @@ module Horologium
         self.class.new(result_high, result_low)
       end
 
-      # Multiplies by a plain number, keeping the precision a single Float would
-      # lose. The number is a scalar, not another two-part value.
-      #
-      # @param scalar [Integer, Float, Rational] the number to multiply by
-      # @return [Horologium::Numeric::TwoPartFloat] the product
-      # @raise [ArgumentError] when given anything but a plain number, such
-      #   as another two-part value
-      # @example
-      #   Horologium::Numeric::TwoPartFloat.new(1.5) * 2 ==
-      #     Horologium::Numeric::TwoPartFloat.new(3.0)
-      #   # => true
+      # @param scalar [Integer, Float, Rational]
+      # @return [Horologium::Numeric::TwoPartFloat]
+      # @raise [ArgumentError] when given anything but a plain number
       def *(scalar) # rubocop:disable Naming/BinaryOperatorParameterName
         factor = scalar_float(scalar)
         high, low = two_sum(@high, @low)
@@ -94,18 +72,10 @@ module Horologium
         self.class.new(result_high, result_low)
       end
 
-      # Divides by a plain number, keeping the precision a single Float would
-      # lose. The number is a scalar, not another two-part value.
-      #
-      # @param scalar [Integer, Float, Rational] the number to divide by
-      # @return [Horologium::Numeric::TwoPartFloat] the quotient
-      # @raise [ArgumentError] when given anything but a plain number, such
-      #   as another two-part value
+      # @param scalar [Integer, Float, Rational]
+      # @return [Horologium::Numeric::TwoPartFloat]
+      # @raise [ArgumentError] when given anything but a plain number
       # @raise [ZeroDivisionError] when dividing by zero
-      # @example
-      #   Horologium::Numeric::TwoPartFloat.new(3.0) / 2 ==
-      #     Horologium::Numeric::TwoPartFloat.new(1.5)
-      #   # => true
       def /(scalar) # rubocop:disable Naming/BinaryOperatorParameterName
         divisor = scalar_float(scalar)
         raise ZeroDivisionError, "divided by 0" if divisor.zero?
@@ -120,15 +90,10 @@ module Horologium
         self.class.new(result_high, result_low)
       end
 
-      # The value as a Rational: the two parts added with no loss. Each Float
-      # is an exact rational, so their sum is exact and keeps the low part's
-      # extra precision.
+      # The two parts added with no loss. Each Float is an exact rational, so
+      # their sum is exact and keeps the low part.
       #
-      # @return [Rational] the sum of the high and low parts
-      # @example
-      #   Horologium::Numeric::TwoPartFloat.new(1.0, 1e-16).to_r ==
-      #     1.to_r + Rational(1e-16)
-      #   # => true
+      # @return [Rational]
       def to_r
         high.to_r + low.to_r
       end
@@ -137,40 +102,26 @@ module Horologium
       # the extra precision the split carries is dropped here. Do it at the
       # end, once the arithmetic is done.
       #
-      # Adding the two parts is what a Float addition already does: it returns
-      # the Float nearest to the exact sum, which is the same answer as
-      # rounding {#to_r}, without building the Rationals.
-      #
-      # @return [Float] the nearest Float to the value
-      # @example
-      #   Horologium::Numeric::TwoPartFloat.new(2_443_144.5, 3.725e-4).to_f
-      #   # => 2443144.5003725
+      # @return [Float]
       def to_f
         high + low
       end
 
-      # Two values are equal when their high and low parts are both equal. This
-      # compares the stored parts, not the number they add up to.
+      # Compares the stored parts, not the number they add up to.
       #
-      # @param other [Object] the object to compare
-      # @return [Boolean] true when other is a TwoPartFloat with equal parts
-      # @example
-      #   obj = Horologium::Numeric::TwoPartFloat.new(1.0, 0.5)
-      #   obj == Horologium::Numeric::TwoPartFloat.new(1.0, 0.5) # => true
+      # @param other [Object]
+      # @return [Boolean]
       def ==(other)
         other.is_a?(self.class) && high == other.high && low == other.low
       end
 
-      # The stricter equality used for Hash keys and Sets. It matches when the
-      # high and low parts are eql?, so an integer part and a float part differ.
-      #
-      # @param other [Object] the object to compare
-      # @return [Boolean] true when other is a TwoPartFloat with eql? parts
+      # @param other [Object]
+      # @return [Boolean]
       def eql?(other)
         other.is_a?(self.class) && high.eql?(other.high) && low.eql?(other.low)
       end
 
-      # @return [Integer] a hash built from the two parts
+      # @return [Integer]
       def hash
         [high, low].hash
       end
@@ -184,10 +135,6 @@ module Horologium
       # @param low [Float] the low part
       # @return [Horologium::Numeric::TwoPartFloat] the value with high on the
       #   integer grid and low the fraction, between -0.5 and 0.5
-      # @example A fraction stays in the low part
-      #   Horologium::Numeric::TwoPartFloat.normalize(2.0, 0.3) ==
-      #     Horologium::Numeric::TwoPartFloat.new(2.0, 0.3)
-      #   # => true
       # @example A low part above one half carries into the high part
       #   Horologium::Numeric::TwoPartFloat.normalize(2.0, 0.75) ==
       #     Horologium::Numeric::TwoPartFloat.new(3.0, -0.25)

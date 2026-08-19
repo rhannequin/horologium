@@ -544,4 +544,18 @@ class TestInstant < Minitest::Test
 
     assert_equal :exact, instant.precision
   end
+
+  def test_inspect_shows_the_tai_julian_date_and_the_precision
+    instant = Horologium::Instant.from_julian_date(2_443_144.5, scale: :tai)
+
+    assert_equal "#<Horologium::Instant 2443144.5 TAI JD (standard)>",
+      instant.inspect
+  end
+
+  def test_inspect_reaches_a_date_the_calendar_conversion_does_not
+    instant = Horologium::Instant.from_julian_date(-40_000.5, scale: :tai)
+
+    assert_equal "#<Horologium::Instant -40000.5 TAI JD (standard)>",
+      instant.inspect
+  end
 end

@@ -132,7 +132,7 @@ module Horologium
           day_seconds(day_number, tai_utc_at(day_number))
         end
 
-        # UTC writes the +Z+ designator, where a zero offset is a real thing.
+        # UTC writes +Z+, where a zero offset is a real thing.
         #
         # @return [String]
         def zone_designator
@@ -204,16 +204,14 @@ module Horologium
             "got #{date.inspect}"
         end
 
-        # Whether the configuration refuses a date past the horizon.
-        #
         # @return [Boolean]
         def strict?
           Horologium.configuration.leap_second_horizon == :raise
         end
 
-        # The seconds in a day, from the offset at its 0h and the next.
+        # From the offset at the day's 0h and the next.
         #
-        # @param day_number [Integer] the Julian Day Number of the day
+        # @param day_number [Integer]
         # @param offset [Integer] TAI - UTC at the day's 0h
         # @return [Integer] the seconds in the day
         def day_seconds(day_number, offset)
@@ -234,7 +232,8 @@ module Horologium
         def elapsed_seconds(value, midnight, offset, precision)
           tai_at_0h = Numeric::Precision.add(
             midnight,
-            Numeric::Precision.build(offset, precision) / Duration::SECONDS_PER_DAY
+            Numeric::Precision.build(offset, precision) /
+              Duration::SECONDS_PER_DAY
           )
 
           Numeric::Precision.subtract(value, tai_at_0h) *

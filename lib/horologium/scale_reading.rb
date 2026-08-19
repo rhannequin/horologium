@@ -86,5 +86,41 @@ module Horologium
         )
       }.render(self, as)
     end
+
+    # Same scale, same moment in it, whatever precision each carries. This is
+    # how {Instant} compares.
+    #
+    # @param other [Object]
+    # @return [Boolean]
+    def ==(other)
+      other.is_a?(ScaleReading) &&
+        scale == other.scale &&
+        value.to_r == other.value.to_r
+    end
+
+    # Stricter than +==+: the precision must match too.
+    #
+    # @param other [Object]
+    # @return [Boolean]
+    def eql?(other)
+      self == other && precision == other.precision
+    end
+
+    # @return [Integer] a hash matching {#eql?}
+    def hash
+      [self.class, scale, precision, value.to_r].hash
+    end
+
+    # @return [String]
+    def inspect
+      format(
+        "#<%s %s JD in %s (%s, %s)>",
+        self.class,
+        value.to_f,
+        scale,
+        precision,
+        provenance
+      )
+    end
   end
 end

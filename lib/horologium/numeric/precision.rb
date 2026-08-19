@@ -21,9 +21,7 @@ module Horologium
       NAMES = %i[standard exact].freeze
 
       class << self
-        # Checks that a precision is recognised and returns it.
-        #
-        # @param precision [Symbol] the precision to check
+        # @param precision [Symbol]
         # @return [Symbol] the same precision
         # @raise [UnknownPrecisionError] when it is not one of {NAMES}
         def validate!(precision)

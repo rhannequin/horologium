@@ -16,9 +16,8 @@ module Horologium
     # so nothing is lost on the way in or out, and precision only re-enters
     # when the fraction of a second is rendered in the type asked for. That
     # makes it more accurate than +eraJd2cal+, which does the same work in
-    # double precision. It also makes it slower, which is the right trade here:
-    # reading a civil date is a display step, where the Julian Date and the
-    # Duration are the values arithmetic runs on.
+    # double precision, and slower. Reading a civil date is a display step;
+    # the Julian Date and the Duration are what arithmetic runs on.
     #
     # @example
     #   instant = Horologium::Instant.from_civil(2025, 5, 1, 12, scale: :tt)
@@ -32,11 +31,19 @@ module Horologium
       OUTPUTS = %i[float rational].freeze
 
       # The earliest year the calendar conversion covers, the range ERFA
-      # documents for +eraCal2jd+. It is also where the arithmetic stays
-      # honest: every intermediate is non-negative from here on, so Ruby's
-      # flooring integer division agrees with the truncating division the C
-      # routines are written in.
+      # documents for +eraCal2jd+. Every intermediate is non-negative from
+      # here on, so Ruby's flooring integer division agrees with the
+      # truncating division the C routines are written in.
       MINIMUM_YEAR = -4799
+
+      # The Julian Day Number of {MINIMUM_YEAR}-01-01, the earliest day the
+      # calendar conversion covers. It bounds the way out as {MINIMUM_YEAR}
+      # bounds the way in, so a reading is never handed back a date that
+      # {parse} would refuse to read.
+      #
+      # @api private
+      MINIMUM_DAY_NUMBER = -31_738
+      private_constant :MINIMUM_DAY_NUMBER
 
       # Half a day, the offset between a Julian Date, which starts at noon,
       # and the day the calendar counts, which starts at midnight.
@@ -78,6 +85,8 @@ module Horologium
         # @return [Horologium::Representations::CivilTime]
         # @raise [UnknownOutputError] when the output type is not one of
         #   {OUTPUTS}
+        # @raise [InvalidCivilTimeError] before {MINIMUM_YEAR}, where the
+        #   calendar conversion stops
         # @example
         #   instant = Horologium::Instant.from_julian_date(
         #     2_443_144.5,
@@ -218,13 +227,24 @@ module Horologium
         end
 
         # The calendar date a Julian Day Number falls on, the conversion
-        # +eraJd2cal+ performs. The intermediate quantities the algorithm
-        # counts in have no names of their own; they are cycles of the
-        # calendar, not dates.
+        # +eraJd2cal+ performs. The intermediate quantities are cycles of the
+        # calendar rather than dates, which is why they are named as they are.
+        #
+        # A day before {MINIMUM_DAY_NUMBER} is refused, because {parse} stops
+        # at {MINIMUM_YEAR} and a date rendered below it could not be read
+        # back into the instant it came from.
         #
         # @param day_number [Integer] the Julian Day Number
         # @return [Array(Integer, Integer, Integer)] the year, month, and day
+        # @raise [InvalidCivilTimeError] before {MINIMUM_DAY_NUMBER}
         def calendar(day_number)
+          if day_number < MINIMUM_DAY_NUMBER
+            raise InvalidCivilTimeError,
+              "this instant is before #{MINIMUM_YEAR}-01-01, where the " \
+              "calendar conversion stops; the continuous scales have no such " \
+              "limit, so read it as a Julian Date instead"
+          end
+
           remainder = day_number + 68_569
           cycles = 4 * remainder / 146_097
           remainder -= (146_097 * cycles + 3) / 4
@@ -445,9 +465,9 @@ module Horologium
           civil.hour == 23 && civil.minute == 59
         end
 
-        # The message for a second outside its minute. A second 60 that the day
-        # does not reach is named as the leap second it would be, since that is
-        # the mistake worth explaining; anything else states the range.
+        # The message for a second outside its minute. A second 60 the day does
+        # not reach is named as the leap second it would be; anything else
+        # states the range.
         #
         # @param civil [Horologium::Representations::CivilTime] the civil time
         # @param highest [Integer] the highest second the minute reaches

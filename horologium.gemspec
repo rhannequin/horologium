@@ -32,7 +32,10 @@ Gem::Specification.new do |spec|
     ls.readlines("\x0", chomp: true).reject do |f|
       (f == gemspec) ||
         f.start_with?(
-          *%w[bin/ Gemfile .gitignore test/ .github/ .rubocop.yml Steepfile]
+          *%w[
+            bin/ Gemfile .gitignore test/ .github/ .rubocop.yml Steepfile
+            sig-vendor/
+          ]
         )
     end
   end

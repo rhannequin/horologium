@@ -10,9 +10,8 @@ module Horologium
     # The scale is not written into the string. There is no ISO 8601
     # designator for TAI or TT, and +Z+ means UTC, so a bare time here is a
     # coordinate in the scale you asked for, not a claim about which scale that
-    # is. When UTC is added it will write the +Z+ that belongs to it, where a
-    # leap second and a zero offset are real; the continuous scales carry
-    # neither.
+    # is. UTC writes the +Z+ that belongs to it, where a leap second and a zero
+    # offset are real; the continuous scales carry neither.
     #
     # The fraction of a second is written to nanosecond resolution, nine
     # digits, the resolution the example in the design carries. That is display
@@ -31,10 +30,10 @@ module Horologium
       # and an optional time of day after a +T+, down to an optional fraction
       # of a second and an optional +Z+ or numeric offset. The year is four
       # digits or more, with a minus sign for a year before 1. A numeric offset
-      # runs from -23:59 to +23:59. Anything outside this shape — a week date,
-      # an ordinal date, a bare hour, a comma for the decimal point, a space
-      # for the +T+, an offset out of range — is refused, rather than read part
-      # way.
+      # runs from -23:59 to +23:59. Anything outside that shape is refused
+      # rather than read part way: a week date, an ordinal date, a bare hour,
+      # a comma for the decimal point, a space for the +T+, an offset out of
+      # range.
       #
       # @api private
       PATTERN = /
@@ -71,6 +70,8 @@ module Horologium
         #   scale
         # @param _output [Symbol] ignored; an ISO 8601 reading is a String
         # @return [String] the date and time, in extended ISO 8601
+        # @raise [InvalidCivilTimeError] before {Civil::MINIMUM_YEAR}, where
+        #   the calendar conversion stops
         # @example
         #   instant = Horologium::Instant.from_julian_date(
         #     2_443_144.5,
@@ -232,19 +233,18 @@ module Horologium
           }
         end
 
-        # A group of digits from the pattern, as an Integer, or 0 when the
-        # group was not there, so an omitted time of day is midnight.
+        # 0 when the group was not there, so an omitted time of day is
+        # midnight.
         #
-        # @param group [String, nil] the digits, or nil
+        # @param group [String, nil]
         # @return [Integer]
         def digits(group)
           group.nil? ? 0 : Integer(group, 10)
         end
 
-        # The fraction of a second the digits after the decimal point spell,
-        # exactly, keeping every digit whatever there is of it.
+        # Exact, keeping every digit there is.
         #
-        # @param group [String, nil] the digits after the decimal point, or nil
+        # @param group [String, nil] the digits after the decimal point
         # @return [Rational, Integer] the fraction, or 0 when there was none
         def fraction(group)
           return 0 if group.nil?

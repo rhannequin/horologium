@@ -14,6 +14,24 @@ module Horologium
 
     private def self.from_seconds: (Numeric::scalar seconds, Symbol precision) -> Duration
 
+    def +: (Duration other) -> Duration
+
+    def -: (Duration other) -> Duration
+
+    def -@: () -> Duration
+
     def abs: () -> Duration
+
+    def zero?: () -> bool
+
+    def negative?: () -> bool
+
+    def positive?: () -> bool
+
+    def to_r: () -> Rational
+
+    def to_f: () -> Float
+
+    def inspect: () -> String
   end
 end
