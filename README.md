@@ -138,13 +138,16 @@ refused.
 
 ```rb
 before = Horologium::Instant.from_utc(
-  2016, 12, 31, 23, 59, 59, precision: :exact
+  2016, 12, 31, 23, 59, 59,
+  precision: :exact
 )
 leap = Horologium::Instant.from_utc(
-  2016, 12, 31, 23, 59, 60, precision: :exact
+  2016, 12, 31, 23, 59, 60,
+  precision: :exact
 )
 after = Horologium::Instant.from_utc(
-  2017, 1, 1, 0, 0, 0, precision: :exact
+  2017, 1, 1, 0, 0, 0,
+  precision: :exact
 )
 
 leap - before == Horologium::Duration.seconds(1)   # => true
@@ -264,7 +267,7 @@ Every value carries one of two precisions, fixed when it is built:
 
 Set the default once at boot. `Horologium.configure` freezes the configuration
 when its block returns, so it is called once and everything is set in the one
-block; a second call raises `Horologium::ConfigurationError`.
+block. A second call raises `Horologium::ConfigurationError`.
 
 ```rb
 Horologium.configure do |c|
