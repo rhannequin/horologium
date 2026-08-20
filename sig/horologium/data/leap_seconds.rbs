@@ -3,7 +3,7 @@ module Horologium
     module LeapSeconds
       MJD_OFFSET: Integer
 
-      def self.tai_utc_at: (Integer day_number) -> (Integer | Rational)
+      def self.tai_utc_at: (Integer | Rational day_number) -> (Integer | Rational)
 
       def self.expires_on: () -> Date?
     end

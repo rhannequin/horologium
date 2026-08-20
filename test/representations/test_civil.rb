@@ -183,6 +183,21 @@ class TestRepresentationsCivil < Minitest::Test
     assert_equal 0, civil.hour
   end
 
+  def test_a_fraction_that_rounds_up_to_a_whole_day_rolls_into_the_next
+    # 2000-01-01 23:59:59.999..., a hair under midnight: the fraction of a
+    # second rounds up to a whole one when rendered as a Float, which fills the
+    # day and rolls the clock into the next, rather than reading a second that
+    # is not there.
+    almost = 59 + Rational(10**18 - 1, 10**18)
+    civil = Horologium::Instant
+      .from_civil(2000, 1, 1, 23, 59, almost, scale: :tai, precision: :exact)
+      .as(:civil, scale: :tai)
+
+    assert_equal [2000, 1, 2, 0, 0, 0],
+      [civil.year, civil.month, civil.day, civil.hour, civil.minute,
+        civil.second]
+  end
+
   def test_the_calendar_is_the_gregorian_one_before_it_was_introduced
     instant = Horologium::Instant.from_civil(1582, 10, 5, scale: :tai)
 
