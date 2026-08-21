@@ -13,6 +13,8 @@ module Horologium
 
       def self.seconds_in_day: (Integer day_number) -> Integer
 
+      def self.si_seconds_in_day: (Integer day_number) -> (Integer | Rational)
+
       def self.zone_designator: () -> String
 
       def self.provenance: (Numeric::TwoPartFloat | Numeric::Exact value) -> Symbol
@@ -25,13 +27,21 @@ module Horologium
 
       private def self.strict?: () -> bool
 
-      private def self.day_seconds: (Integer day_number, Integer offset) -> Integer
+      private def self.whole_leap_seconds: (Integer day_number) -> Integer
 
-      private def self.elapsed_seconds: (Numeric::TwoPartFloat | Numeric::Exact value, Numeric::TwoPartFloat | Numeric::Exact midnight, Integer offset, Symbol precision) -> (Numeric::TwoPartFloat | Numeric::Exact)
+      private def self.day_fraction: (Numeric::TwoPartFloat | Numeric::Exact value, Integer day, Symbol precision) -> (Numeric::TwoPartFloat | Numeric::Exact)
 
-      private def self.day_step: (Rational seconds, Integer seclen) -> Integer
+      private def self.unstretch: (Numeric::TwoPartFloat | Numeric::Exact value, Integer day, Symbol precision) -> (Numeric::TwoPartFloat | Numeric::Exact)
 
-      private def self.tai_utc_at: (Integer day_number) -> Integer
+      private def self.before_midnight?: (Numeric::TwoPartFloat | Numeric::Exact value, Integer day, Symbol precision) -> bool
+
+      private def self.midnight_tai: (Integer day, Symbol precision) -> (Numeric::TwoPartFloat | Numeric::Exact)
+
+      private def self.day_scale: (Integer day, Integer | Rational dat0) -> Rational
+
+      private def self.drift_rate: (Integer day, Integer | Rational dat0) -> Rational
+
+      private def self.tai_utc_at: (Integer | Rational day_number) -> (Integer | Rational)
 
       private def self.refuse: () -> bot
     end

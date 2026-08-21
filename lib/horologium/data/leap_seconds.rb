@@ -10,9 +10,10 @@ module Horologium
     # can put another source in its place through
     # {Configuration#leap_second_source}, as long as it answers {tai_utc_at}.
     #
-    # The lookup is by whole day. TAI - UTC changes at 0h UTC, so a scale asks
-    # for the offset at the start of a day, and iers reads it from the bundled
-    # table with no network access.
+    # The lookup is by day. TAI - UTC steps at 0h UTC, so a scale asks for the
+    # offset at the start of a day; before 1972 it drifts through the day too,
+    # so the scale also asks part way through one. iers reads either from the
+    # bundled table with no network access.
     module LeapSeconds
       # The days between a Julian Date and a Modified Julian Date, less the
       # half day that puts a Julian Day Number, which counts from noon, onto
@@ -24,15 +25,17 @@ module Horologium
       MJD_OFFSET = 2_400_001
 
       class << self
-        # TAI - UTC at 0h UTC of a day, the number of seconds TAI is ahead of
+        # TAI - UTC at a point in UTC, the number of seconds TAI is ahead of
         # UTC. From 1972 it is a whole number of seconds, an Integer; between
         # 1961 and 1972, when UTC drifted, it is a fraction of a second, a
-        # Rational. Either is exact.
+        # Rational. Either is exact. The point is a day by its Julian Day
+        # Number, or part way through one where a fraction is added.
         #
-        # @param day_number [Integer] the Julian Day Number of the day
+        # @param day_number [Integer, Rational] the Julian Day Number of the
+        #   day, or a point through it
         # @return [Integer, Rational] TAI - UTC in seconds
         # @raise [IERS::OutOfRangeError] before 1961, where TAI - UTC is not
-        #   defined; {Scales::UTC} stops at 1972 before this is reached
+        #   defined; {Scales::UTC} stops there before this is reached
         def tai_utc_at(day_number)
           IERS::LeapSecond.at(mjd: day_number - MJD_OFFSET)
         end

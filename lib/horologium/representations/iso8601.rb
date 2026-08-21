@@ -111,9 +111,9 @@ module Horologium
         # day, and every digit of the fraction of a second is kept, unbounded
         # at +:exact+. A numeric offset is subtracted here, in the scale, as
         # plain arithmetic on the fields; it is not a time zone and consults no
-        # zone data. It counts against the day's own length, so on a leap
-        # second day an offset shifts by SI seconds, not by a stretched
-        # fraction of the day.
+        # zone data. It counts against the day's SI length, so it shifts by SI
+        # seconds on a leap second day and through the pre-1972 drift alike, not
+        # by a stretched fraction of the day.
         #
         # @param value [String] the date and time, in extended ISO 8601
         # @param _low [nil] unused; an ISO 8601 string has no low part
@@ -144,7 +144,7 @@ module Horologium
           Numeric::Precision.subtract(
             in_scale,
             Numeric::Precision.build(
-              Rational(offset_seconds, scale.seconds_in_day(day)),
+              Rational(offset_seconds, scale.si_seconds_in_day(day)),
               precision
             )
           )

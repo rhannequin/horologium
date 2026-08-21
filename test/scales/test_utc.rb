@@ -122,31 +122,110 @@ class TestScalesUtc < Minitest::Test
       Horologium::Instant.from_utc(civil, precision: :exact)
   end
 
-  # The domain: 1972 and the door in the wall.
+  # The rate-adjustment era, 1961 to 1972: UTC drifts, without a leap second.
 
-  def test_a_utc_reading_before_1972_is_refused
+  def test_a_drift_era_time_round_trips_through_tai
+    instant = Horologium::Instant.from_utc(
+      1965, 7, 1, 12, 0, 0,
+      precision: :exact
+    )
+    civil = instant.as(:civil, scale: :utc)
+
+    assert_equal [1965, 7, 1, 12, 0, 0],
+      [civil.year, civil.month, civil.day, civil.hour, civil.minute,
+        civil.second]
+  end
+
+  def test_a_drift_era_day_has_no_second_60
+    error = assert_raises(Horologium::InvalidCivilTimeError) do
+      Horologium::Instant.from_utc(1965, 6, 30, 23, 59, 60)
+    end
+
+    assert_includes error.message, "leap second"
+  end
+
+  def test_a_drift_era_day_is_86_400_civil_seconds_long
+    # 1965-07-01, a rate-adjustment day: the drift is spread through its
+    # seconds, so the civil clock still counts 86,400 of them.
+    assert_equal 86_400, Horologium::Scales::UTC.seconds_in_day(2_438_943)
+  end
+
+  def test_a_drift_era_day_spans_more_si_seconds_than_it_counts
+    assert_equal 86_400, Horologium::Scales::UTC.seconds_in_day(2_438_943)
+    assert_operator Horologium::Scales::UTC.si_seconds_in_day(2_438_943),
+      :>, 86_400
+  end
+
+  def test_the_si_length_before_1961_is_refused
+    assert_raises(Horologium::OutOfRangeError) do
+      Horologium::Scales::UTC.si_seconds_in_day(2_437_300)
+    end
+  end
+
+  def test_a_drift_era_time_sits_the_measured_offset_behind_tai
+    # 1965-07-01 12:00:00 UTC is 3.975354 s behind TAI, the ERFA value.
+    utc = Horologium::Instant.from_utc(1965, 7, 1, 12, 0, 0, precision: :exact)
+    tai = Horologium::Instant.from_tai(1965, 7, 1, 12, 0, 0, precision: :exact)
+
+    assert_equal Rational(3_975_354, 1_000_000), (utc - tai).to_r
+  end
+
+  def test_an_iso_offset_in_the_drift_era_shifts_by_si_seconds
+    shifted = Horologium::Instant.from_iso8601(
+      "1965-07-01T12:00:00+01:00",
+      scale: :utc,
+      precision: :exact
+    )
+
+    assert_equal Horologium::Instant.from_utc(
+      1965, 7, 1, 12, 0, 0,
+      precision: :exact
+    ) - Horologium::Duration.seconds(3600),
+      shifted
+  end
+
+  def test_it_round_trips_across_the_drift_segment_boundaries
+    [
+      [1961, 7, 31, 23, 59, 59],
+      [1961, 8, 1, 0, 0, 0],
+      [1971, 12, 31, 23, 59, 59],
+      [1972, 1, 1, 0, 0, 0]
+    ].each do |fields|
+      civil = Horologium::Instant
+        .from_utc(*fields, precision: :exact)
+        .as(:civil, scale: :utc)
+
+      assert_equal fields,
+        [civil.year, civil.month, civil.day, civil.hour, civil.minute,
+          civil.second]
+    end
+  end
+
+  # The domain: 1961 and the door in the wall.
+
+  def test_a_utc_reading_before_1961_is_refused
     error = assert_raises(Horologium::OutOfRangeError) do
-      Horologium::Instant.from_utc(1971, 12, 31, 0, 0, 0)
+      Horologium::Instant.from_utc(1960, 12, 31, 0, 0, 0)
     end
 
     assert_includes error.message, "continuous scale"
   end
 
   def test_the_first_utc_day_is_allowed
-    instant = Horologium::Instant.from_utc(1972, 1, 1, 0, 0, 0)
+    instant = Horologium::Instant.from_utc(1961, 1, 1, 0, 0, 0)
 
-    assert_equal "1972-01-01T00:00:00.000000000Z",
+    assert_equal "1961-01-01T00:00:00.000000000Z",
       instant.as(:iso8601, scale: :utc)
   end
 
-  def test_a_pre_1972_instant_is_reachable_in_a_continuous_scale
-    instant = Horologium::Instant.from_julian_date(2_440_000.5, scale: :tai)
+  def test_a_pre_1961_instant_is_reachable_in_a_continuous_scale
+    instant = Horologium::Instant.from_julian_date(2_436_000.5, scale: :tai)
 
     assert_kind_of String, instant.as(:iso8601, scale: :tt)
   end
 
-  def test_a_pre_1972_instant_has_no_utc_label
-    instant = Horologium::Instant.from_julian_date(2_440_000.5, scale: :tai)
+  def test_a_pre_1961_instant_has_no_utc_label
+    instant = Horologium::Instant.from_julian_date(2_436_000.5, scale: :tai)
 
     assert_raises(Horologium::OutOfRangeError) do
       instant.to(:utc)
@@ -155,9 +234,9 @@ class TestScalesUtc < Minitest::Test
 
   # A Julian Date reaches to_reference without passing the calendar, where
   # from_utc is stopped by the day length first.
-  def test_a_pre_1972_julian_date_read_in_utc_is_refused
+  def test_a_pre_1961_julian_date_read_in_utc_is_refused
     error = assert_raises(Horologium::OutOfRangeError) do
-      Horologium::Instant.from_julian_date(2_441_000.0, scale: :utc)
+      Horologium::Instant.from_julian_date(2_436_000.0, scale: :utc)
     end
 
     assert_includes error.message, "continuous scale"

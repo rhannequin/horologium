@@ -47,9 +47,9 @@ module Horologium
   class InvalidCivilTimeError < Error; end
 
   # Raised when a moment falls outside a scale's domain of validity, such as a
-  # UTC reading before 1972, where UTC does not yet run in whole leap seconds.
-  # The instant itself is still a point on the timeline; it is only the label
-  # in that scale that has no meaning, so the message names a scale that does
+  # UTC reading before 1961, where the published TAI - UTC series starts. The
+  # instant itself is still a point on the timeline; it is only the label in
+  # that scale that has no meaning, so the message names a scale that does
   # reach it.
   class OutOfRangeError < Error; end
 
