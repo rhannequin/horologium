@@ -161,15 +161,16 @@ The `:exact` above is what makes `==` the right question to ask. At the default
 `:standard` precision the same three instants land a rounding step apart, well
 under a zeptosecond but not zero, so compare those with `equal_within?`.
 
-UTC runs from 1972, where it settled into whole leap seconds. An earlier UTC
-date raises `Horologium::OutOfRangeError`. The instant is still reachable, only
-its UTC label is not, so the error names the continuous scales, which have no
-lower bound. The leap seconds come from the [iers] gem, with no network access:
-the data ships with the gem.
+UTC runs from 1961, whole leap seconds from 1972 and the earlier
+rate-adjustment drift before that, where a UTC second was fractionally longer
+than an SI one. An earlier UTC date raises `Horologium::OutOfRangeError`. The
+instant is still reachable, only its UTC label is not, so the error names the
+continuous scales, which have no lower bound. The leap seconds and the drift
+come from the [iers] gem, with no network access: the data ships with the gem.
 
 ```rb
-Horologium::Instant.from_utc(1971, 12, 31)                  # => OutOfRangeError
-Horologium::Instant.from_civil(1971, 12, 31, scale: :tt)    # reaches any date
+Horologium::Instant.from_utc(1960, 12, 31)                  # => OutOfRangeError
+Horologium::Instant.from_civil(1960, 12, 31, scale: :tt)    # reaches any date
 ```
 
 Leap seconds are announced about six months ahead, so past the date its data

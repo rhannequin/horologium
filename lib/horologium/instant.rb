@@ -258,13 +258,15 @@ module Horologium
       # {from_civil} read in UTC, the scale of civil clocks, so a leap second
       # is a legal reading: the second may be 60 on a day that holds one.
       #
-      # UTC runs from 1972-01-01. An earlier date raises {OutOfRangeError} and
-      # names the continuous constructors, which reach any date.
+      # UTC runs from 1961-01-01, whole leap seconds from 1972 and the earlier
+      # rate-adjustment drift before that. An earlier date raises
+      # {OutOfRangeError} and names the continuous constructors, which reach
+      # any date.
       #
       # The fields are {from_civil}'s.
       #
       # @return [Horologium::Instant]
-      # @raise [OutOfRangeError] before 1972-01-01
+      # @raise [OutOfRangeError] before 1961-01-01
       # @raise [InvalidCivilTimeError] when the fields are not a real date and
       #   time, such as second 60 on a day with no leap second
       # @raise [UnknownPrecisionError] when the precision is not recognised

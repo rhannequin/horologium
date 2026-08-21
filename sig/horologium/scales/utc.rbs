@@ -13,6 +13,8 @@ module Horologium
 
       def self.seconds_in_day: (Integer day_number) -> Integer
 
+      def self.si_seconds_in_day: (Integer day_number) -> (Integer | Rational)
+
       def self.zone_designator: () -> String
 
       def self.provenance: (Numeric::TwoPartFloat | Numeric::Exact value) -> Symbol

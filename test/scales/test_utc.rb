@@ -150,12 +150,55 @@ class TestScalesUtc < Minitest::Test
     assert_equal 86_400, Horologium::Scales::UTC.seconds_in_day(2_438_943)
   end
 
+  def test_a_drift_era_day_spans_more_si_seconds_than_it_counts
+    assert_equal 86_400, Horologium::Scales::UTC.seconds_in_day(2_438_943)
+    assert_operator Horologium::Scales::UTC.si_seconds_in_day(2_438_943),
+      :>, 86_400
+  end
+
+  def test_the_si_length_before_1961_is_refused
+    assert_raises(Horologium::OutOfRangeError) do
+      Horologium::Scales::UTC.si_seconds_in_day(2_437_300)
+    end
+  end
+
   def test_a_drift_era_time_sits_the_measured_offset_behind_tai
     # 1965-07-01 12:00:00 UTC is 3.975354 s behind TAI, the ERFA value.
     utc = Horologium::Instant.from_utc(1965, 7, 1, 12, 0, 0, precision: :exact)
     tai = Horologium::Instant.from_tai(1965, 7, 1, 12, 0, 0, precision: :exact)
 
     assert_equal Rational(3_975_354, 1_000_000), (utc - tai).to_r
+  end
+
+  def test_an_iso_offset_in_the_drift_era_shifts_by_si_seconds
+    shifted = Horologium::Instant.from_iso8601(
+      "1965-07-01T12:00:00+01:00",
+      scale: :utc,
+      precision: :exact
+    )
+
+    assert_equal Horologium::Instant.from_utc(
+      1965, 7, 1, 12, 0, 0,
+      precision: :exact
+    ) - Horologium::Duration.seconds(3600),
+      shifted
+  end
+
+  def test_it_round_trips_across_the_drift_segment_boundaries
+    [
+      [1961, 7, 31, 23, 59, 59],
+      [1961, 8, 1, 0, 0, 0],
+      [1971, 12, 31, 23, 59, 59],
+      [1972, 1, 1, 0, 0, 0]
+    ].each do |fields|
+      civil = Horologium::Instant
+        .from_utc(*fields, precision: :exact)
+        .as(:civil, scale: :utc)
+
+      assert_equal fields,
+        [civil.year, civil.month, civil.day, civil.hour, civil.minute,
+          civil.second]
+    end
   end
 
   # The domain: 1961 and the door in the wall.

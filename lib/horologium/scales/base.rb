@@ -65,10 +65,10 @@ module Horologium
           raise NotImplementedError, "#{self} must implement .to_reference"
         end
 
-        # The SI seconds in a day of this scale, on the day at +day_number+.
-        # A day is 86,400 seconds in every scale the library reads by
-        # continuous time. UTC is the exception: a day that holds a leap
-        # second is 86,401 seconds long, so UTC overrides this. A
+        # The seconds the clock counts in a day of this scale, on the day at
+        # +day_number+. A day is 86,400 seconds in every scale the library
+        # reads by continuous time. UTC is the exception: a day that holds a
+        # leap second is 86,401 seconds long, so UTC overrides this. A
         # representation asks the scale this to map a fraction of a day to a
         # time of day, and to know whether a 61-second final minute is legal.
         #
@@ -76,6 +76,20 @@ module Horologium
         # @return [Integer] the seconds in that day
         def seconds_in_day(_day_number)
           Duration::SECONDS_PER_DAY
+        end
+
+        # The SI seconds a day of this scale spans, on the day at +day_number+.
+        # It matches {seconds_in_day} everywhere the day counts whole seconds:
+        # 86,400 in a continuous scale, 86,401 on a UTC leap second day. The
+        # one place they part is UTC's pre-1972 drift, where the clock still
+        # counts 86,400 seconds but each is fractionally longer, so the day
+        # spans a little more SI time. A numeric ISO 8601 offset counts against
+        # this, so it shifts by SI seconds on every day.
+        #
+        # @param day_number [Integer] the Julian Day Number of the day
+        # @return [Integer, Rational] the SI seconds in that day
+        def si_seconds_in_day(day_number)
+          seconds_in_day(day_number)
         end
 
         # The ISO 8601 zone designator this scale writes. Empty for a

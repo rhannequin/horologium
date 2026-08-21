@@ -132,6 +132,23 @@ module Horologium
           Duration::SECONDS_PER_DAY + whole_leap_seconds(day_number)
         end
 
+        # The SI seconds a UTC day spans: 86,400, one more on a day that holds a
+        # leap second, and a fraction more through the pre-1972 drift. It is the
+        # length the conversion to TAI stretches the day over, where
+        # {seconds_in_day} is the whole count the civil clock shows. A numeric
+        # ISO 8601 offset counts against this, so it shifts by SI seconds even
+        # on a drift day.
+        #
+        # @param day_number [Integer] the Julian Day Number of the day
+        # @return [Integer, Rational] the SI seconds in that day
+        # @raise [OutOfRangeError] before 1961-01-01
+        def si_seconds_in_day(day_number)
+          refuse unless day_number >= FIRST_DAY
+
+          day_scale(day_number, tai_utc_at(day_number)) *
+            Duration::SECONDS_PER_DAY
+        end
+
         # UTC writes +Z+, where a zero offset is a real thing.
         #
         # @return [String]

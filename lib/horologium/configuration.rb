@@ -23,8 +23,12 @@ module Horologium
     LEAP_SECOND_HORIZONS = %i[extrapolate raise].freeze
 
     # The source UTC reads its leap seconds from. It answers +tai_utc_at+ with
-    # TAI - UTC at a day's 0h. {Data::LeapSeconds}, over the iers gem, is the
-    # default; a caller with its own leap second data can set another here.
+    # TAI - UTC at a point in UTC, given a Julian Day Number: a day's 0h for a
+    # whole number, or part way through a day where a fraction is added, which
+    # UTC asks for to read the pre-1972 drift within a day. A source that steps
+    # only at whole days can answer a fraction with the offset at its 0h.
+    # {Data::LeapSeconds}, over the iers gem, is the default; a caller with its
+    # own leap second data can set another here.
     #
     # @return [#tai_utc_at]
     attr_reader :leap_second_source
