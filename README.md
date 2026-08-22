@@ -159,7 +159,7 @@ Horologium::Instant.from_utc(2020, 6, 15, 23, 59, 60)
 
 The `:exact` above is what makes `==` the right question to ask. At the default
 `:standard` precision the same three instants land a rounding step apart, well
-under a zeptosecond but not zero, so compare those with `equal_within?`.
+under a nanosecond but not zero, so compare those with `equal_within?`.
 
 UTC runs from 1961, whole leap seconds from 1972 and the earlier
 rate-adjustment drift before that, where a UTC second was fractionally longer
