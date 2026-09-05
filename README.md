@@ -94,6 +94,10 @@ Horologium::Instant.from_tai(2025, 5, 1, 12, 0, 0)
 Horologium::Instant.from_tdb(2025, 5, 1, 12, 0, 0)
 ```
 
+TDB is the one scale that rests on a model rather than a definition. Horologium
+runs the full 787-term Fairhead and Bretagnon series, the one [ERFA] evaluates
+in `dtdb`, rather than a truncation of it.
+
 A date that does not exist is refused rather than rolled over, and the message
 says which field is wrong.
 
@@ -342,23 +346,29 @@ Horologium.with_precision(:exact) do
 end
 ```
 
+A library can depend on Horologium without taking the configuration away from
+the application that depends on it. Reading the configuration does not freeze
+it, so a gem that converts an instant while it loads still leaves
+`Horologium.configure` open to the host. And a value built with an explicit
+`precision:` ignores the default, so a gem that pins its own precision computes
+the same thing whatever the host sets.
+
 Exactness is contagious. An operation between two `:standard` values stays
 `:standard`. Mixing a `:standard` and an `:exact` value gives an `:exact`
 result, so precision is not quietly lost. `:exact` guarantees the arithmetic
 Horologium performs. It cannot bring back precision that an input already lost
 when it was built.
 
-`:exact` is not the slower of the two, which is worth saying because the name
-suggests it. A `:standard` value turns a `Rational` into a pair of `Float`s on
-the way in and back again on the way out, and that conversion costs more than
-the arithmetic it feeds. So `:exact` is the faster one whenever a `Rational`
-goes in or comes out, by up to about twice on a build and a read. With a `Float`
-in and a `Float` out the two are close enough that the machine decides.
-`:standard` is the cheaper one for a long run of arithmetic between values
-already held that way. Mixing the two is the expensive case, because promoting
-a `:standard` value to a `Rational` costs more than the operation it is promoted
-for, so inside a loop it is worth keeping to one precision. `bin/benchmark`
-measures all of this on your own machine.
+A `:standard` value turns a `Rational` into a pair of `Float`s on the way in and
+back again on the way out, and that conversion costs more than the arithmetic it
+feeds. So `:exact` is the faster one whenever a `Rational` goes in or comes out,
+by up to about twice on a build and a read. With a `Float` in and a `Float` out
+the two are close enough that the machine decides. `:standard` is the cheaper
+one for a long run of arithmetic between values already held that way. Mixing
+the two is the expensive case, because promoting a `:standard` value to a
+`Rational` costs more than the operation it is promoted for, so inside a loop it
+is worth keeping to one precision. `bin/benchmark` measures all of this on your
+own machine.
 
 ## Status
 

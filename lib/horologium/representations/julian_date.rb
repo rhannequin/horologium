@@ -48,7 +48,14 @@ module Horologium
         # An +:exact+ reading asked for +:two_part+ is split again, and loses
         # the precision the Rational held beyond the two parts. It only
         # happens when the caller asks for it.
-
+        #
+        # Two Float readings of one instant are too coarse to subtract. The
+        # Floats around a modern Julian Date sit about 47 microseconds of time
+        # apart, and the whole TDB - TT correction peaks around 1.7
+        # milliseconds, so most of what the subtraction returns is the
+        # rounding. At Julian Date 2460676.5 the two scales read 80.466
+        # microseconds apart as Floats, where the answer is 86.463. Read both
+        # as +:rational+ to compare them.
         #
         # @param reading [Horologium::ScaleReading] the instant, read in a
         #   scale
