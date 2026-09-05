@@ -2,13 +2,31 @@ module Horologium
   class Duration
     include PreciseValue
 
+    SECONDS_PER_MINUTE: Integer
+
+    SECONDS_PER_HOUR: Integer
+
     SECONDS_PER_DAY: Integer
+
+    SECONDS_PER_JULIAN_YEAR: Integer
+
+    SECONDS_PER_JULIAN_CENTURY: Integer
 
     NANOSECONDS_PER_SECOND: Integer
 
     def self.seconds: (Numeric::scalar count, ?precision: Symbol) -> Duration
 
+    def self.minutes: (Numeric::scalar count, ?precision: Symbol) -> Duration
+
+    def self.hours: (Numeric::scalar count, ?precision: Symbol) -> Duration
+
     def self.days: (Numeric::scalar count, ?precision: Symbol) -> Duration
+
+    def self.julian_years: (Numeric::scalar count, ?precision: Symbol) -> Duration
+
+    def self.julian_centuries: (Numeric::scalar count, ?precision: Symbol) -> Duration
+
+    def self.zero: (?precision: Symbol) -> Duration
 
     def self.nanoseconds: (Numeric::scalar count, ?precision: Symbol) -> Duration
 
@@ -27,6 +45,16 @@ module Horologium
     def negative?: () -> bool
 
     def positive?: () -> bool
+
+    def in_seconds: () -> (Float | Rational)
+
+    def in_days: () -> (Float | Rational)
+
+    def in_julian_years: () -> (Float | Rational)
+
+    def in_julian_centuries: () -> (Float | Rational)
+
+    private def in_unit: (Integer seconds_per_unit) -> (Float | Rational)
 
     def to_r: () -> Rational
 
