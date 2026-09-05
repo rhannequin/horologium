@@ -408,4 +408,16 @@ class TestScalesUtc < Minitest::Test
     # With a flat 37-second offset and no step, every day is 86,400 seconds.
     assert_equal 86_400, Horologium::Scales::UTC.seconds_in_day(2_458_849)
   end
+
+  def test_a_julian_date_past_the_reach_of_a_float_still_reads_in_utc
+    julian_date = Rational(10**400)
+    utc = Horologium::Instant
+      .from_julian_date(julian_date, scale: :tai, precision: :exact)
+      .as(:julian_date, scale: :utc, as: :rational)
+
+    assert_equal julian_date,
+      Horologium::Instant
+        .from_julian_date(utc, scale: :utc, precision: :exact)
+        .as(:julian_date, scale: :tai, as: :rational)
+  end
 end

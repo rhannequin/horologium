@@ -49,6 +49,15 @@ module Horologium
       MAX_STEPS = 3
       private_constant :MAX_STEPS
 
+      # The magnitude a Julian Date has to stay under for the Floats around it
+      # to be less than a day apart. Over it a guess read off the Floats could
+      # land further out than the search walks back, so {guess_day} works the
+      # day out exactly instead.
+      #
+      # @api private
+      GUESSABLE = 2**52
+      private_constant :GUESSABLE
+
       class << self
         # A TAI Julian Date, read in UTC. It finds the UTC day the instant
         # falls in, then takes the fraction through that day back off the leap
@@ -296,13 +305,18 @@ module Horologium
 
         # The UTC day a TAI Julian Date is likely to fall in, read off the
         # Floats. It is at most a day out, which is what {from_reference}
-        # settles by stepping, so it does not have to be exact.
+        # settles by stepping, so it does not have to be exact. A date past
+        # {GUESSABLE}, where a Float no longer holds every day, is worked out
+        # exactly.
         #
         # @param value [Horologium::Numeric::TwoPartFloat,
         #   Horologium::Numeric::Exact] the Julian Date in TAI, in days
         # @return [Integer] the Julian Day Number to start the search at
         def guess_day(value)
-          (value.to_f + 0.5).floor
+          days = value.to_f
+          return (value.to_r + HALF).floor unless days.abs < GUESSABLE
+
+          (days + 0.5).floor
         end
 
         # The TAI Julian Date of a UTC day's 0h. A TAI instant reads in the UTC

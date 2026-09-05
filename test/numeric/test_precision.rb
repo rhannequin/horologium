@@ -197,6 +197,13 @@ class TestPrecision < Minitest::Test
     ))
   end
 
+  def test_compare_settles_parts_that_overflow_when_they_cancel
+    assert_equal 0, Horologium::Numeric::Precision.compare(
+      Horologium::Numeric::TwoPartFloat.new(1e308, -1e308),
+      Horologium::Numeric::TwoPartFloat.new(-1e308, 1e308)
+    )
+  end
+
   def test_compare_orders_across_precisions
     assert_equal 0, Horologium::Numeric::Precision.compare(
       Horologium::Numeric::TwoPartFloat.new(1.0, 0.5),

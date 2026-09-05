@@ -7,6 +7,8 @@ module Horologium
 
       MAX_STEPS: Integer
 
+      GUESSABLE: Integer
+
       def self.from_reference: (Numeric::TwoPartFloat | Numeric::Exact value, Symbol precision) -> (Numeric::TwoPartFloat | Numeric::Exact)
 
       def self.to_reference: (Numeric::TwoPartFloat | Numeric::Exact value, Symbol precision) -> (Numeric::TwoPartFloat | Numeric::Exact)

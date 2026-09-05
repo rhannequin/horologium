@@ -88,7 +88,8 @@ class TestScaleReading < Minitest::Test
       Horologium::ScaleReading.new(
         :tt,
         Horologium::Numeric::Exact.new(2_443_144.5),
-        :standard
+        :standard,
+        Horologium::Scales::TT
       )
     end
   end
@@ -190,5 +191,27 @@ class TestScaleReading < Minitest::Test
     assert_equal "#<Horologium::ScaleReading 2443144.5 JD in tai " \
       "(standard, measured)>",
       reading.inspect
+  end
+
+  def test_provenance_comes_from_the_scale_that_took_the_reading
+    reading = Horologium::Instant
+      .from_julian_date(2_500_000.5, scale: :tai)
+      .to(:utc)
+    replacement = Class.new(Horologium::Scales::Base) do
+      def self.from_reference(value, _precision)
+        value
+      end
+
+      def self.to_reference(value, _precision)
+        value
+      end
+
+      def self.provenance(_value)
+        :measured
+      end
+    end
+    Horologium.configure { |config| config.register_scale(:utc, replacement) }
+
+    assert_equal :extrapolated, reading.provenance
   end
 end

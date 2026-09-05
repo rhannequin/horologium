@@ -35,19 +35,29 @@ module Horologium
     # @return [Horologium::Numeric::TwoPartFloat, Horologium::Numeric::Exact]
     attr_reader :value
 
+    # The scale that took the reading, kept so the reading can ask it
+    # questions of its own.
+    #
+    # @api private
+    # @return [Class]
+    attr_reader :time_scale
+
     # @api private
     # @param scale [Symbol] the registered name of the scale
+    # @param time_scale [Class] the scale that took the reading, which is what
+    #   answers {#provenance}
     # @param value [Horologium::Numeric::TwoPartFloat,
     #   Horologium::Numeric::Exact] the Julian Date in that scale, in days
     # @param precision [Symbol] +:standard+ or +:exact+
     # @raise [ArgumentError] when the value does not match the precision,
     #   which is how a scale that dropped the precision it was given is caught
-    def initialize(scale, value, precision)
+    def initialize(scale, value, precision, time_scale)
       Numeric::Precision.validate_value!(value, precision)
 
       @scale = scale
       @value = value
       @precision = precision
+      @time_scale = time_scale
       freeze
     end
 
@@ -56,12 +66,14 @@ module Horologium
     # past the point its leap second data vouches for, where the offset is the
     # last known one and a new leap second could overturn it.
     #
-    # The scale answers this when it is asked. Most readings are taken without
-    # anyone reading it, and in UTC the answer costs more than the reading.
+    # The scale that took the reading answers this when it is asked. Most
+    # readings are taken without anyone reading it, and in UTC the answer
+    # costs more than the reading. It is the scale the reading came from, so a
+    # configuration changed afterwards does not move the answer.
     #
     # @return [Symbol] +:measured+ or +:extrapolated+
     def provenance
-      Horologium.configuration.scale(scale).provenance(value)
+      time_scale.provenance(value)
     end
 
     # The reading, in the representation asked for. The whole reading is

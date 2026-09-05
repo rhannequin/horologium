@@ -130,9 +130,12 @@ module Horologium
 
         # Orders two values by the number they denote, whatever precision each
         # is held in. Two two-part floats are compared through the difference
-        # of their parts, which is where the answer already is, and a
-        # difference of zero is settled exactly: a Float difference reaching
-        # zero says the values are close, not that they are equal.
+        # of their parts, which is where the answer already is.
+        #
+        # That difference answers only when it is finite and away from zero.
+        # Reaching zero says the values are close rather than equal, and parts
+        # large enough to overflow can cancel into a NaN, so both cases are
+        # settled exactly instead.
         #
         # @param left [TwoPartFloat, Exact] one value
         # @param right [TwoPartFloat, Exact] the other value
@@ -141,7 +144,8 @@ module Horologium
           if left.is_a?(TwoPartFloat) && right.is_a?(TwoPartFloat)
             difference = (left.high - right.high) + (left.low - right.low)
 
-            return sign_of(difference) unless difference.zero?
+            return sign_of(difference) if difference.finite? &&
+              !difference.zero?
           end
 
           sign_of(left.to_r - right.to_r)

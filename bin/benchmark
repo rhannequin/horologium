@@ -112,12 +112,14 @@ def time(block, iterations)
   (finished - started).to_f / iterations
 end
 
+# The objects one call allocates, counted over a thousand of them so the
+# measuring itself does not show up in the number.
 def allocations(block)
   GC.start
   before = GC.stat(:total_allocated_objects)
   1_000.times { block.call }
 
-  GC.stat(:total_allocated_objects) - before
+  (GC.stat(:total_allocated_objects) - before) / 1_000
 end
 
 # How many times a case runs in a round, from what one run of it costs.
@@ -139,10 +141,10 @@ ROUNDS.times do |round|
 end
 
 width = names.map(&:length).max
-puts format("%-#{width}s %12s %14s", "case", "time", "allocations")
+puts format("%-#{width}s %12s %10s", "case", "time", "objects")
 names.each do |name|
   puts format(
-    "%-#{width}s %9.3f us %10d",
+    "%-#{width}s %9.3f us %6d",
     name,
     fastest[name] / 1_000.0,
     allocations(CASES[name])
