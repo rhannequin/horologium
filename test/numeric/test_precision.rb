@@ -102,6 +102,26 @@ class TestPrecision < Minitest::Test
     end
   end
 
+  def test_build_each_holds_the_value_at_every_precision
+    table = Horologium::Numeric::Precision.build_each(Rational(1, 3))
+
+    assert_equal Horologium::Numeric::Precision::NAMES, table.keys
+    assert_instance_of Horologium::Numeric::TwoPartFloat, table[:standard]
+    assert_equal Rational(1, 3), table[:exact].to_r
+  end
+
+  def test_build_each_is_frozen
+    table = Horologium::Numeric::Precision.build_each(1)
+
+    assert_predicate table, :frozen?
+  end
+
+  def test_build_each_rejects_an_unrecognised_precision_when_it_is_read
+    table = Horologium::Numeric::Precision.build_each(1)
+
+    assert_raises(Horologium::UnknownPrecisionError) { table[:fast] }
+  end
+
   def test_two_standard_values_add_in_the_split
     sum = Horologium::Numeric::Precision.add(
       Horologium::Numeric::TwoPartFloat.new(1.0),

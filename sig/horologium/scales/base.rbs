@@ -1,5 +1,7 @@
 module Horologium
   module Scales
+    TT_TCG_TCB_ORIGIN_JULIAN_DATE: Rational
+
     class Base
       def self.from_reference: (Numeric::TwoPartFloat | Numeric::Exact value, Symbol precision) -> (Numeric::TwoPartFloat | Numeric::Exact)
 

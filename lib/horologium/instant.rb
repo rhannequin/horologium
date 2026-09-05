@@ -254,6 +254,96 @@ module Horologium
         )
       end
 
+      # Builds an instant from a TCG calendar date and time. It is
+      # {from_civil} read in TCG, the coordinate time of a frame moving
+      # with the Earth but outside its gravity well.
+      #
+      # The fields are {from_civil}'s, and a {Representations::CivilTime}
+      # may be passed on its own.
+      #
+      # @return [Horologium::Instant]
+      # @raise [InvalidCivilTimeError] when the fields are not a real date and
+      #   time
+      # @raise [UnknownPrecisionError] when the precision is not recognised
+      # @see from_civil
+      def from_tcg(
+        year,
+        month = nil,
+        day = nil,
+        hour = 0,
+        minute = 0,
+        second = 0,
+        precision: Horologium.current_precision
+      )
+        from_representation(
+          Representations::Civil,
+          civil_time(year, month, day, hour, minute, second),
+          nil,
+          :tcg,
+          precision
+        )
+      end
+
+      # Builds an instant from a TCB calendar date and time. It is
+      # {from_civil} read in TCB, the coordinate time of a frame at the
+      # barycentre of the solar system.
+      #
+      # The fields are {from_civil}'s, and a {Representations::CivilTime}
+      # may be passed on its own.
+      #
+      # @return [Horologium::Instant]
+      # @raise [InvalidCivilTimeError] when the fields are not a real date and
+      #   time
+      # @raise [UnknownPrecisionError] when the precision is not recognised
+      # @see from_civil
+      def from_tcb(
+        year,
+        month = nil,
+        day = nil,
+        hour = 0,
+        minute = 0,
+        second = 0,
+        precision: Horologium.current_precision
+      )
+        from_representation(
+          Representations::Civil,
+          civil_time(year, month, day, hour, minute, second),
+          nil,
+          :tcb,
+          precision
+        )
+      end
+
+      # Builds an instant from a GPS calendar date and time. It is
+      # {from_civil} read in GPS, the scale the Global Positioning
+      # System broadcasts, a fixed 19 seconds behind TAI.
+      #
+      # The fields are {from_civil}'s, and a {Representations::CivilTime}
+      # may be passed on its own.
+      #
+      # @return [Horologium::Instant]
+      # @raise [InvalidCivilTimeError] when the fields are not a real date and
+      #   time
+      # @raise [UnknownPrecisionError] when the precision is not recognised
+      # @see from_civil
+      def from_gps(
+        year,
+        month = nil,
+        day = nil,
+        hour = 0,
+        minute = 0,
+        second = 0,
+        precision: Horologium.current_precision
+      )
+        from_representation(
+          Representations::Civil,
+          civil_time(year, month, day, hour, minute, second),
+          nil,
+          :gps,
+          precision
+        )
+      end
+
       # Builds an instant from a UTC calendar date and time. It is
       # {from_civil} read in UTC, the scale of civil clocks, so a leap second
       # is a legal reading: the second may be 60 on a day that holds one.

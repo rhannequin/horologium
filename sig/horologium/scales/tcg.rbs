@@ -1,11 +1,15 @@
 module Horologium
   module Scales
-    class TT < Base
-      SECONDS_AHEAD_OF_TAI: Rational
+    class TCG < Base
+      L_G: Rational
 
-      DAYS_AHEAD_OF_TAI: Rational
+      RATE_FROM_TT: Rational
 
-      OFFSETS: Hash[Symbol, Numeric::TwoPartFloat | Numeric::Exact]
+      RATES: Hash[Symbol, Float | Rational]
+
+      BACK_RATES: Hash[Symbol, Float | Rational]
+
+      ORIGINS: Hash[Symbol, Numeric::TwoPartFloat | Numeric::Exact]
 
       def self.from_reference: (Numeric::TwoPartFloat | Numeric::Exact value, Symbol precision) -> (Numeric::TwoPartFloat | Numeric::Exact)
 

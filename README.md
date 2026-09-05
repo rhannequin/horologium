@@ -3,9 +3,9 @@
 [![Tests](https://github.com/rhannequin/horologium/workflows/CI/badge.svg)](https://github.com/rhannequin/horologium/actions?query=workflow%3ACI)
 
 Horologium is a Ruby library dedicated to **scientific time**: the time scales
-(TAI, TT, TDB, and UTC so far), high-precision instants, Julian Dates,
-intervals, and rigorous conversions between scales that astronomy and physics
-require.
+(TAI, TT, TDB, TCG, TCB, GPS, and UTC so far), high-precision instants, Julian
+Dates, intervals, and rigorous conversions between scales that astronomy and
+physics require.
 
 Ruby already has `Time`, `Date`, `DateTime`, and `ActiveSupport` for civil time:
 time zones, calendars, human formatting. None of them knows the difference
@@ -92,11 +92,29 @@ keyword.
 Horologium::Instant.from_tt(2025, 5, 1, 12, 0, 0)
 Horologium::Instant.from_tai(2025, 5, 1, 12, 0, 0)
 Horologium::Instant.from_tdb(2025, 5, 1, 12, 0, 0)
+Horologium::Instant.from_tcg(2025, 5, 1, 12, 0, 0)
+Horologium::Instant.from_tcb(2025, 5, 1, 12, 0, 0)
+Horologium::Instant.from_gps(2025, 5, 1, 12, 0, 0)
 ```
 
 TDB is the one scale that rests on a model rather than a definition. Horologium
 runs the full 787-term Fairhead and Bretagnon series, the one [ERFA] evaluates
 in `dtdb`, rather than a truncation of it.
+
+TCG and TCB are the coordinate times of the Earth-centred and barycentric
+frames. Each runs ahead of the scale it is defined on at a fixed rate set by
+definition, TCG on TT by about 22 milliseconds a year and TCB on TDB by about
+half a second, both counted from 1977-01-01 00:00:00 TAI. GPS time is a fixed
+19 SI seconds behind TAI and stays there, because it counts SI seconds and
+never takes a leap second.
+
+```rb
+instant = Horologium::Instant.from_julian_date(2_451_545.0, scale: :tt)
+
+instant.to(:tcg).as(:julian_date)  # => 2451545.0000058548
+instant.to(:tcb).as(:julian_date)  # => 2451545.000130251
+instant.to(:gps).as(:julian_date)  # => 2451544.9994075927
+```
 
 A date that does not exist is refused rather than rolled over, and the message
 says which field is wrong.

@@ -189,7 +189,7 @@ class TestConfiguration < Minitest::Test
       Horologium.configuration.scale(:sundial)
     end
 
-    assert_equal %i[tai tt tdb utc], error.known_scales
+    assert_equal %i[tai tt tdb tcg tcb gps utc], error.known_scales
   end
 
   def test_register_scale_adds_a_scale_an_instant_can_be_read_in
@@ -270,6 +270,7 @@ class TestConfiguration < Minitest::Test
   end
 
   def test_the_scale_names_list_the_registered_scales
-    assert_equal %i[tai tt tdb utc], Horologium.configuration.scale_names
+    assert_equal %i[tai tt tdb tcg tcb gps utc],
+      Horologium.configuration.scale_names
   end
 end

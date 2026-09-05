@@ -1,9 +1,9 @@
 module Horologium
   module Scales
-    class TT < Base
-      SECONDS_AHEAD_OF_TAI: Rational
+    class GPS < Base
+      SECONDS_BEHIND_TAI: Integer
 
-      DAYS_AHEAD_OF_TAI: Rational
+      DAYS_BEHIND_TAI: Rational
 
       OFFSETS: Hash[Symbol, Numeric::TwoPartFloat | Numeric::Exact]
 

@@ -92,6 +92,26 @@ module Horologium
           end
         end
 
+        # Builds a constant at every precision, once, so a conversion that
+        # leans on it does not build it again on every call. The result is a
+        # frozen Hash keyed by precision, which answers an unrecognised
+        # precision with {UnknownPrecisionError} rather than +nil+, so a
+        # caller reads it with +[]+ and needs no fetch of its own.
+        #
+        # @param value [Integer, Float, Rational] the number to hold
+        # @return [Hash{Symbol => TwoPartFloat, Exact}] the number at each
+        #   precision
+        # @example
+        #   OFFSETS = Numeric::Precision.build_each(Rational(19, 86_400))
+        #   OFFSETS[:exact] # => a Numeric::Exact
+        def build_each(value)
+          table = Hash.new do |_, precision|
+            raise UnknownPrecisionError.new(precision, NAMES)
+          end
+          NAMES.each { |precision| table[precision] = build(value, precision) }
+          table.freeze
+        end
+
         # Adds two values. Two standard values add as two-part floats; if
         # either is exact, both are promoted to exact Rationals first. Build a
         # plain number into a value with {build} before adding it: a bare

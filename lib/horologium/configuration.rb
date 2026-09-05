@@ -13,6 +13,9 @@ module Horologium
       tai: Scales::TAI,
       tt: Scales::TT,
       tdb: Scales::TDB,
+      tcg: Scales::TCG,
+      tcb: Scales::TCB,
+      gps: Scales::GPS,
       utc: Scales::UTC
     }.freeze
 

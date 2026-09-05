@@ -6,6 +6,13 @@ module Horologium
   # one scale to another goes through TAI. {Scales::Base} is what a scale
   # implements, and {Configuration#register_scale} adds one.
   module Scales
+    # The TT Julian Date where TT, TCG and TCB were set to read the same,
+    # 1977-01-01 00:00:00 TAI. The rates that separate the two coordinate
+    # scales from TT are counted from here, so both {TCG} and {TCB} need it.
+    # It is {Epochs::TT_TCG_TCB_ORIGIN} written as a bare TT Julian Date,
+    # which a scale can hold before {Instant} is defined.
+    TT_TCG_TCB_ORIGIN_JULIAN_DATE = Rational(24_431_445_003_725, 10**7)
+
     # The two methods a time scale implements. One reads a TAI Julian Date in
     # the scale, the other reads a Julian Date in the scale back in TAI. Every
     # scale converts to and from TAI, so a scale does not need to know about

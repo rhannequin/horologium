@@ -30,12 +30,7 @@ module Horologium
       # it again every time.
       #
       # @api private
-      OFFSETS = Numeric::Precision::NAMES.map do |precision|
-        [
-          precision,
-          Numeric::Precision.build(DAYS_AFTER_JULIAN_DATE_ORIGIN, precision)
-        ]
-      end.to_h.freeze
+      OFFSETS = Numeric::Precision.build_each(DAYS_AFTER_JULIAN_DATE_ORIGIN)
       private_constant :OFFSETS
 
       class << self
@@ -53,7 +48,7 @@ module Horologium
           JulianDate.render_value(
             Numeric::Precision.subtract(
               reading.value,
-              offset(reading.precision)
+              OFFSETS[reading.precision]
             ),
             output
           )
@@ -85,20 +80,8 @@ module Horologium
         def parse(value, low, scale, precision)
           Numeric::Precision.add(
             JulianDate.parse(value, low, scale, precision),
-            offset(precision)
+            OFFSETS[precision]
           )
-        end
-
-        private
-
-        # The days between the two origins, at the given precision.
-        #
-        # @param precision [Symbol] +:standard+ or +:exact+
-        # @return [Horologium::Numeric::TwoPartFloat,
-        #   Horologium::Numeric::Exact] the offset, in days
-        # @raise [UnknownPrecisionError] when the precision is not recognised
-        def offset(precision)
-          OFFSETS.fetch(Numeric::Precision.validate!(precision))
         end
       end
     end

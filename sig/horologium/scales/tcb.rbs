@@ -1,9 +1,19 @@
 module Horologium
   module Scales
-    class TT < Base
-      SECONDS_AHEAD_OF_TAI: Rational
+    class TCB < Base
+      L_B: Rational
 
-      DAYS_AHEAD_OF_TAI: Rational
+      TDB_0: Rational
+
+      TDB_0_IN_DAYS: Rational
+
+      RATE_FROM_TDB: Rational
+
+      RATES: Hash[Symbol, Float | Rational]
+
+      BACK_RATES: Hash[Symbol, Float | Rational]
+
+      ORIGINS: Hash[Symbol, Numeric::TwoPartFloat | Numeric::Exact]
 
       OFFSETS: Hash[Symbol, Numeric::TwoPartFloat | Numeric::Exact]
 
