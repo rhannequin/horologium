@@ -311,8 +311,8 @@ with ordinary floating-point arithmetic.
 
 Every value carries one of two precisions, fixed when it is built:
 
-- `:standard`, the default, keeps the value as a two-part float. It is fast and
-  stays within a few nanoseconds of the true value.
+- `:standard`, the default, keeps the value as a two-part float. It stays
+  within a few nanoseconds of the true value.
 - `:exact` keeps the value as a `Rational`, with no rounding. The test suite
   uses it to check that `:standard` stays within its stated precision.
 
@@ -347,6 +347,18 @@ result, so precision is not quietly lost. `:exact` guarantees the arithmetic
 Horologium performs. It cannot bring back precision that an input already lost
 when it was built.
 
+`:exact` is not the slower of the two, which is worth saying because the name
+suggests it. A `:standard` value turns a `Rational` into a pair of `Float`s on
+the way in and back again on the way out, and that conversion costs more than
+the arithmetic it feeds. So `:exact` is the faster one whenever a `Rational`
+goes in or comes out, by up to about twice on a build and a read. With a `Float`
+in and a `Float` out the two are close enough that the machine decides.
+`:standard` is the cheaper one for a long run of arithmetic between values
+already held that way. Mixing the two is the expensive case, because promoting
+a `:standard` value to a `Rational` costs more than the operation it is promoted
+for, so inside a loop it is worth keeping to one precision. `bin/benchmark`
+measures all of this on your own machine.
+
 ## Status
 
 This library is in early development, before its first public release. The
@@ -364,6 +376,12 @@ which is enforced at 100% of lines and branches in CI. You can also run
 `sig/` holds Horologium's own signatures and ships with the gem. `sig-vendor/`
 holds stubs for gems that ship none of their own, and stays out of the gem so
 it cannot clash with a downstream RBS collection.
+
+Run `bin/benchmark` to time the paths a consumer runs in a loop and count the
+objects each one allocates. Timings drift by a few percent between runs, so it
+rotates the order of the cases and reports the fastest round for each. The
+allocation counts do not drift, so where a timing and a count disagree, trust
+the count. Run it on a branch and on `main` to compare.
 
 Run `bin/ci` to run every check that GitHub Actions runs (RuboCop, Steep, YARD
 documentation coverage, and the tests with coverage) in a single pass. It runs

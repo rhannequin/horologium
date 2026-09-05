@@ -215,17 +215,17 @@ module Horologium
 
     # @return [Boolean]
     def zero?
-      rational.zero?
+      value.zero?
     end
 
     # @return [Boolean]
     def negative?
-      rational.negative?
+      value.negative?
     end
 
     # @return [Boolean]
     def positive?
-      rational.positive?
+      value.positive?
     end
 
     # The duration in SI seconds.
@@ -271,7 +271,7 @@ module Horologium
     #
     # @return [Rational]
     def to_r
-      rational
+      value.to_r
     end
 
     # The duration in SI seconds. A Float has about 15 digits, so a long
@@ -296,9 +296,9 @@ module Horologium
     # @return [Float, Rational] a Float at +:standard+, a Rational at
     #   +:exact+
     def in_unit(seconds_per_unit)
-      count = value / seconds_per_unit
+      return value.to_r / seconds_per_unit if precision == :exact
 
-      (precision == :exact) ? count.to_r : count.to_f
+      (value / seconds_per_unit).to_f
     end
   end
 end

@@ -63,7 +63,12 @@ module Horologium
         #   Horologium::Numeric::Exact] the offset in days
         # @raise [UnknownPrecisionError] when the precision is not recognised
         def offset(precision)
-          OFFSETS.fetch(Numeric::Precision.validate!(precision))
+          OFFSETS.fetch(precision) do
+            raise UnknownPrecisionError.new(
+              precision,
+              Numeric::Precision::NAMES
+            )
+          end
         end
       end
     end

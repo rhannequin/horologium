@@ -13,6 +13,8 @@ module Horologium
 
       private def self.single: (Instant::julian_date value, Symbol precision) -> (Numeric::TwoPartFloat | Numeric::Exact)
 
+      private def self.day: (Float value, Symbol precision) -> (Numeric::TwoPartFloat | Numeric::Exact)
+
       private def self.two_parts: (Instant::julian_date high, Instant::julian_date low, Symbol precision) -> (Numeric::TwoPartFloat | Numeric::Exact)
 
       private def self.part: (Instant::julian_date value) -> Float

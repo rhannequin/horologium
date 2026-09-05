@@ -259,4 +259,51 @@ class TestTwoPartFloat < Minitest::Test
         Horologium::Numeric::TwoPartFloat.new(2.0)
     end
   end
+
+  def test_it_is_zero_when_the_parts_cancel
+    assert_predicate Horologium::Numeric::TwoPartFloat.new(1.0, -1.0), :zero?
+  end
+
+  def test_it_is_not_zero_when_only_the_low_part_is_left
+    refute_predicate Horologium::Numeric::TwoPartFloat.new(0.0, 1e-300), :zero?
+  end
+
+  def test_it_reads_its_sign_from_both_parts
+    assert_predicate Horologium::Numeric::TwoPartFloat.new(1.0, -0.5), :positive?
+    assert_predicate Horologium::Numeric::TwoPartFloat.new(-1.0, 0.5), :negative?
+  end
+
+  def test_sum_error_is_the_error_two_sum_reports
+    sum, error = Horologium::Numeric::TwoPartFloat.two_sum(0.1, 0.2)
+
+    assert_equal error,
+      Horologium::Numeric::TwoPartFloat.sum_error(0.1, 0.2, sum)
+  end
+
+  def test_difference_error_is_the_error_two_diff_reports
+    difference, error = Horologium::Numeric::TwoPartFloat.two_diff(1e16, 1.0)
+
+    assert_equal error,
+      Horologium::Numeric::TwoPartFloat.difference_error(1e16, 1.0, difference)
+  end
+
+  def test_fast_sum_error_is_the_error_fast_two_sum_reports
+    sum, error = Horologium::Numeric::TwoPartFloat.fast_two_sum(1.0, 1e-16)
+
+    assert_equal error,
+      Horologium::Numeric::TwoPartFloat.fast_sum_error(1.0, 1e-16, sum)
+  end
+
+  def test_product_error_is_the_error_two_product_reports
+    product, error = Horologium::Numeric::TwoPartFloat.two_product(0.1, 0.2)
+
+    assert_equal error,
+      Horologium::Numeric::TwoPartFloat.product_error(0.1, 0.2, product)
+  end
+
+  def test_split_high_is_the_high_half_split_reports
+    high, = Horologium::Numeric::TwoPartFloat.split(0.1)
+
+    assert_equal high, Horologium::Numeric::TwoPartFloat.split_high(0.1)
+  end
 end

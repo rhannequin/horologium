@@ -175,4 +175,32 @@ class TestPrecision < Minitest::Test
       )
     end
   end
+
+  def test_compare_orders_two_standard_values
+    assert_equal(-1, Horologium::Numeric::Precision.compare(
+      Horologium::Numeric::TwoPartFloat.new(1.0),
+      Horologium::Numeric::TwoPartFloat.new(2.0)
+    ))
+  end
+
+  def test_compare_reads_the_number_and_not_the_parts_it_is_spelled_with
+    assert_equal 0, Horologium::Numeric::Precision.compare(
+      Horologium::Numeric::TwoPartFloat.new(2_460_796.0, 0.5),
+      Horologium::Numeric::TwoPartFloat.new(2_460_797.0, -0.5)
+    )
+  end
+
+  def test_compare_settles_a_close_pair_exactly
+    assert_equal(-1, Horologium::Numeric::Precision.compare(
+      Horologium::Numeric::TwoPartFloat.new(1.0, 0.0),
+      Horologium::Numeric::TwoPartFloat.new(1.0, 1e-300)
+    ))
+  end
+
+  def test_compare_orders_across_precisions
+    assert_equal 0, Horologium::Numeric::Precision.compare(
+      Horologium::Numeric::TwoPartFloat.new(1.0, 0.5),
+      Horologium::Numeric::Exact.new(Rational(3, 2))
+    )
+  end
 end

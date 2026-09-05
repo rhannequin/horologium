@@ -39,25 +39,31 @@ module Horologium
       # @param other [Horologium::Numeric::TwoPartFloat]
       # @return [Horologium::Numeric::TwoPartFloat]
       def +(other)
-        high_sum, high_error = two_sum(@high, other.high)
-        low_sum, low_error = two_sum(@low, other.low)
-        result_high, result_low = fast_two_sum(
-          high_sum,
-          high_error + low_error + low_sum
+        high_sum = @high + other.high
+        low_sum = @low + other.low
+        tail = TwoPartFloat.sum_error(@high, other.high, high_sum) +
+          TwoPartFloat.sum_error(@low, other.low, low_sum) + low_sum
+        result_high = high_sum + tail
+
+        self.class.new(
+          result_high,
+          TwoPartFloat.fast_sum_error(high_sum, tail, result_high)
         )
-        self.class.new(result_high, result_low)
       end
 
       # @param other [Horologium::Numeric::TwoPartFloat]
       # @return [Horologium::Numeric::TwoPartFloat]
       def -(other)
-        high_diff, high_error = two_diff(@high, other.high)
-        low_diff, low_error = two_diff(@low, other.low)
-        result_high, result_low = fast_two_sum(
-          high_diff,
-          high_error + low_error + low_diff
+        high_diff = @high - other.high
+        low_diff = @low - other.low
+        tail = TwoPartFloat.difference_error(@high, other.high, high_diff) +
+          TwoPartFloat.difference_error(@low, other.low, low_diff) + low_diff
+        result_high = high_diff + tail
+
+        self.class.new(
+          result_high,
+          TwoPartFloat.fast_sum_error(high_diff, tail, result_high)
         )
-        self.class.new(result_high, result_low)
       end
 
       # @param scalar [Integer, Float, Rational]
@@ -65,11 +71,16 @@ module Horologium
       # @raise [ArgumentError] when given anything but a plain number
       def *(scalar) # rubocop:disable Naming/BinaryOperatorParameterName
         factor = scalar_float(scalar)
-        high, low = two_sum(@high, @low)
-        product, product_error = two_product(high, factor)
-        result_high, result_low =
-          fast_two_sum(product, product_error + low * factor)
-        self.class.new(result_high, result_low)
+        high = @high + @low
+        low = TwoPartFloat.sum_error(@high, @low, high)
+        product = high * factor
+        tail = TwoPartFloat.product_error(high, factor, product) + low * factor
+        result_high = product + tail
+
+        self.class.new(
+          result_high,
+          TwoPartFloat.fast_sum_error(product, tail, result_high)
+        )
       end
 
       # @param scalar [Integer, Float, Rational]
@@ -80,21 +91,32 @@ module Horologium
         divisor = scalar_float(scalar)
         raise ZeroDivisionError, "divided by 0" if divisor.zero?
 
-        high, low = two_sum(@high, @low)
+        high = @high + @low
+        low = TwoPartFloat.sum_error(@high, @low, high)
         quotient = high / divisor
-        product, product_error = two_product(quotient, divisor)
-        remainder, remainder_error = two_diff(high, product)
-        correction = (remainder_error + low) - product_error
+        product = quotient * divisor
+        remainder = high - product
+        correction = (
+          TwoPartFloat.difference_error(high, product, remainder) + low
+        ) - TwoPartFloat.product_error(quotient, divisor, product)
         next_quotient = (remainder + correction) / divisor
-        result_high, result_low = fast_two_sum(quotient, next_quotient)
-        self.class.new(result_high, result_low)
+        result_high = quotient + next_quotient
+
+        self.class.new(
+          result_high,
+          TwoPartFloat.fast_sum_error(quotient, next_quotient, result_high)
+        )
       end
 
       # The two parts added with no loss. Each Float is an exact rational, so
-      # their sum is exact and keeps the low part.
+      # their sum is exact and keeps the low part. A zero low part has nothing
+      # to add, and that is the common case: it is how a value built from a
+      # single number is held.
       #
       # @return [Rational]
       def to_r
+        return high.to_r if low.zero?
+
         high.to_r + low.to_r
       end
 
@@ -105,6 +127,24 @@ module Horologium
       # @return [Float]
       def to_f
         high + low
+      end
+
+      # Whether the two parts add up to nothing. A pair that cancels, such as
+      # a high part of 1.0 and a low part of -1.0, reads as zero.
+      #
+      # @return [Boolean]
+      def zero?
+        to_f.zero?
+      end
+
+      # @return [Boolean]
+      def negative?
+        to_f.negative?
+      end
+
+      # @return [Boolean]
+      def positive?
+        to_f.positive?
       end
 
       # Compares the stored parts, not the number they add up to.
@@ -142,12 +182,13 @@ module Horologium
       def self.normalize(high, low = 0.0)
         rounded = high.round.to_f
         remainder = high - rounded
-        sum, error = two_sum(remainder, low)
+        sum = remainder + low
+        error = sum_error(remainder, low, sum)
         if sum.abs > 0.5
           carry = sum.round.to_f
-          carry_sum, carry_error = two_sum(sum - carry, error)
+          carry_sum = (sum - carry) + error
           new_high = rounded + carry
-          new_low = carry_sum + carry_error
+          new_low = carry_sum + sum_error(sum - carry, error, carry_sum)
         else
           new_high = rounded
           new_low = sum + error
@@ -182,8 +223,23 @@ module Horologium
       # @return [Array(Float, Float)] the sum and its rounding error
       def self.two_sum(left, right)
         sum = left + right
+
+        [sum, sum_error(left, right, sum)]
+      end
+
+      # The rounding error of an addition whose sum you already have. It is
+      # {two_sum} without the pair, for the arithmetic below, where boxing a
+      # pair of Floats costs more than the addition it carries.
+      #
+      # @api private
+      # @param left [Float]
+      # @param right [Float]
+      # @param sum [Float] the sum of left and right
+      # @return [Float] what the addition rounded away
+      def self.sum_error(left, right, sum)
         right_virtual = sum - left
-        [sum, (left - (sum - right_virtual)) + (right - right_virtual)]
+
+        (left - (sum - right_virtual)) + (right - right_virtual)
       end
 
       # Subtracts right from left and also returns the rounding error. Adding
@@ -196,11 +252,22 @@ module Horologium
       # @return [Array(Float, Float)] the difference and its rounding error
       def self.two_diff(left, right)
         difference = left - right
+
+        [difference, difference_error(left, right, difference)]
+      end
+
+      # The rounding error of a subtraction whose difference you already have,
+      # the {two_diff} companion of {sum_error}.
+      #
+      # @api private
+      # @param left [Float]
+      # @param right [Float]
+      # @param difference [Float] left minus right
+      # @return [Float] what the subtraction rounded away
+      def self.difference_error(left, right, difference)
         right_virtual = difference - left
-        [
-          difference,
-          (left - (difference - right_virtual)) - (right + right_virtual)
-        ]
+
+        (left - (difference - right_virtual)) - (right + right_virtual)
       end
 
       # Dekker's fast-two-sum, a quicker version of two_sum. It is only correct
@@ -213,7 +280,19 @@ module Horologium
       # @return [Array(Float, Float)] the sum and its rounding error
       def self.fast_two_sum(larger, smaller)
         sum = larger + smaller
-        [sum, smaller - (sum - larger)]
+
+        [sum, fast_sum_error(larger, smaller, sum)]
+      end
+
+      # The rounding error of a {fast_two_sum} whose sum you already have.
+      #
+      # @api private
+      # @param larger [Float] the part with the larger magnitude
+      # @param smaller [Float] the part with the smaller magnitude
+      # @param sum [Float] the sum of the two
+      # @return [Float] what the addition rounded away
+      def self.fast_sum_error(larger, smaller, sum)
+        smaller - (sum - larger)
       end
 
       # Multiplies left and right and also returns the rounding error of the
@@ -227,14 +306,28 @@ module Horologium
       # @return [Array(Float, Float)] the product and its rounding error
       def self.two_product(left, right)
         product = left * right
-        left_high, left_low = split(left)
-        right_high, right_low = split(right)
-        error =
-          ((left_high * right_high - product) +
-            left_high * right_low +
-            left_low * right_high) +
+
+        [product, product_error(left, right, product)]
+      end
+
+      # The rounding error of a multiplication whose product you already have,
+      # the {two_product} companion of {sum_error}.
+      #
+      # @api private
+      # @param left [Float]
+      # @param right [Float]
+      # @param product [Float] left times right
+      # @return [Float] what the multiplication rounded away
+      def self.product_error(left, right, product)
+        left_high = split_high(left)
+        left_low = left - left_high
+        right_high = split_high(right)
+        right_low = right - right_high
+
+        ((left_high * right_high - product) +
+          left_high * right_low +
+          left_low * right_high) +
           left_low * right_low
-        [product, error]
       end
 
       # Splits a Float into a high and a low half that add back to the value
@@ -245,10 +338,20 @@ module Horologium
       # @param value [Float]
       # @return [Array(Float, Float)] the high half and the low half
       def self.split(value)
+        high = split_high(value)
+
+        [high, value - high]
+      end
+
+      # The high half of a split mantissa, which is {split} without the pair.
+      #
+      # @api private
+      # @param value [Float]
+      # @return [Float] the high half
+      def self.split_high(value)
         scaled = SPLIT_FACTOR * value
-        high = scaled - (scaled - value)
-        low = value - high
-        [high, low]
+
+        scaled - (scaled - value)
       end
 
       # The two parts. Read them to pass the value to a foreign kernel that
@@ -276,22 +379,6 @@ module Horologium
             "a TwoPartFloat multiplies and divides by a plain number, " \
             "got a #{scalar.class}"
         end
-      end
-
-      def two_sum(left, right)
-        self.class.two_sum(left, right)
-      end
-
-      def two_diff(left, right)
-        self.class.two_diff(left, right)
-      end
-
-      def fast_two_sum(larger, smaller)
-        self.class.fast_two_sum(larger, smaller)
-      end
-
-      def two_product(left, right)
-        self.class.two_product(left, right)
       end
     end
   end

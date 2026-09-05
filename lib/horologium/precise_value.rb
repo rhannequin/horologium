@@ -35,13 +35,13 @@ module Horologium
 
       @value = value
       @precision = precision
-      @rational = value.to_r
       freeze
     end
 
     # Orders by the value denoted, across precisions. The same value compares
     # equal whatever the precision, so +==+ (from Comparable) and sorting
-    # ignore it.
+    # ignore it. The comparison happens in the precision the values are held
+    # in; see {Numeric::Precision.compare}.
     #
     # @param other [Object] the value to compare with
     # @return [Integer, nil] -1, 0, or 1, or nil when other is not the same
@@ -49,7 +49,7 @@ module Horologium
     def <=>(other)
       return unless other.is_a?(self.class)
 
-      rational <=> other.rational
+      Numeric::Precision.compare(value, other.value)
     end
 
     # Stricter than +==+: the precision must match too.
@@ -69,11 +69,14 @@ module Horologium
 
     protected
 
-    # The value denoted, as a Rational, computed once at construction so a
-    # frozen value never recomputes it for comparison.
+    # The value denoted, as a Rational. {#eql?} and {#hash} read it, because
+    # they need one number for a value the two precisions spell differently.
+    # {#<=>} does not, so ordering two values never builds one.
     #
     # @api private
     # @return [Rational]
-    attr_reader :rational
+    def rational
+      value.to_r
+    end
   end
 end
