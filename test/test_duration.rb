@@ -265,6 +265,14 @@ class TestDuration < Minitest::Test
     assert_in_delta 86_400.0, Horologium::Duration.days(1).in_seconds
   end
 
+  def test_it_reads_itself_in_minutes
+    assert_in_delta 60.0, Horologium::Duration.hours(1).in_minutes
+  end
+
+  def test_it_reads_itself_in_hours
+    assert_in_delta 24.0, Horologium::Duration.days(1).in_hours
+  end
+
   def test_it_reads_itself_in_days
     assert_in_delta 0.5, Horologium::Duration.hours(12).in_days
   end

@@ -54,6 +54,21 @@ module Horologium
         self.class.new(value / scalar_rational(scalar))
       end
 
+      # @return [Boolean]
+      def zero?
+        value.zero?
+      end
+
+      # @return [Boolean]
+      def negative?
+        value.negative?
+      end
+
+      # @return [Boolean]
+      def positive?
+        value.positive?
+      end
+
       # @param other [Object]
       # @return [Boolean]
       def ==(other)

@@ -170,7 +170,7 @@ module Horologium
         # @param reading [Horologium::ScaleReading] the reading to round
         # @return [Horologium::ScaleReading] the rounded reading, held exactly
         def nanosecond_reading(reading)
-          scale = Horologium.configuration.scale(reading.scale)
+          scale = reading.time_scale
           shifted = reading.value.to_r + HALF_DAY
           day = shifted.floor
           seclen = scale.seconds_in_day(day)
@@ -183,7 +183,7 @@ module Horologium
           )
           value = Numeric::Precision.build(day - HALF_DAY + fraction, :exact)
 
-          ScaleReading.new(reading.scale, value, :exact)
+          ScaleReading.new(reading.scale, value, :exact, scale)
         end
 
         # The date part of a civil time, the year written to at least four

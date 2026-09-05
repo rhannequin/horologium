@@ -19,6 +19,12 @@ module Horologium
 
       def to_r: () -> Rational
 
+      def zero?: () -> bool
+
+      def negative?: () -> bool
+
+      def positive?: () -> bool
+
       def to_f: () -> Float
 
       attr_reader value: Rational

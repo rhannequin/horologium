@@ -6,15 +6,13 @@ module Horologium
 
     @precision: Symbol
 
-    @rational: Rational
-
     def initialize: (Numeric::TwoPartFloat | Numeric::Exact value, Symbol precision) -> void
 
     attr_reader value: Numeric::TwoPartFloat | Numeric::Exact
 
     attr_reader precision: Symbol
 
-    attr_reader rational: Rational
+    def rational: () -> Rational
 
     def <=>: (untyped other) -> Integer?
 

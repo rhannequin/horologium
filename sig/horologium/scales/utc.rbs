@@ -7,6 +7,8 @@ module Horologium
 
       MAX_STEPS: Integer
 
+      GUESSABLE: Integer
+
       def self.from_reference: (Numeric::TwoPartFloat | Numeric::Exact value, Symbol precision) -> (Numeric::TwoPartFloat | Numeric::Exact)
 
       def self.to_reference: (Numeric::TwoPartFloat | Numeric::Exact value, Symbol precision) -> (Numeric::TwoPartFloat | Numeric::Exact)
@@ -27,17 +29,19 @@ module Horologium
 
       private def self.strict?: () -> bool
 
-      private def self.whole_leap_seconds: (Integer day_number) -> Integer
+      private def self.whole_leap_seconds: ((Integer | Rational) dat0, (Integer | Rational) next_dat0) -> Integer
 
       private def self.day_fraction: (Numeric::TwoPartFloat | Numeric::Exact value, Integer day, Symbol precision) -> (Numeric::TwoPartFloat | Numeric::Exact)
 
-      private def self.unstretch: (Numeric::TwoPartFloat | Numeric::Exact value, Integer day, Symbol precision) -> (Numeric::TwoPartFloat | Numeric::Exact)
+      private def self.unstretch: (Numeric::TwoPartFloat | Numeric::Exact value, Numeric::TwoPartFloat | Numeric::Exact midnight, Rational scale) -> (Numeric::TwoPartFloat | Numeric::Exact)
 
-      private def self.before_midnight?: (Numeric::TwoPartFloat | Numeric::Exact value, Integer day, Symbol precision) -> bool
+      private def self.before_midnight?: (Numeric::TwoPartFloat | Numeric::Exact value, Numeric::TwoPartFloat | Numeric::Exact midnight) -> bool
 
-      private def self.midnight_tai: (Integer day, Symbol precision) -> (Numeric::TwoPartFloat | Numeric::Exact)
+      private def self.guess_day: (Numeric::TwoPartFloat | Numeric::Exact value) -> Integer
 
-      private def self.day_scale: (Integer day, Integer | Rational dat0) -> Rational
+      private def self.midnight_tai: (Integer day, Symbol precision, (Integer | Rational) dat0) -> (Numeric::TwoPartFloat | Numeric::Exact)
+
+      private def self.day_scale: (Integer day, (Integer | Rational) dat0, (Integer | Rational) next_dat0) -> Rational
 
       private def self.drift_rate: (Integer day, Integer | Rational dat0) -> Rational
 

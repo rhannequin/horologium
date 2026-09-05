@@ -126,4 +126,13 @@ class TestExact < Minitest::Test
       Horologium::Numeric::Exact.new(3) / Horologium::Numeric::Exact.new(2)
     end
   end
+
+  def test_it_is_zero_when_it_holds_nothing
+    assert_predicate Horologium::Numeric::Exact.new(0), :zero?
+  end
+
+  def test_it_reads_its_sign_from_the_value_it_holds
+    assert_predicate Horologium::Numeric::Exact.new(Rational(1, 3)), :positive?
+    assert_predicate Horologium::Numeric::Exact.new(Rational(-1, 3)), :negative?
+  end
 end

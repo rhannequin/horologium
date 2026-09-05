@@ -15,6 +15,12 @@ module Horologium
 
       def to_r: () -> Rational
 
+      def zero?: () -> bool
+
+      def negative?: () -> bool
+
+      def positive?: () -> bool
+
       def to_f: () -> Float
 
       def ==: (untyped other) -> bool
@@ -29,13 +35,23 @@ module Horologium
 
       def self.two_sum: (Float left, Float right) -> [ Float, Float ]
 
+      def self.sum_error: (Float left, Float right, Float sum) -> Float
+
       def self.two_diff: (Float left, Float right) -> [ Float, Float ]
+
+      def self.difference_error: (Float left, Float right, Float difference) -> Float
 
       def self.fast_two_sum: (Float larger, Float smaller) -> [ Float, Float ]
 
+      def self.fast_sum_error: (Float larger, Float smaller, Float sum) -> Float
+
       def self.two_product: (Float left, Float right) -> [ Float, Float ]
 
+      def self.product_error: (Float left, Float right, Float product) -> Float
+
       def self.split: (Float value) -> [ Float, Float ]
+
+      def self.split_high: (Float value) -> Float
 
       attr_reader high: Float
 
@@ -45,13 +61,6 @@ module Horologium
 
       def scalar_float: (untyped scalar) -> Float
 
-      def two_sum: (Float left, Float right) -> [ Float, Float ]
-
-      def two_diff: (Float left, Float right) -> [ Float, Float ]
-
-      def fast_two_sum: (Float larger, Float smaller) -> [ Float, Float ]
-
-      def two_product: (Float left, Float right) -> [ Float, Float ]
     end
   end
 end

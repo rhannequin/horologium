@@ -25,9 +25,12 @@ module Horologium
         # @return [Symbol] the same precision
         # @raise [UnknownPrecisionError] when it is not one of {NAMES}
         def validate!(precision)
-          return precision if NAMES.include?(precision)
-
-          raise UnknownPrecisionError.new(precision, NAMES)
+          case precision
+          when :standard, :exact
+            precision
+          else
+            raise UnknownPrecisionError.new(precision, NAMES)
+          end
         end
 
         # The precision a result takes from its two operands. Same precision
@@ -102,6 +105,8 @@ module Horologium
         def add(left, right)
           if left.is_a?(TwoPartFloat) && right.is_a?(TwoPartFloat)
             left + right
+          elsif left.is_a?(Exact) && right.is_a?(Exact)
+            left + right
           else
             promote(left) + promote(right)
           end
@@ -116,9 +121,34 @@ module Horologium
         def subtract(left, right)
           if left.is_a?(TwoPartFloat) && right.is_a?(TwoPartFloat)
             left - right
+          elsif left.is_a?(Exact) && right.is_a?(Exact)
+            left - right
           else
             promote(left) - promote(right)
           end
+        end
+
+        # Orders two values by the number they denote, whatever precision each
+        # is held in. Two two-part floats are compared through the difference
+        # of their parts, which is where the answer already is.
+        #
+        # That difference answers only when it is finite and away from zero.
+        # Reaching zero says the values are close rather than equal, and parts
+        # large enough to overflow can cancel into a NaN, so both cases are
+        # settled exactly instead.
+        #
+        # @param left [TwoPartFloat, Exact] one value
+        # @param right [TwoPartFloat, Exact] the other value
+        # @return [Integer] -1, 0, or 1
+        def compare(left, right)
+          if left.is_a?(TwoPartFloat) && right.is_a?(TwoPartFloat)
+            difference = (left.high - right.high) + (left.low - right.low)
+
+            return sign_of(difference) if difference.finite? &&
+              !difference.zero?
+          end
+
+          sign_of(left.to_r - right.to_r)
         end
 
         # Checks that a value matches a precision: a {TwoPartFloat} for
@@ -147,10 +177,27 @@ module Horologium
         # @return [Class] the type its values take
         # @raise [UnknownPrecisionError] when the precision is not recognised
         def value_type(precision)
-          (validate!(precision) == :exact) ? Exact : TwoPartFloat
+          case precision
+          when :standard
+            TwoPartFloat
+          when :exact
+            Exact
+          else
+            raise UnknownPrecisionError.new(precision, NAMES)
+          end
         end
 
         private
+
+        # Where a number sits against zero.
+        #
+        # @param number [Float, Rational] the number to read
+        # @return [Integer] -1 below zero, 0 at it, 1 above it
+        def sign_of(number)
+          return 0 if number.zero?
+
+          number.negative? ? -1 : 1
+        end
 
         # One side of an operation, as an exact value.
         #

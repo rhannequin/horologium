@@ -8,7 +8,7 @@ module Horologium
 
     @precision: Symbol
 
-    @provenance: Symbol
+    @time_scale: singleton(Scales::Base)
 
     attr_reader scale: Symbol
 
@@ -16,9 +16,11 @@ module Horologium
 
     attr_reader value: Numeric::TwoPartFloat | Numeric::Exact
 
-    attr_reader provenance: Symbol
+    attr_reader time_scale: singleton(Scales::Base)
 
-    def initialize: (Symbol scale, Numeric::TwoPartFloat | Numeric::Exact value, Symbol precision, ?Symbol provenance) -> void
+    def provenance: () -> Symbol
+
+    def initialize: (Symbol scale, Numeric::TwoPartFloat | Numeric::Exact value, Symbol precision, singleton(Scales::Base) time_scale) -> void
 
     def as: (Symbol representation, ?as: Symbol) -> untyped
 

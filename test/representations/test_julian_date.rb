@@ -11,7 +11,8 @@ class TestRepresentationsJulianDate < Minitest::Test
     reading = Horologium::ScaleReading.new(
       :tai,
       Horologium::Numeric::TwoPartFloat.new(2_443_144.5, 3.725e-4),
-      :standard
+      :standard,
+      Horologium::Scales::TAI
     )
 
     assert_in_delta 2_443_144.500_372_5,
@@ -25,7 +26,8 @@ class TestRepresentationsJulianDate < Minitest::Test
       Horologium::Numeric::Exact.new(
         Rational(24_431_445_003_725, 10_000_000)
       ),
-      :exact
+      :exact,
+      Horologium::Scales::TAI
     )
 
     assert_in_delta 2_443_144.500_372_5,
@@ -39,7 +41,8 @@ class TestRepresentationsJulianDate < Minitest::Test
       Horologium::Numeric::Exact.new(
         Rational(24_431_445_003_725, 10_000_000)
       ),
-      :exact
+      :exact,
+      Horologium::Scales::TAI
     )
 
     assert_equal Rational(24_431_445_003_725, 10_000_000),
@@ -48,7 +51,12 @@ class TestRepresentationsJulianDate < Minitest::Test
 
   def test_it_renders_a_standard_reading_as_the_two_part_float_it_holds
     value = Horologium::Numeric::TwoPartFloat.new(2_443_144.5, 3.725e-4)
-    reading = Horologium::ScaleReading.new(:tai, value, :standard)
+    reading = Horologium::ScaleReading.new(
+      :tai,
+      value,
+      :standard,
+      Horologium::Scales::TAI
+    )
 
     assert_same value,
       Horologium::Representations::JulianDate.render(reading, :two_part)
@@ -58,7 +66,12 @@ class TestRepresentationsJulianDate < Minitest::Test
     value = Horologium::Numeric::Exact.new(
       Rational(24_431_445_003_725, 10_000_000)
     )
-    reading = Horologium::ScaleReading.new(:tai, value, :exact)
+    reading = Horologium::ScaleReading.new(
+      :tai,
+      value,
+      :exact,
+      Horologium::Scales::TAI
+    )
 
     rendered = Horologium::Representations::JulianDate.render(
       reading,

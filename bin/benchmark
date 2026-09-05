@@ -1,0 +1,152 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Times the paths a consumer runs in a loop, and counts the objects each
+# allocates. Timing on a laptop drifts by a few percent between rounds, so
+# every case runs in a rotating order across rounds and the number reported is
+# the fastest round rather than an average. Allocation counts do not drift, so
+# where a timing and a count disagree, trust the count.
+#
+# Run it on the branch and on main, and compare the two runs.
+
+require_relative "../lib/horologium"
+
+FLOAT_JULIAN_DATE = 2_460_796.5
+RATIONAL_JULIAN_DATE = Rational(2_460_796_500_001, 1_000_000)
+# Each case runs for about this long in a round, so a slow case does not have
+# to run as many times as a fast one.
+ROUND_NANOSECONDS = 30_000_000
+MIN_ITERATIONS = 200
+MAX_ITERATIONS = 20_000
+ROUNDS = 7
+
+instant = Horologium::Instant
+exact = instant.from_julian_date(
+  FLOAT_JULIAN_DATE,
+  scale: :tt,
+  precision: :exact
+)
+standard = instant.from_julian_date(
+  FLOAT_JULIAN_DATE,
+  scale: :tt,
+  precision: :standard
+)
+standard_epoch = instant.from_tt(2000, 1, 1, 12, precision: :standard)
+
+CASES = {
+  "build from a Float, :exact" => -> {
+    instant.from_julian_date(FLOAT_JULIAN_DATE, scale: :tt, precision: :exact)
+  },
+  "build from a Float, :standard" => -> {
+    instant.from_julian_date(
+      FLOAT_JULIAN_DATE,
+      scale: :tt,
+      precision: :standard
+    )
+  },
+  "build from a Rational, :exact" => -> {
+    instant.from_julian_date(
+      RATIONAL_JULIAN_DATE,
+      scale: :tt,
+      precision: :exact
+    )
+  },
+  "build from a Rational, :standard" => -> {
+    instant.from_julian_date(
+      RATIONAL_JULIAN_DATE,
+      scale: :tt,
+      precision: :standard
+    )
+  },
+  "build from civil fields, :exact" => -> {
+    instant.from_tt(2026, 1, 1, 12, 0, 0, precision: :exact)
+  },
+  "read a Julian Date, :exact" => -> {
+    exact.as(:julian_date, scale: :tai)
+  },
+  "read a Julian Date, :standard" => -> {
+    standard.as(:julian_date, scale: :tai)
+  },
+  "read a civil time, :exact" => -> { exact.as(:civil, scale: :tt) },
+  "read an ISO 8601 string, :exact" => -> { exact.as(:iso8601, scale: :tt) },
+  "read UTC, :exact" => -> { exact.as(:julian_date, scale: :utc) },
+  "read UTC, :standard" => -> { standard.as(:julian_date, scale: :utc) },
+  "build from UTC, :standard" => -> {
+    instant.from_julian_date(
+      FLOAT_JULIAN_DATE,
+      scale: :utc,
+      precision: :standard
+    )
+  },
+  "read the provenance of a UTC reading" => -> {
+    exact.to(:utc).provenance
+  },
+  "read TDB, :exact" => -> { exact.as(:julian_date, scale: :tdb) },
+  "subtract an epoch, both :exact" => -> {
+    exact - Horologium::Epochs::J2000
+  },
+  "subtract an epoch, both :standard" => -> { standard - standard_epoch },
+  "subtract an epoch, mixed" => -> {
+    standard - Horologium::Epochs::J2000
+  },
+  "centuries since J2000, :exact" => -> {
+    (
+      instant.from_julian_date(
+        RATIONAL_JULIAN_DATE,
+        scale: :tt,
+        precision: :exact
+      ) - Horologium::Epochs::J2000
+    ).in_julian_centuries.to_f
+  }
+}.freeze
+
+def time(block, iterations)
+  started = Process.clock_gettime(Process::CLOCK_MONOTONIC, :nanosecond)
+  count = 0
+  while count < iterations
+    block.call
+    count += 1
+  end
+  finished = Process.clock_gettime(Process::CLOCK_MONOTONIC, :nanosecond)
+
+  (finished - started).to_f / iterations
+end
+
+# The objects one call allocates, counted over a thousand of them so the
+# measuring itself does not show up in the number.
+def allocations(block)
+  GC.start
+  before = GC.stat(:total_allocated_objects)
+  1_000.times { block.call }
+
+  (GC.stat(:total_allocated_objects) - before) / 1_000
+end
+
+# How many times a case runs in a round, from what one run of it costs.
+def iterations_for(block)
+  each = time(block, MIN_ITERATIONS)
+
+  (ROUND_NANOSECONDS / each).to_i.clamp(MIN_ITERATIONS, MAX_ITERATIONS)
+end
+
+names = CASES.keys
+iterations = names.to_h { |name| [name, iterations_for(CASES[name])] }
+
+fastest = Hash.new(Float::INFINITY)
+ROUNDS.times do |round|
+  names.rotate(round).each do |name|
+    nanoseconds = time(CASES[name], iterations[name])
+    fastest[name] = nanoseconds if nanoseconds < fastest[name]
+  end
+end
+
+width = names.map(&:length).max
+puts format("%-#{width}s %12s %10s", "case", "time", "objects")
+names.each do |name|
+  puts format(
+    "%-#{width}s %9.3f us %6d",
+    name,
+    fastest[name] / 1_000.0,
+    allocations(CASES[name])
+  )
+end

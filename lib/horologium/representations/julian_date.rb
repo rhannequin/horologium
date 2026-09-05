@@ -49,6 +49,14 @@ module Horologium
         # the precision the Rational held beyond the two parts. It only
         # happens when the caller asks for it.
         #
+        # Two Float readings of one instant are too coarse to subtract. The
+        # Floats around a modern Julian Date sit about 47 microseconds of time
+        # apart, and the whole TDB - TT correction peaks around 1.7
+        # milliseconds, so most of what the subtraction returns is the
+        # rounding. At Julian Date 2460676.5 the two scales read 80.466
+        # microseconds apart as Floats, where the answer is 86.463. Read both
+        # as +:rational+ to compare them.
+        #
         # @param reading [Horologium::ScaleReading] the instant, read in a
         #   scale
         # @param output [Symbol] one of {OUTPUTS}
@@ -144,12 +152,29 @@ module Horologium
           when Rational, Integer
             Numeric::Precision.build(value, precision)
           when Float
-            two_parts(value, 0.0, precision)
+            day(value, precision)
           else
             raise ArgumentError,
               "a Julian Date is a String, a Rational, an Integer, a Float, " \
               "or a high and a low part each a Float or an Integer, got a " \
               "#{value.class}"
+          end
+        end
+
+        # A Julian Date given as one Float. There is no low part to add to it,
+        # so at +:exact+ it is the Rational the Float already spells, and at
+        # +:standard+ it goes onto the integer-day grid with an empty low part.
+        #
+        # @param value [Float] the Julian Date, in days
+        # @param precision [Symbol] +:standard+ or +:exact+
+        # @return [Horologium::Numeric::TwoPartFloat,
+        #   Horologium::Numeric::Exact] the Julian Date, in days
+        # @raise [UnknownPrecisionError] when the precision is not recognised
+        def day(value, precision)
+          if Numeric::Precision.validate!(precision) == :exact
+            Numeric::Exact.new(value)
+          else
+            Numeric::TwoPartFloat.normalize(value, 0.0)
           end
         end
 

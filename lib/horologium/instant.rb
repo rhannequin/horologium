@@ -440,12 +440,7 @@ module Horologium
       time_scale = Horologium.configuration.scale(scale)
       reading = time_scale.from_reference(value, precision)
 
-      ScaleReading.new(
-        scale,
-        reading,
-        precision,
-        time_scale.provenance(reading)
-      )
+      ScaleReading.new(scale, reading, precision, time_scale)
     end
 
     # The instant in a representation, read in a scale. This is the shorthand
