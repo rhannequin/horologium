@@ -42,11 +42,11 @@ class TestScalesTCB < Minitest::Test
       0.0001
   end
 
-  # At the origin the two part by TDB_0, but not to the last bit: TDB there is
-  # a few microseconds from the origin Julian Date, because the barycentric
-  # model is not zero at that date, and the rate applied over those
-  # microseconds leaves a residue. It is about 5e-17 seconds, some fourteen
-  # orders of magnitude below the offset it perturbs.
+  # At the origin the two scales part by TDB_0, but not to the last bit: TDB
+  # there is a few microseconds from the origin Julian Date, because the
+  # barycentric model is not zero at that date, and the rate applied over
+  # those microseconds leaves a residue. It is about 5e-17 seconds, some
+  # fourteen orders of magnitude below the offset it perturbs.
   def test_tcb_and_tdb_part_by_the_tdb_offset_at_the_origin
     value = Horologium::Numeric::Exact.new(2_443_144.5)
 
@@ -58,7 +58,10 @@ class TestScalesTCB < Minitest::Test
       Rational(1, 10**15)
   end
 
-  def test_reading_tcb_back_into_tai_returns_the_value_it_came_from
+  # Not exact, unlike TCG: the TDB edge reads its correction at TT going out
+  # and at TDB coming back, so the round trip lands a fraction of a picosecond
+  # from where it started.
+  def test_reading_tcb_back_into_tai_stays_within_a_nanosecond
     value = Horologium::Numeric::Exact.new(2_460_000.5)
 
     reading = Horologium::Scales::TCB.from_reference(value, :exact)

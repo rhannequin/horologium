@@ -12,8 +12,11 @@ module Horologium
     # TCB is defined on TDB, so this conversion goes through it. TDB itself
     # rests on the floating-point {Data::BarycentricModel}, so while the TCB
     # to TDB edge is exact, the whole conversion from TAI inherits the model's
-    # accuracy the way {TDB} does. Reading TCB back in TAI still returns the
-    # value given, because each edge undoes itself.
+    # accuracy the way {TDB} does. Reading TCB back in TAI does not return the
+    # value given to the last bit, either: the TDB edge reads its correction
+    # at TT on the way out and at TDB on the way back, and the two differ by
+    # the couple of milliseconds between the scales. The round trip comes back
+    # within about a third of a picosecond.
     #
     # The scales were set to read the same at {TT_TCG_TCB_ORIGIN_JULIAN_DATE},
     # 1977-01-01 00:00:00 TAI, up to the small constant {TDB_0} that keeps TDB
