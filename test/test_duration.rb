@@ -21,6 +21,35 @@ class TestDuration < Minitest::Test
       Horologium::Duration.nanoseconds(1_000_000_000)
   end
 
+  def test_minutes_are_sixty_seconds_each
+    assert_equal Horologium::Duration.seconds(5400),
+      Horologium::Duration.minutes(90)
+  end
+
+  def test_hours_are_sixty_minutes_each
+    assert_equal Horologium::Duration.minutes(360),
+      Horologium::Duration.hours(6)
+  end
+
+  def test_a_julian_year_is_365_25_days
+    assert_equal Horologium::Duration.days(365.25),
+      Horologium::Duration.julian_years(1)
+  end
+
+  def test_a_julian_century_is_a_hundred_julian_years
+    assert_equal Horologium::Duration.julian_years(100),
+      Horologium::Duration.julian_centuries(1)
+  end
+
+  def test_julian_centuries_take_a_fraction_of_one
+    assert_equal Horologium::Duration.days(9131.25),
+      Horologium::Duration.julian_centuries(0.25)
+  end
+
+  def test_the_zero_constructor_holds_no_time_at_all
+    assert_predicate Horologium::Duration.zero, :zero?
+  end
+
   def test_it_orders_durations_by_length
     assert_operator Horologium::Duration.seconds(1), :<,
       Horologium::Duration.seconds(2)
@@ -228,6 +257,40 @@ class TestDuration < Minitest::Test
 
   def test_to_f_reads_the_seconds_as_a_float
     assert_in_delta 86_400.0, Horologium::Duration.days(1).to_f
+  end
+
+  # Reading a duration in a unit.
+
+  def test_it_reads_itself_in_seconds
+    assert_in_delta 86_400.0, Horologium::Duration.days(1).in_seconds
+  end
+
+  def test_it_reads_itself_in_days
+    assert_in_delta 0.5, Horologium::Duration.hours(12).in_days
+  end
+
+  def test_it_reads_itself_in_julian_years
+    assert_in_delta 1.0, Horologium::Duration.days(365.25).in_julian_years
+  end
+
+  def test_it_reads_itself_in_julian_centuries
+    assert_in_delta 1.0, Horologium::Duration.days(36_525).in_julian_centuries
+  end
+
+  def test_an_exact_duration_reads_a_unit_as_a_rational
+    duration = Horologium::Duration.julian_years(1, precision: :exact)
+
+    assert_equal Rational(1461, 4), duration.in_days
+  end
+
+  def test_a_standard_duration_reads_a_unit_as_a_float
+    assert_instance_of Float, Horologium::Duration.days(1).in_days
+  end
+
+  def test_reading_a_unit_divides_before_it_becomes_a_float
+    duration = Horologium::Duration.seconds(2**53 + 1)
+
+    assert_equal Rational(2**53 + 1, 86_400).to_f, duration.in_days
   end
 
   def test_inspect_shows_the_seconds_and_the_precision

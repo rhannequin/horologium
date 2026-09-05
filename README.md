@@ -218,6 +218,20 @@ so a duration and a calendar day are different things.
 Horologium::Duration.days(1) == Horologium::Duration.seconds(86_400)  # => true
 Horologium::Duration.nanoseconds(1_000_000_000) ==
   Horologium::Duration.seconds(1)                                     # => true
+
+Horologium::Duration.minutes(90)
+Horologium::Duration.hours(6)
+Horologium::Duration.zero
+```
+
+A Julian year is exactly 365.25 days and a Julian century is 36,525 days. They
+are astronomical constants. A calendar year holds 365 or 366 days, so a Julian
+year lands a few hours away from the same date next year.
+
+```rb
+Horologium::Duration.julian_years(1) ==
+  Horologium::Duration.days(365.25)     # => true
+Horologium::Duration.julian_centuries(0.25)
 ```
 
 Durations add, subtract, and negate among themselves, and read back out in SI
@@ -230,6 +244,18 @@ Horologium::Duration.seconds(30) - Horologium::Duration.seconds(42)  # negative
 
 Horologium::Duration.days(1).to_r  # => (86400/1), the whole value
 Horologium::Duration.days(1).to_f  # => 86400.0
+```
+
+A duration also reads in a unit. The division happens inside the precision the
+duration is held in, so a `:standard` duration keeps the digits a collapsed
+`Float` would lose, and an `:exact` one reads as a `Rational`.
+
+```rb
+Horologium::Duration.hours(12).in_days                 # => 0.5
+Horologium::Duration.days(36_525).in_julian_centuries  # => 1.0
+
+exact = Horologium::Duration.julian_years(1, precision: :exact)
+exact.in_days  # => (1461/4)
 ```
 
 Adding a duration to an instant makes sense, but adding two instants together

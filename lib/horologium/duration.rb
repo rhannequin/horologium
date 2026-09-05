@@ -15,14 +15,30 @@ module Horologium
   # Adding an Instant to a Duration raises {DimensionalError}; it is
   # {Instant#+} that shifts a point by a span.
   #
+  # A duration reads back in a unit with {#in_seconds}, {#in_days},
+  # {#in_julian_years} and {#in_julian_centuries}. They come out as a Float at
+  # +:standard+ and a Rational at +:exact+.
+  #
   # @example A day is a fixed number of SI seconds
   #   Horologium::Duration.days(1) == Horologium::Duration.seconds(86_400)
   #   # => true
   class Duration
     include PreciseValue
 
+    # The number of SI seconds in a minute.
+    SECONDS_PER_MINUTE = 60
+
+    # The number of SI seconds in an hour.
+    SECONDS_PER_HOUR = 3_600
+
     # The number of SI seconds in a day.
     SECONDS_PER_DAY = 86_400
+
+    # The number of SI seconds in a Julian year of 365.25 days.
+    SECONDS_PER_JULIAN_YEAR = 31_557_600
+
+    # The number of SI seconds in a Julian century of 36,525 days.
+    SECONDS_PER_JULIAN_CENTURY = 3_155_760_000
 
     # The number of nanoseconds in a second.
     NANOSECONDS_PER_SECOND = 1_000_000_000
@@ -40,6 +56,30 @@ module Horologium
         from_seconds(count, precision)
       end
 
+      # A duration of +count+ minutes.
+      #
+      # @param count [Numeric] the number of minutes
+      # @param precision [Symbol] +:standard+ or +:exact+, taken from the
+      #   precision in effect when omitted
+      # @return [Horologium::Duration]
+      # @example
+      #   Horologium::Duration.minutes(90)
+      def minutes(count, precision: Horologium.current_precision)
+        from_seconds(count * SECONDS_PER_MINUTE, precision)
+      end
+
+      # A duration of +count+ hours.
+      #
+      # @param count [Numeric] the number of hours
+      # @param precision [Symbol] +:standard+ or +:exact+, taken from the
+      #   precision in effect when omitted
+      # @return [Horologium::Duration]
+      # @example
+      #   Horologium::Duration.hours(6)
+      def hours(count, precision: Horologium.current_precision)
+        from_seconds(count * SECONDS_PER_HOUR, precision)
+      end
+
       # A duration of +count+ days, each of {SECONDS_PER_DAY} SI seconds. This
       # counts time and is not tied to the calendar.
       #
@@ -54,6 +94,36 @@ module Horologium
         from_seconds(count * SECONDS_PER_DAY, precision)
       end
 
+      # A duration of +count+ Julian years, each of exactly 365.25 days. It is
+      # the astronomical constant, and a calendar year holds 365 or 366 days,
+      # so shifting an instant by a Julian year lands a few hours away from
+      # the same date next year.
+      #
+      # @param count [Numeric] the number of Julian years
+      # @param precision [Symbol] +:standard+ or +:exact+, taken from the
+      #   precision in effect when omitted
+      # @return [Horologium::Duration]
+      # @example
+      #   Horologium::Duration.julian_years(1) ==
+      #     Horologium::Duration.days(365.25) # => true
+      def julian_years(count, precision: Horologium.current_precision)
+        from_seconds(count * SECONDS_PER_JULIAN_YEAR, precision)
+      end
+
+      # A duration of +count+ Julian centuries, each of a hundred Julian
+      # years, or 36,525 days. It is the unit the astronomical series count
+      # their time in.
+      #
+      # @param count [Numeric] the number of Julian centuries
+      # @param precision [Symbol] +:standard+ or +:exact+, taken from the
+      #   precision in effect when omitted
+      # @return [Horologium::Duration]
+      # @example
+      #   Horologium::Duration.julian_centuries(0.25)
+      def julian_centuries(count, precision: Horologium.current_precision)
+        from_seconds(count * SECONDS_PER_JULIAN_CENTURY, precision)
+      end
+
       # A duration of +count+ nanoseconds.
       #
       # @param count [Numeric] the number of nanoseconds
@@ -64,6 +134,17 @@ module Horologium
       #   Horologium::Duration.nanoseconds(1)
       def nanoseconds(count, precision: Horologium.current_precision)
         from_seconds(Rational(count) / NANOSECONDS_PER_SECOND, precision)
+      end
+
+      # A duration of no time at all.
+      #
+      # @param precision [Symbol] +:standard+ or +:exact+, taken from the
+      #   precision in effect when omitted
+      # @return [Horologium::Duration]
+      # @example
+      #   Horologium::Duration.zero.zero? # => true
+      def zero(precision: Horologium.current_precision)
+        from_seconds(0, precision)
       end
 
       private
@@ -147,6 +228,45 @@ module Horologium
       rational.positive?
     end
 
+    # The duration in SI seconds.
+    #
+    # @return [Float, Rational] a Float at +:standard+, a Rational at
+    #   +:exact+
+    # @example
+    #   Horologium::Duration.days(1).in_seconds # => 86400.0
+    def in_seconds
+      in_unit(1)
+    end
+
+    # The duration in days of {SECONDS_PER_DAY} SI seconds each.
+    #
+    # @return [Float, Rational] a Float at +:standard+, a Rational at
+    #   +:exact+
+    # @example
+    #   Horologium::Duration.hours(12).in_days # => 0.5
+    def in_days
+      in_unit(SECONDS_PER_DAY)
+    end
+
+    # The duration in Julian years of 365.25 days each.
+    #
+    # @return [Float, Rational] a Float at +:standard+, a Rational at
+    #   +:exact+
+    def in_julian_years
+      in_unit(SECONDS_PER_JULIAN_YEAR)
+    end
+
+    # The duration in Julian centuries of 36,525 days each. It is the time
+    # argument the astronomical series are written for.
+    #
+    # @return [Float, Rational] a Float at +:standard+, a Rational at
+    #   +:exact+
+    # @example
+    #   Horologium::Duration.days(36_525).in_julian_centuries # => 1.0
+    def in_julian_centuries
+      in_unit(SECONDS_PER_JULIAN_CENTURY)
+    end
+
     # The duration in SI seconds, exactly.
     #
     # @return [Rational]
@@ -165,6 +285,20 @@ module Horologium
     # @return [String]
     def inspect
       format("#<%s %s s (%s)>", self.class, to_f, precision)
+    end
+
+    private
+
+    # The duration counted in a unit. The division happens in the precision
+    # the duration is held in, so the digits survive it.
+    #
+    # @param seconds_per_unit [Integer] the SI seconds one unit holds
+    # @return [Float, Rational] a Float at +:standard+, a Rational at
+    #   +:exact+
+    def in_unit(seconds_per_unit)
+      count = value / seconds_per_unit
+
+      (precision == :exact) ? count.to_r : count.to_f
     end
   end
 end
