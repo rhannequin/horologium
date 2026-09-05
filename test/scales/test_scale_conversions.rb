@@ -3,7 +3,8 @@
 require "test_helper"
 require "json"
 
-# Cross-checks the TAI to TT and TAI to TDB conversions against astropy. The
+# Cross-checks the TAI to TT, TDB, TCG, TCB and GPS conversions against
+# astropy. The
 # reference values live in test/fixtures/scale_conversions.json, frozen from
 # astropy with the versions and method the file records.
 #
@@ -37,13 +38,25 @@ class TestScaleConversions < Minitest::Test
     assert_matches_reference("tdb")
   end
 
+  def test_it_converts_tai_to_tcg_matching_astropy
+    assert_matches_reference("tcg")
+  end
+
+  def test_it_converts_tai_to_tcb_matching_astropy
+    assert_matches_reference("tcb")
+  end
+
+  def test_it_converts_tai_to_gps_matching_astropy
+    assert_matches_reference("gps")
+  end
+
   private
 
   # Builds each instant from the TAI Julian Date in the fixture, reads it in
   # the scale, and checks it against the astropy value within {TOLERANCE}, at
   # both precisions.
   #
-  # @param scale [String] "tt" or "tdb"
+  # @param scale [String] "tt", "tdb", "tcg", "tcb" or "gps"
   def assert_matches_reference(scale)
     FIXTURE["cases"].each do |reference|
       tai = reference["tai"]

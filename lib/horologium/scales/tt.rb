@@ -28,9 +28,7 @@ module Horologium
       # build it again every time.
       #
       # @api private
-      OFFSETS = Numeric::Precision::NAMES.map do |precision|
-        [precision, Numeric::Precision.build(DAYS_AHEAD_OF_TAI, precision)]
-      end.to_h.freeze
+      OFFSETS = Numeric::Precision.build_each(DAYS_AHEAD_OF_TAI)
       private_constant :OFFSETS
 
       class << self
@@ -41,8 +39,9 @@ module Horologium
         # @param precision [Symbol] +:standard+ or +:exact+
         # @return [Horologium::Numeric::TwoPartFloat,
         #   Horologium::Numeric::Exact] the Julian Date in TT, in days
+        # @raise [UnknownPrecisionError] when the precision is not recognised
         def from_reference(value, precision)
-          Numeric::Precision.add(value, offset(precision))
+          Numeric::Precision.add(value, OFFSETS[precision])
         end
 
         # A TT Julian Date, read back in TAI. It removes the 32.184 seconds.
@@ -52,23 +51,9 @@ module Horologium
         # @param precision [Symbol] +:standard+ or +:exact+
         # @return [Horologium::Numeric::TwoPartFloat,
         #   Horologium::Numeric::Exact] the Julian Date in TAI, in days
-        def to_reference(value, precision)
-          Numeric::Precision.subtract(value, offset(precision))
-        end
-
-        private
-
-        # @param precision [Symbol] +:standard+ or +:exact+
-        # @return [Horologium::Numeric::TwoPartFloat,
-        #   Horologium::Numeric::Exact] the offset in days
         # @raise [UnknownPrecisionError] when the precision is not recognised
-        def offset(precision)
-          OFFSETS.fetch(precision) do
-            raise UnknownPrecisionError.new(
-              precision,
-              Numeric::Precision::NAMES
-            )
-          end
+        def to_reference(value, precision)
+          Numeric::Precision.subtract(value, OFFSETS[precision])
         end
       end
     end

@@ -1,0 +1,21 @@
+module Horologium
+  module Scales
+    class TCB < Base
+      L_B: Rational
+
+      TDB_0: Rational
+
+      TDB_0_IN_DAYS: Rational
+
+      RATE_FROM_TDB: Rational
+
+      ORIGINS: Hash[Symbol, Numeric::TwoPartFloat | Numeric::Exact]
+
+      OFFSETS: Hash[Symbol, Numeric::TwoPartFloat | Numeric::Exact]
+
+      def self.from_reference: (Numeric::TwoPartFloat | Numeric::Exact value, Symbol precision) -> (Numeric::TwoPartFloat | Numeric::Exact)
+
+      def self.to_reference: (Numeric::TwoPartFloat | Numeric::Exact value, Symbol precision) -> (Numeric::TwoPartFloat | Numeric::Exact)
+    end
+  end
+end

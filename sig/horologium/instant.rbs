@@ -22,6 +22,15 @@ module Horologium
     def self.from_tdb: (Representations::CivilTime civil, ?precision: Symbol) -> Instant
                      | (Integer year, Integer month, Integer day, ?Integer hour, ?Integer minute, ?Representations::Civil::second second, ?precision: Symbol) -> Instant
 
+    def self.from_tcg: (Representations::CivilTime civil, ?precision: Symbol) -> Instant
+                       | (Integer year, Integer month, Integer day, ?Integer hour, ?Integer minute, ?Representations::Civil::second second, ?precision: Symbol) -> Instant
+
+    def self.from_tcb: (Representations::CivilTime civil, ?precision: Symbol) -> Instant
+                       | (Integer year, Integer month, Integer day, ?Integer hour, ?Integer minute, ?Representations::Civil::second second, ?precision: Symbol) -> Instant
+
+    def self.from_gps: (Representations::CivilTime civil, ?precision: Symbol) -> Instant
+                       | (Integer year, Integer month, Integer day, ?Integer hour, ?Integer minute, ?Representations::Civil::second second, ?precision: Symbol) -> Instant
+
     def self.from_utc: (Representations::CivilTime civil, ?precision: Symbol) -> Instant
                      | (Integer year, Integer month, Integer day, ?Integer hour, ?Integer minute, ?Representations::Civil::second second, ?precision: Symbol) -> Instant
 
