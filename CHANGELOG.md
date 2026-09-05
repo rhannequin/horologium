@@ -1,5 +1,41 @@
 # Changelog
 
+## 0.0.4 - 2026-09-05
+
+The epochs astronomy counts from arrive as instants, a duration reads back in
+the unit you want it in, and the conversions cost a good deal less than they
+did.
+
+### Features
+
+- Add `Epochs`, with `J2000`, `J1900`, `GPS_ZERO`, `UNIX` and
+  `TT_TCG_TCB_ORIGIN`. An epoch is an ordinary `Instant`, so the time elapsed
+  since one is a subtraction and no Julian Date is involved
+- Add the `Duration` constructors `minutes`, `hours`, `julian_years`,
+  `julian_centuries` and `zero`, where a Julian year is exactly 365.25 days and
+  a Julian century 36,525
+- Add `Duration#in_seconds`, `#in_minutes`, `#in_hours`, `#in_days`,
+  `#in_julian_years` and `#in_julian_centuries`, which come out as a Float at
+  `:standard` and a Rational at `:exact`
+- Add `zero?`, `negative?` and `positive?` to `Numeric::TwoPartFloat` and
+  `Numeric::Exact`, and `Numeric::Precision.compare`, which orders two values
+  by the number they denote whatever precision each is held in
+
+### Improvements
+
+- Build an instant in about half the time at `:standard` and a third less at
+  `:exact`, allocating 3 objects where it allocated 30. An instant no longer
+  works out its exact Rational value when it is built, the two-part arithmetic
+  keeps its intermediate parts in Floats, and a Julian Date given as a single
+  Float skips a step it does not need
+- Read UTC twice as fast at `:standard` and a third faster at `:exact`. The
+  conversion reads each leap second offset once, and settles the day without
+  spelling the value out as a Rational
+- Read `ScaleReading#provenance` from the scale that took the reading, when it
+  is asked rather than on every reading
+
+**Full Changelog**: https://github.com/rhannequin/horologium/compare/v0.0.3...v0.0.4
+
 ## 0.0.3 - 2026-08-22
 
 The scale conversions arrive. An instant is now a point with no scale of its
