@@ -64,22 +64,30 @@ module Horologium
         # @raise [OutOfDataRangeError] past the data horizon in strict mode
         # @raise [UnknownPrecisionError] when the precision is not recognised
         def from_reference(value, precision)
-          day = (value.to_r + HALF).floor
+          day = guess_day(value)
 
           MAX_STEPS.times do
             break if day < FIRST_DAY
 
-            if before_midnight?(value, day, precision)
+            dat0 = tai_utc_at(day)
+            midnight = midnight_tai(day, precision, dat0)
+            if before_midnight?(value, midnight)
               day -= 1
-            elsif !before_midnight?(value, day + 1, precision)
-              day += 1
-            else
-              enforce_horizon(day)
-              return Numeric::Precision.add(
-                Numeric::Precision.build(day - HALF, precision),
-                unstretch(value, day, precision)
-              )
+              next
             end
+
+            next_dat0 = tai_utc_at(day + 1)
+            next_midnight = midnight_tai(day + 1, precision, next_dat0)
+            unless before_midnight?(value, next_midnight)
+              day += 1
+              next
+            end
+
+            enforce_horizon(day)
+            return Numeric::Precision.add(
+              Numeric::Precision.build(day - HALF, precision),
+              unstretch(value, midnight, day_scale(day, dat0, next_dat0))
+            )
           end
 
           refuse
@@ -104,7 +112,8 @@ module Horologium
           enforce_horizon(day)
 
           dat0 = tai_utc_at(day)
-          scaled = day_fraction(value, day, precision) * day_scale(day, dat0)
+          scaled = day_fraction(value, day, precision) *
+            day_scale(day, dat0, tai_utc_at(day + 1))
 
           Numeric::Precision.add(
             Numeric::Precision.build(day - HALF, precision),
@@ -129,7 +138,10 @@ module Horologium
         def seconds_in_day(day_number)
           refuse unless day_number >= FIRST_DAY
 
-          Duration::SECONDS_PER_DAY + whole_leap_seconds(day_number)
+          Duration::SECONDS_PER_DAY + whole_leap_seconds(
+            tai_utc_at(day_number),
+            tai_utc_at(day_number + 1)
+          )
         end
 
         # The SI seconds a UTC day spans: 86,400, one more on a day that holds a
@@ -145,8 +157,11 @@ module Horologium
         def si_seconds_in_day(day_number)
           refuse unless day_number >= FIRST_DAY
 
-          day_scale(day_number, tai_utc_at(day_number)) *
-            Duration::SECONDS_PER_DAY
+          day_scale(
+            day_number,
+            tai_utc_at(day_number),
+            tai_utc_at(day_number + 1)
+          ) * Duration::SECONDS_PER_DAY
         end
 
         # UTC writes +Z+, where a zero offset is a real thing.
@@ -228,7 +243,7 @@ module Horologium
 
         # The fraction through the UTC day a Julian Date falls, from 0 at its
         # 0h to just under 1 at the next. It is the part {to_reference} spreads
-        # over the day's length and {from_reference} takes back off it.
+        # over the day's length, and {unstretch} takes it back off.
         #
         # @param value [Horologium::Numeric::TwoPartFloat,
         #   Horologium::Numeric::Exact] the Julian Date in UTC, in days
@@ -238,36 +253,25 @@ module Horologium
         #   Horologium::Numeric::Exact] the fraction through the day
         def day_fraction(value, day, precision)
           Numeric::Precision.subtract(
-            Numeric::Precision.add(
-              value,
-              Numeric::Precision.build(HALF, precision)
-            ),
-            Numeric::Precision.build(day, precision)
+            value,
+            Numeric::Precision.build(day - HALF, precision)
           )
         end
 
         # The fraction through the UTC day a TAI Julian Date falls, taken back
         # off the day's length. It inverts what {to_reference} does to the day
-        # fraction, so {from_reference} reads a plain time of day.
+        # fraction, so {from_reference} reads a plain time of day. The 0h and
+        # the day's length come from the caller, which has them already.
         #
         # @param value [Horologium::Numeric::TwoPartFloat,
         #   Horologium::Numeric::Exact] the Julian Date in TAI, in days
-        # @param day [Integer] the Julian Day Number of the day it falls in
-        # @param precision [Symbol] +:standard+ or +:exact+
+        # @param midnight [Horologium::Numeric::TwoPartFloat,
+        #   Horologium::Numeric::Exact] the TAI Julian Date of the day's 0h
+        # @param scale [Rational] the factor the day's length stretches by
         # @return [Horologium::Numeric::TwoPartFloat,
         #   Horologium::Numeric::Exact] the fraction through the day
-        def unstretch(value, day, precision)
-          dat0 = tai_utc_at(day)
-          from_midnight = Numeric::Precision.subtract(
-            value,
-            Numeric::Precision.add(
-              Numeric::Precision.build(day - HALF, precision),
-              Numeric::Precision.build(dat0, precision) /
-                Duration::SECONDS_PER_DAY
-            )
-          )
-
-          from_midnight / day_scale(day, dat0)
+        def unstretch(value, midnight, scale)
+          Numeric::Precision.subtract(value, midnight) / scale
         end
 
         # Whether a TAI instant falls before a UTC day's 0h. It is told at the
@@ -276,16 +280,29 @@ module Horologium
         # rounding crumb, where an exact comparison would read one that is not
         # there. This is what lets the search settle and the first day stand.
         #
+        # The sign comes off the difference itself. A two-part difference is
+        # only zero when its parts cancel, which is when the instant sits on
+        # the 0h, so this reads the same answer as spelling it out as a
+        # Rational.
+        #
         # @param value [Horologium::Numeric::TwoPartFloat,
         #   Horologium::Numeric::Exact] the Julian Date in TAI, in days
-        # @param day [Integer] the Julian Day Number of the day
-        # @param precision [Symbol] +:standard+ or +:exact+
+        # @param midnight [Horologium::Numeric::TwoPartFloat,
+        #   Horologium::Numeric::Exact] the TAI Julian Date of the day's 0h
         # @return [Boolean]
-        def before_midnight?(value, day, precision)
-          Numeric::Precision.subtract(
-            value,
-            midnight_tai(day, precision)
-          ).to_r < 0
+        def before_midnight?(value, midnight)
+          Numeric::Precision.subtract(value, midnight).negative?
+        end
+
+        # The UTC day a TAI Julian Date is likely to fall in, read off the
+        # Floats. It is at most a day out, which is what {from_reference}
+        # settles by stepping, so it does not have to be exact.
+        #
+        # @param value [Horologium::Numeric::TwoPartFloat,
+        #   Horologium::Numeric::Exact] the Julian Date in TAI, in days
+        # @return [Integer] the Julian Day Number to start the search at
+        def guess_day(value)
+          (value.to_f + 0.5).floor
         end
 
         # The TAI Julian Date of a UTC day's 0h. A TAI instant reads in the UTC
@@ -295,12 +312,13 @@ module Horologium
         #
         # @param day [Integer] the Julian Day Number of the day
         # @param precision [Symbol] +:standard+ or +:exact+
+        # @param dat0 [Integer, Rational] TAI - UTC at the day's 0h
         # @return [Horologium::Numeric::TwoPartFloat,
         #   Horologium::Numeric::Exact] the TAI Julian Date of its 0h
-        def midnight_tai(day, precision)
+        def midnight_tai(day, precision, dat0)
           Numeric::Precision.add(
             Numeric::Precision.build(day - HALF, precision),
-            Numeric::Precision.build(tai_utc_at(day), precision) /
+            Numeric::Precision.build(dat0, precision) /
               Duration::SECONDS_PER_DAY
           )
         end
@@ -314,10 +332,11 @@ module Horologium
         #
         # @param day [Integer] the Julian Day Number of the day
         # @param dat0 [Integer, Rational] TAI - UTC at the day's 0h
+        # @param next_dat0 [Integer, Rational] TAI - UTC at the next day's 0h
         # @return [Rational] the factor, 1 on an ordinary day
-        def day_scale(day, dat0)
+        def day_scale(day, dat0, next_dat0)
           seconds = Duration::SECONDS_PER_DAY
-          leap = whole_leap_seconds(day)
+          leap = whole_leap_seconds(dat0, next_dat0)
           rate = drift_rate(day, dat0)
 
           (seconds + leap) * (seconds + rate) / (seconds * seconds)
@@ -340,10 +359,11 @@ module Horologium
         # one, and none in the drift era, where the step is a fraction the civil
         # clock does not show.
         #
-        # @param day_number [Integer] the Julian Day Number of the day
+        # @param dat0 [Integer, Rational] TAI - UTC at the day's 0h
+        # @param next_dat0 [Integer, Rational] TAI - UTC at the next day's 0h
         # @return [Integer] the whole leap seconds, 0 or 1
-        def whole_leap_seconds(day_number)
-          (tai_utc_at(day_number + 1).to_r - tai_utc_at(day_number).to_r).to_i
+        def whole_leap_seconds(dat0, next_dat0)
+          (next_dat0.to_r - dat0.to_r).to_i
         end
 
         # TAI - UTC at a point in UTC, from the configured source. A whole
