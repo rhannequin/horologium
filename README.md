@@ -251,6 +251,7 @@ duration is held in, so a `:standard` duration keeps the digits a collapsed
 `Float` would lose, and an `:exact` one reads as a `Rational`.
 
 ```rb
+Horologium::Duration.days(1).in_hours                  # => 24.0
 Horologium::Duration.hours(12).in_days                 # => 0.5
 Horologium::Duration.days(36_525).in_julian_centuries  # => 1.0
 

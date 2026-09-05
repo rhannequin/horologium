@@ -48,6 +48,10 @@ module Horologium
 
     def in_seconds: () -> (Float | Rational)
 
+    def in_minutes: () -> (Float | Rational)
+
+    def in_hours: () -> (Float | Rational)
+
     def in_days: () -> (Float | Rational)
 
     def in_julian_years: () -> (Float | Rational)

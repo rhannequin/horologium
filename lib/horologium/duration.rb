@@ -15,9 +15,9 @@ module Horologium
   # Adding an Instant to a Duration raises {DimensionalError}; it is
   # {Instant#+} that shifts a point by a span.
   #
-  # A duration reads back in a unit with {#in_seconds}, {#in_days},
-  # {#in_julian_years} and {#in_julian_centuries}. They come out as a Float at
-  # +:standard+ and a Rational at +:exact+.
+  # A duration reads back in a unit with {#in_seconds}, {#in_minutes},
+  # {#in_hours}, {#in_days}, {#in_julian_years} and {#in_julian_centuries}.
+  # They come out as a Float at +:standard+ and a Rational at +:exact+.
   #
   # @example A day is a fixed number of SI seconds
   #   Horologium::Duration.days(1) == Horologium::Duration.seconds(86_400)
@@ -236,6 +236,26 @@ module Horologium
     #   Horologium::Duration.days(1).in_seconds # => 86400.0
     def in_seconds
       in_unit(1)
+    end
+
+    # The duration in minutes of {SECONDS_PER_MINUTE} SI seconds each.
+    #
+    # @return [Float, Rational] a Float at +:standard+, a Rational at
+    #   +:exact+
+    # @example
+    #   Horologium::Duration.hours(1).in_minutes # => 60.0
+    def in_minutes
+      in_unit(SECONDS_PER_MINUTE)
+    end
+
+    # The duration in hours of {SECONDS_PER_HOUR} SI seconds each.
+    #
+    # @return [Float, Rational] a Float at +:standard+, a Rational at
+    #   +:exact+
+    # @example
+    #   Horologium::Duration.days(1).in_hours # => 24.0
+    def in_hours
+      in_unit(SECONDS_PER_HOUR)
     end
 
     # The duration in days of {SECONDS_PER_DAY} SI seconds each.
