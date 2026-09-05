@@ -1,0 +1,13 @@
+module Horologium
+  module Epochs
+    J2000: Instant
+
+    J1900: Instant
+
+    GPS_ZERO: Instant
+
+    UNIX: Instant
+
+    TT_TCG_TCB_ORIGIN: Instant
+  end
+end

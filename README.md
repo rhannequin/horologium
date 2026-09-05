@@ -239,6 +239,30 @@ does not, so it raises an error.
 instant + instant  # => raises Horologium::DimensionalError
 ```
 
+The astronomical epochs are built as instants, so the elapsed time since one is
+a subtraction and no Julian Date is involved.
+
+```rb
+instant = Horologium::Instant.from_tt(2026, 1, 1)
+
+(instant - Horologium::Epochs::J2000).to_f  # => 820497600.0 SI seconds
+```
+
+The scale is part of an epoch's definition. `J2000` is noon TT, which is 64.184
+seconds away from noon UTC on the same day.
+
+```rb
+Horologium::Epochs::J2000              # 2000-01-01 12:00:00 TT
+Horologium::Epochs::J1900              # 1899-12-31 12:00:00 TT
+Horologium::Epochs::GPS_ZERO           # 1980-01-06 00:00:00 UTC
+Horologium::Epochs::UNIX               # 1970-01-01 00:00:00 UTC
+Horologium::Epochs::TT_TCG_TCB_ORIGIN  # 1977-01-01 00:00:00 TAI
+```
+
+An epoch is fixed at `:exact`, since it is a definition. Subtracting one from a
+`:standard` instant gives an `:exact` duration, the way any other mix of the two
+does.
+
 Exact equality is rarely what scientific code wants, so you can compare within a
 tolerance:
 
