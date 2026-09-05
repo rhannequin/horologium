@@ -7,8 +7,6 @@ require "test_helper"
 # The TCB to TDB edge is exact; the rest of the way to TAI goes through TDB,
 # which rests on the floating-point barycentric model.
 class TestScalesTCB < Minitest::Test
-  A_NANOSECOND_IN_DAYS = Rational(1, 86_400 * 1_000_000_000)
-
   def test_the_defining_constant_is_l_b
     assert_equal Rational(1_550_519_768, 10**17), Horologium::Scales::TCB::L_B
   end
@@ -67,7 +65,7 @@ class TestScalesTCB < Minitest::Test
     round_trip = Horologium::Scales::TCB.to_reference(reading, :exact)
 
     assert_operator (round_trip.to_r - value.to_r).abs, :<,
-      A_NANOSECOND_IN_DAYS
+      Rational(1, 86_400 * 1_000_000_000)
   end
 
   def test_a_standard_round_trip_stays_within_a_nanosecond
@@ -77,7 +75,7 @@ class TestScalesTCB < Minitest::Test
     round_trip = Horologium::Scales::TCB.to_reference(reading, :standard)
 
     assert_operator (round_trip.to_r - value.to_r).abs, :<,
-      A_NANOSECOND_IN_DAYS
+      Rational(1, 86_400 * 1_000_000_000)
   end
 
   def test_a_standard_reading_stays_within_a_nanosecond_of_the_exact_one
@@ -88,7 +86,7 @@ class TestScalesTCB < Minitest::Test
     from_standard = Horologium::Scales::TCB.from_reference(standard, :standard)
 
     assert_operator (from_standard.to_r - from_exact.to_r).abs, :<,
-      A_NANOSECOND_IN_DAYS
+      Rational(1, 86_400 * 1_000_000_000)
   end
 
   def test_a_standard_reading_stays_a_two_part_float

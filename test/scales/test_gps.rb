@@ -7,10 +7,6 @@ require "test_helper"
 # 1980-01-06 00:00:00 UTC, where GPS time started, and TAI - UTC was 19
 # seconds that day, which is where the offset comes from.
 class TestScalesGPS < Minitest::Test
-  def teardown
-    Horologium.reset_configuration!
-  end
-
   def test_the_offset_is_19_seconds
     assert_equal 19, Horologium::Scales::GPS::SECONDS_BEHIND_TAI
   end

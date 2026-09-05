@@ -28,13 +28,28 @@ module Horologium
       # definition, not a measurement, so it is held as a Rational.
       L_G = Rational(6_969_290_134, 10**19)
 
-      # The rate TT gains on TCG, L_G / (1 - L_G). Going from TT to TCG
+      # The rate TCG gains on TT, L_G / (1 - L_G). Going from TT to TCG
       # multiplies by this; coming back multiplies by {L_G}, which is what
       # makes the pair exact inverses.
       #
       # @api private
       RATE_FROM_TT = L_G / (1 - L_G)
       private_constant :RATE_FROM_TT
+
+      # The two rates at each precision. A two-part float multiplies by a
+      # Float, so holding the Rationals alone would work out the same Floats
+      # on every conversion, and their denominators are wide enough for that
+      # to cost more than the arithmetic they feed. An unrecognised precision
+      # is refused before either table is read, by the conversion into TT on
+      # the way out and by {ORIGINS} on the way back.
+      #
+      # @api private
+      RATES = {standard: RATE_FROM_TT.to_f, exact: RATE_FROM_TT}.freeze
+      private_constant :RATES
+
+      # @api private
+      BACK_RATES = {standard: L_G.to_f, exact: L_G}.freeze
+      private_constant :BACK_RATES
 
       # The origin at each precision, built once, so a conversion does not
       # build it again every time.
@@ -56,7 +71,7 @@ module Horologium
         def from_reference(value, precision)
           in_tt = TT.from_reference(value, precision)
           elapsed = Numeric::Precision.subtract(in_tt, ORIGINS[precision])
-          Numeric::Precision.add(in_tt, elapsed * RATE_FROM_TT)
+          Numeric::Precision.add(in_tt, elapsed * RATES[precision])
         end
 
         # A TCG Julian Date, read back in TAI. It removes the rate over the
@@ -70,7 +85,10 @@ module Horologium
         # @raise [UnknownPrecisionError] when the precision is not recognised
         def to_reference(value, precision)
           elapsed = Numeric::Precision.subtract(value, ORIGINS[precision])
-          in_tt = Numeric::Precision.subtract(value, elapsed * L_G)
+          in_tt = Numeric::Precision.subtract(
+            value,
+            elapsed * BACK_RATES[precision]
+          )
           TT.to_reference(in_tt, precision)
         end
       end

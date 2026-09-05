@@ -7,10 +7,6 @@ require "test_helper"
 # to read the same at the Julian Date 2443144.5 TAI, 1977-01-01 00:00:00 TAI,
 # which is 2443144.5003725 in TT.
 class TestScalesTCG < Minitest::Test
-  ORIGIN_IN_TT = Rational(24_431_445_003_725, 10_000_000)
-
-  A_NANOSECOND_IN_DAYS = Rational(1, 86_400 * 1_000_000_000)
-
   def test_the_defining_constant_is_l_g
     assert_equal Rational(6_969_290_134, 10**19), Horologium::Scales::TCG::L_G
   end
@@ -20,7 +16,7 @@ class TestScalesTCG < Minitest::Test
 
     reading = Horologium::Scales::TCG.from_reference(value, :exact)
 
-    assert_equal ORIGIN_IN_TT, reading.to_r
+    assert_equal Horologium::Scales::TT_TCG_TCB_ORIGIN_JULIAN_DATE, reading.to_r
   end
 
   def test_tcg_gains_on_tt_at_the_rate_l_g_over_one_minus_l_g
@@ -29,8 +25,9 @@ class TestScalesTCG < Minitest::Test
     in_tt = Horologium::Scales::TT.from_reference(value, :exact).to_r
     in_tcg = Horologium::Scales::TCG.from_reference(value, :exact).to_r
     l_g = Horologium::Scales::TCG::L_G
+    origin = Horologium::Scales::TT_TCG_TCB_ORIGIN_JULIAN_DATE
 
-    assert_equal l_g / (1 - l_g), (in_tcg - in_tt) / (in_tt - ORIGIN_IN_TT)
+    assert_equal l_g / (1 - l_g), (in_tcg - in_tt) / (in_tt - origin)
   end
 
   def test_tcg_gains_about_22_milliseconds_a_julian_year
@@ -63,7 +60,7 @@ class TestScalesTCG < Minitest::Test
     round_trip = Horologium::Scales::TCG.to_reference(reading, :standard)
 
     assert_operator (round_trip.to_r - value.to_r).abs, :<,
-      A_NANOSECOND_IN_DAYS
+      Rational(1, 86_400 * 1_000_000_000)
   end
 
   def test_a_standard_reading_stays_within_a_nanosecond_of_the_exact_one
@@ -74,7 +71,7 @@ class TestScalesTCG < Minitest::Test
     from_standard = Horologium::Scales::TCG.from_reference(standard, :standard)
 
     assert_operator (from_standard.to_r - from_exact.to_r).abs, :<,
-      A_NANOSECOND_IN_DAYS
+      Rational(1, 86_400 * 1_000_000_000)
   end
 
   def test_a_standard_reading_stays_a_two_part_float

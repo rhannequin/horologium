@@ -270,6 +270,7 @@ class TestConfiguration < Minitest::Test
   end
 
   def test_the_scale_names_list_the_registered_scales
-    assert_equal %i[tai tt tdb tcg tcb gps utc], Horologium.configuration.scale_names
+    assert_equal %i[tai tt tdb tcg tcb gps utc],
+      Horologium.configuration.scale_names
   end
 end

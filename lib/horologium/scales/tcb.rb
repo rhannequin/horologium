@@ -38,13 +38,28 @@ module Horologium
       # The same offset in days, because a Julian Date counts days.
       TDB_0_IN_DAYS = TDB_0 / Duration::SECONDS_PER_DAY
 
-      # The rate TDB gains on TCB, L_B / (1 - L_B). Going from TDB to TCB
+      # The rate TCB gains on TDB, L_B / (1 - L_B). Going from TDB to TCB
       # multiplies by this; coming back multiplies by {L_B}, which is what
       # makes the pair exact inverses.
       #
       # @api private
       RATE_FROM_TDB = L_B / (1 - L_B)
       private_constant :RATE_FROM_TDB
+
+      # The two rates at each precision. A two-part float multiplies by a
+      # Float, so holding the Rationals alone would work out the same Floats
+      # on every conversion, and their denominators are wide enough for that
+      # to cost more than the arithmetic they feed. An unrecognised precision
+      # is refused before either table is read, by the conversion into TDB on
+      # the way out and by {ORIGINS} on the way back.
+      #
+      # @api private
+      RATES = {standard: RATE_FROM_TDB.to_f, exact: RATE_FROM_TDB}.freeze
+      private_constant :RATES
+
+      # @api private
+      BACK_RATES = {standard: L_B.to_f, exact: L_B}.freeze
+      private_constant :BACK_RATES
 
       # The origin and the TDB offset at each precision, built once, so a
       # conversion does not build them again every time.
@@ -72,7 +87,7 @@ module Horologium
           in_tdb = TDB.from_reference(value, precision)
           shifted = Numeric::Precision.subtract(in_tdb, OFFSETS[precision])
           elapsed = Numeric::Precision.subtract(shifted, ORIGINS[precision])
-          Numeric::Precision.add(shifted, elapsed * RATE_FROM_TDB)
+          Numeric::Precision.add(shifted, elapsed * RATES[precision])
         end
 
         # A TCB Julian Date, read back in TAI. It removes the rate over the
@@ -87,7 +102,10 @@ module Horologium
         # @raise [UnknownPrecisionError] when the precision is not recognised
         def to_reference(value, precision)
           elapsed = Numeric::Precision.subtract(value, ORIGINS[precision])
-          shifted = Numeric::Precision.subtract(value, elapsed * L_B)
+          shifted = Numeric::Precision.subtract(
+            value,
+            elapsed * BACK_RATES[precision]
+          )
           in_tdb = Numeric::Precision.add(shifted, OFFSETS[precision])
           TDB.to_reference(in_tdb, precision)
         end

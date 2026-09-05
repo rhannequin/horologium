@@ -4,9 +4,9 @@ require "test_helper"
 require "json"
 
 # Cross-checks the TAI to TT, TDB, TCG, TCB and GPS conversions against
-# astropy. The
-# reference values live in test/fixtures/scale_conversions.json, frozen from
-# astropy with the versions and method the file records.
+# astropy. The reference values live in
+# test/fixtures/scale_conversions.json, frozen from astropy with the versions
+# and method the file records.
 #
 # Each Julian Date is compared as its two parts turned into an exact Rational,
 # not as a single Float. A Float Julian Date at a modern date is only good to

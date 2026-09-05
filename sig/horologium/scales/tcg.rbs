@@ -5,6 +5,10 @@ module Horologium
 
       RATE_FROM_TT: Rational
 
+      RATES: Hash[Symbol, Float | Rational]
+
+      BACK_RATES: Hash[Symbol, Float | Rational]
+
       ORIGINS: Hash[Symbol, Numeric::TwoPartFloat | Numeric::Exact]
 
       def self.from_reference: (Numeric::TwoPartFloat | Numeric::Exact value, Symbol precision) -> (Numeric::TwoPartFloat | Numeric::Exact)

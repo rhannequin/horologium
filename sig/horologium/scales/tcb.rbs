@@ -9,6 +9,10 @@ module Horologium
 
       RATE_FROM_TDB: Rational
 
+      RATES: Hash[Symbol, Float | Rational]
+
+      BACK_RATES: Hash[Symbol, Float | Rational]
+
       ORIGINS: Hash[Symbol, Numeric::TwoPartFloat | Numeric::Exact]
 
       OFFSETS: Hash[Symbol, Numeric::TwoPartFloat | Numeric::Exact]
