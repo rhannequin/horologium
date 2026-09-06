@@ -475,14 +475,16 @@ module Horologium
       # @example
       #   Horologium::Instant.from_time(Time.utc(2025, 5, 1, 12))
       def from_time(time, precision: Horologium.current_precision)
-        unless time.respond_to?(:getutc) && time.respond_to?(:subsec)
-          raise InvalidValueError, "a Time is expected, got a #{time.class}"
+        unless time.is_a?(Time)
+          raise InvalidValueError,
+            "a Time is expected, got a #{time.class}; a Date or a DateTime " \
+            "converts with #to_time"
         end
 
         utc = time.getutc
         from_utc(
           utc.year, utc.month, utc.day, utc.hour, utc.min,
-          utc.sec + utc.subsec,
+          utc.sec + Rational(utc.subsec),
           precision: precision
         )
       end

@@ -16,19 +16,21 @@ module Horologium
 
     FIELDS: Hash[Symbol, Integer]
 
+    CLOCK_FIELDS: Array[Symbol]
+
     PATTERN: Regexp
 
     def self.mean: (Array[Duration] durations) -> Duration
 
-    def self.parse: (untyped value, ?precision: Symbol) -> Duration
+    def self.parse: (String value, ?precision: Symbol) -> Duration
 
     private def self.fraction_above_the_last?: (MatchData match, Array[Symbol] present) -> bool
 
     private def self.refuse: (untyped value) -> bot
 
-    def *: (untyped scalar) -> Duration
+    def *: (Numeric::scalar scalar) -> Duration
 
-    def /: (untyped scalar) -> Duration
+    def /: (Numeric::scalar scalar) -> Duration
 
     def to_iso8601: () -> String
 

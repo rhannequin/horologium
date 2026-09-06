@@ -357,6 +357,12 @@ Horologium::Duration.seconds(14_706).to_iso8601    # => "PT4H5M6S"
 Horologium::Duration.parse("P1Y")  # => raises ParseError
 ```
 
+The string holds nanoseconds, so a duration on that grid reads back into
+itself and one finer than it does not: an exact third of a second writes as
+`PT0.333333333S`, and a quarter of a nanosecond writes as `PT0S`. A third of a
+second has no finite decimal form at any resolution, so that is the format
+rather than the grid. Use `to_r` where the whole value has to survive.
+
 A duration also reads in a unit. The division happens inside the precision the
 duration is held in, so a `:standard` duration keeps the digits a collapsed
 `Float` would lose, and an `:exact` one reads as a `Rational`.

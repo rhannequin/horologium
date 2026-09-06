@@ -53,6 +53,13 @@ module Horologium
     }.freeze
     private_constant :FIELDS
 
+    # The fields that sit below the +T+. A +T+ that opens none of them is not
+    # a duration, however well formed the day field before it is.
+    #
+    # @api private
+    CLOCK_FIELDS = %i[hours minutes seconds].freeze
+    private_constant :CLOCK_FIELDS
+
     # The subset of ISO 8601 durations {parse} reads. Every field is
     # optional here, so {parse} checks that at least one of them is there
     # rather than leaving a bare +P+ or +PT+ to match.
@@ -61,7 +68,7 @@ module Horologium
     PATTERN = /
       \A(?<sign>-)?P
         (?:(?<days>\d+(?:\.\d+)?)D)?
-        (?:T
+        (?<clock>T
           (?:(?<hours>\d+(?:\.\d+)?)H)?
           (?:(?<minutes>\d+(?:\.\d+)?)M)?
           (?:(?<seconds>\d+(?:\.\d+)?)S)?
@@ -225,6 +232,7 @@ module Horologium
 
         present = FIELDS.keys.select { |name| match[name] }
         refuse(value) if present.empty?
+        refuse(value) if match[:clock] && (present & CLOCK_FIELDS).empty?
         refuse(value) if fraction_above_the_last?(match, present)
 
         seconds = present.sum { |name| Rational(match[name]) * FIELDS[name] }
@@ -286,9 +294,10 @@ module Horologium
       def refuse(value)
         raise ParseError,
           "#{value.inspect} is not an ISO 8601 duration the library reads. " \
-          "It reads a quantity of time, such as PT4H5M6S or P3D, and not a " \
-          "calendar period: years, months and weeks are refused because a " \
-          "duration cannot say how long they are"
+          "It reads a quantity of time, such as PT4H5M6S or P3D. Years and " \
+          "months are refused because a duration cannot say how long they " \
+          "are; weeks are seven days exactly but sit outside the subset all " \
+          "the same, and P7D says the same thing"
       end
 
       def from_seconds(seconds, precision)
@@ -467,11 +476,19 @@ module Horologium
       value.to_f
     end
 
-    # @return [String]
     # The duration as an ISO 8601 string, in the subset {Duration.parse}
     # reads. Whole days come out as a day field and the rest below the +T+,
     # zero fields are left out, and the seconds carry a fraction when they
-    # have one, rounded to the nanosecond the way an instant's are.
+    # have one.
+    #
+    # **The string holds nanoseconds, and not everything fits.** The fraction
+    # is rounded onto the nanosecond grid, the way an instant's ISO 8601 is,
+    # so a duration on that grid reads back into itself and one finer than it
+    # does not: an exact third of a second writes as +PT0.333333333S+, and a
+    # quarter of a nanosecond writes as +PT0S+. A third of a second has no
+    # finite decimal form at any resolution, so this is a property of the
+    # format rather than of the choice of grid. Use {#to_r} where the whole
+    # value has to survive; this is an interchange form, like {#to_f}.
     #
     # @return [String]
     # @example
@@ -490,6 +507,7 @@ module Horologium
         "#{clock_part(hours, minutes, seconds, fraction)}"
     end
 
+    # @return [String]
     def inspect
       format("#<%s %s s (%s)>", self.class, to_f, precision)
     end

@@ -574,12 +574,16 @@ class TestInstant < Minitest::Test
       Horologium::Instant.from_time(utc.localtime("+05:30"), precision: :exact)
   end
 
+  # The fraction is read back as a Rational, since the Float reading compares
+  # equal to a third of a second without being one.
   def test_the_fraction_of_a_second_survives_the_bridge
     time = Time.at(Rational(1, 3), in: "UTC")
 
-    assert_equal Rational(1, 3),
-      Horologium::Instant.from_time(time, precision: :exact)
-        .as(:civil, scale: :utc).second_fraction
+    fraction = Horologium::Instant.from_time(time, precision: :exact)
+      .as(:civil, scale: :utc, as: :rational).second_fraction
+
+    assert_instance_of Rational, fraction
+    assert_equal Rational(1, 3), fraction
   end
 
   def test_it_refuses_something_that_is_not_a_time

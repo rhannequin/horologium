@@ -436,12 +436,52 @@ class TestDuration < Minitest::Test
     assert_equal "-PT1H", Horologium::Duration.seconds(-3600).to_iso8601
   end
 
-  def test_every_written_duration_reads_back
+  def test_a_duration_on_the_nanosecond_grid_reads_back
     [0, 1, -1, 0.5, 14_706, 259_200, 93_784.5, 86_401, -3600].each do |seconds|
       duration = Horologium::Duration.seconds(seconds, precision: :exact)
 
       assert_equal duration,
         Horologium::Duration.parse(duration.to_iso8601, precision: :exact)
     end
+  end
+
+  # The string holds nanoseconds. A third of a second has no finite decimal
+  # form at any resolution, so it is written to the grid and reads back as the
+  # grid value, and #to_r is what keeps the whole of it.
+  def test_a_duration_finer_than_a_nanosecond_is_written_to_the_grid
+    third = Horologium::Duration.seconds(1, precision: :exact) / 3
+
+    assert_equal "PT0.333333333S", third.to_iso8601
+    assert_equal Rational(333_333_333, 1_000_000_000),
+      Horologium::Duration.parse(third.to_iso8601, precision: :exact).to_r
+  end
+
+  def test_a_duration_under_half_a_nanosecond_writes_as_none_at_all
+    quarter = Horologium::Duration.nanoseconds(
+      Rational(1, 4),
+      precision: :exact
+    )
+
+    assert_equal "PT0S", quarter.to_iso8601
+  end
+
+  def test_a_trailing_t_opening_no_fields_is_refused
+    %w[P1DT P1.5DT].each do |value|
+      assert_raises(Horologium::ParseError) do
+        Horologium::Duration.parse(value)
+      end
+    end
+  end
+
+  def test_a_scalar_that_overflows_a_float_is_refused_at_standard
+    assert_raises(Horologium::InvalidValueError) do
+      Horologium::Duration.seconds(1) * 10**400
+    end
+  end
+
+  def test_a_scalar_that_overflows_a_float_is_held_at_exact
+    scaled = Horologium::Duration.seconds(1, precision: :exact) * 10**400
+
+    assert_equal 10**400, scaled.to_r
   end
 end

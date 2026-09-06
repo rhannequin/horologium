@@ -399,7 +399,7 @@ module Horologium
       def scalar_float(scalar)
         case scalar
         when Integer, Float, Rational
-          Precision.number!(scalar).to_f
+          Precision.finite_float!(scalar)
         else
           raise InvalidValueError,
             "a TwoPartFloat multiplies and divides by a plain number, " \
