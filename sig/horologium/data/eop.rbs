@@ -1,0 +1,11 @@
+module Horologium
+  module Data
+    module Eop
+      MJD_OFFSET: Float
+
+      def self.delta_t_at: (Float julian_date) -> Float
+
+      def self.provenance_at: (Float julian_date) -> Symbol
+    end
+  end
+end

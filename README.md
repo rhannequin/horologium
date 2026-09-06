@@ -3,7 +3,7 @@
 [![Tests](https://github.com/rhannequin/horologium/workflows/CI/badge.svg)](https://github.com/rhannequin/horologium/actions?query=workflow%3ACI)
 
 Horologium is a Ruby library dedicated to **scientific time**: the time scales
-(TAI, TT, TDB, TCG, TCB, GPS, and UTC so far), high-precision instants, Julian
+(TAI, TT, TDB, TCG, TCB, GPS, UTC and UT1), high-precision instants, Julian
 Dates, intervals, and rigorous conversions between scales that astronomy and
 physics require.
 
@@ -95,6 +95,7 @@ Horologium::Instant.from_tdb(2025, 5, 1, 12, 0, 0)
 Horologium::Instant.from_tcg(2025, 5, 1, 12, 0, 0)
 Horologium::Instant.from_tcb(2025, 5, 1, 12, 0, 0)
 Horologium::Instant.from_gps(2025, 5, 1, 12, 0, 0)
+Horologium::Instant.from_ut1(2025, 5, 1, 12, 0, 0)
 ```
 
 TDB is the one scale that rests on a model rather than a definition. Horologium
@@ -114,6 +115,30 @@ instant = Horologium::Instant.from_julian_date(2_451_545.0, scale: :tt)
 instant.to(:tcg).as(:julian_date)  # => 2451545.0000058548
 instant.to(:tcb).as(:julian_date)  # => 2451545.000130251
 instant.to(:gps).as(:julian_date)  # => 2451544.9994075927
+```
+
+UT1 follows the actual rotation of the Earth, which is irregular, so it is the
+one scale here that is measured rather than defined. Horologium reads the
+difference from the [iers] gem and converts as `UT1 = TT - delta T`, not as
+`UTC + delta UT1`. That is what lets it reach back past 1961: UTC is not
+defined before then and refuses the date, while delta T is estimated from a
+polynomial fit as far back as 1800, so the instant still has a UT1 name.
+
+```rb
+instant = Horologium::Instant.from_ut1(1955, 1, 1, 12)
+
+instant.as(:iso8601, scale: :tt)   # => "1955-01-01T12:00:31.047050952"
+instant.as(:iso8601, scale: :utc)  # => raises OutOfRangeError
+```
+
+A UT1 reading says where its number came from, so you can tell an observation
+from a prediction from a fit. It is `:measured` where the published series
+observed it, `:extrapolated` where the series predicts it, and `:estimated`
+where the series does not reach and the polynomial answered instead.
+
+```rb
+Horologium::Instant.from_utc(2020, 1, 1).to(:ut1).provenance  # => :measured
+Horologium::Instant.from_ut1(1900, 1, 1).to(:ut1).provenance  # => :estimated
 ```
 
 A date that does not exist is refused rather than rolled over, and the message
@@ -438,6 +463,7 @@ rooms and mailing lists is expected to follow the [code of conduct].
 
 [Bundler]: https://bundler.io
 [ERFA]: https://github.com/liberfa/erfa
+[iers]: https://github.com/rhannequin/iers
 [CHANGELOG]: https://github.com/rhannequin/horologium/blob/main/CHANGELOG.md
 [rubygems.org]: https://rubygems.org
 [MIT License]: https://opensource.org/licenses/MIT

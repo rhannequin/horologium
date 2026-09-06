@@ -189,7 +189,7 @@ class TestConfiguration < Minitest::Test
       Horologium.configuration.scale(:sundial)
     end
 
-    assert_equal %i[tai tt tdb tcg tcb gps utc], error.known_scales
+    assert_equal %i[tai tt tdb tcg tcb gps utc ut1], error.known_scales
   end
 
   def test_register_scale_adds_a_scale_an_instant_can_be_read_in
@@ -269,8 +269,44 @@ class TestConfiguration < Minitest::Test
     end
   end
 
+  def test_it_reads_earth_orientation_from_the_iers_data_by_default
+    assert_equal Horologium::Data::Eop, Horologium.configuration.eop_source
+  end
+
+  def test_an_earth_orientation_source_can_be_put_in_its_place
+    source = Class.new do
+      def delta_t_at(_julian_date) = 70.0
+
+      def provenance_at(_julian_date) = :measured
+    end.new
+
+    Horologium.configure { |c| c.eop_source = source }
+
+    assert_equal source, Horologium.configuration.eop_source
+  end
+
+  def test_it_refuses_an_earth_orientation_source_missing_a_method
+    source = Class.new do
+      def delta_t_at(_julian_date) = 70.0
+    end.new
+
+    error = assert_raises(Horologium::ConfigurationError) do
+      Horologium.configure { |c| c.eop_source = source }
+    end
+
+    assert_includes error.message, "provenance_at"
+  end
+
+  def test_it_refuses_an_earth_orientation_source_once_frozen
+    Horologium.configure { |c| c.default_precision = :exact }
+
+    assert_raises(Horologium::ConfigurationError) do
+      Horologium.configuration.eop_source = Horologium::Data::Eop
+    end
+  end
+
   def test_the_scale_names_list_the_registered_scales
-    assert_equal %i[tai tt tdb tcg tcb gps utc],
+    assert_equal %i[tai tt tdb tcg tcb gps utc ut1],
       Horologium.configuration.scale_names
   end
 end
