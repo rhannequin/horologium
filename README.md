@@ -17,6 +17,7 @@ Horologium fills.
 
 - [Installation](#installation)
 - [Usage](#usage)
+- [Intervals](#intervals)
 - [Precision](#precision)
 - [Status](#status)
 - [Development](#development)
@@ -321,6 +322,51 @@ Horologium::Duration.julian_years(1) ==
 Horologium::Duration.julian_centuries(0.25)
 ```
 
+## Intervals
+
+An interval is a span between two instants: an observation campaign, an
+eclipse window, a satellite pass. It holds its start and excludes its end, so
+one window runs into the next without the two overlapping on the moment they
+share, and two windows that merely touch intersect in nothing.
+
+```rb
+window = Horologium::Interval.new(
+  Horologium::Instant.from_utc(2025, 5, 1),
+  Horologium::Instant.from_utc(2025, 5, 1, 2)
+)
+
+Horologium::Interval.from(
+  Horologium::Instant.from_utc(2025, 5, 1),
+  Horologium::Duration.hours(2)
+)
+
+window.start
+window.end
+window.duration
+window.cover?(Horologium::Instant.from_utc(2025, 5, 1, 1))
+window.overlap?(other)
+window.intersection(other)   # => an Interval, or nil
+window.to_iso8601(scale: :utc)
+```
+
+Its duration is elapsed SI seconds, and that is not the difference the clock
+shows. A two-hour window across the 2016 leap second is 7,201 seconds long,
+and this is the one place in the library where leap seconds show up without
+anyone having asked about them.
+
+```rb
+window = Horologium::Interval.parse(
+  "2016-12-31T23:00Z/2017-01-01T01:00Z",
+  scale: :utc,
+  precision: :exact
+)
+
+window.duration.in_seconds  # => (7201/1)
+```
+
+Repeating intervals (`R5/…`) are not read. Repetition is scheduling, and
+scheduling is [ice_cube]'s problem, not this library's.
+
 Durations add, subtract, and negate among themselves, scale by a plain number,
 and read back out in SI seconds.
 
@@ -533,6 +579,7 @@ rooms and mailing lists is expected to follow the [code of conduct].
 
 [Bundler]: https://bundler.io
 [ERFA]: https://github.com/liberfa/erfa
+[ice_cube]: https://github.com/ice-cube-ruby/ice_cube
 [iers]: https://github.com/rhannequin/iers
 [CHANGELOG]: https://github.com/rhannequin/horologium/blob/main/CHANGELOG.md
 [rubygems.org]: https://rubygems.org

@@ -27,6 +27,7 @@ require_relative "horologium/representations/iso8601"
 require_relative "horologium/scale_reading"
 require_relative "horologium/instant"
 require_relative "horologium/epochs"
+require_relative "horologium/interval"
 require_relative "horologium/version"
 
 # Horologium is a Ruby library dedicated to scientific time: the time scales,
