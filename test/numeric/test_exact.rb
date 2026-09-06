@@ -116,13 +116,13 @@ class TestExact < Minitest::Test
   end
 
   def test_multiplication_rejects_an_exact_value
-    assert_raises(ArgumentError) do
+    assert_raises(Horologium::InvalidValueError) do
       Horologium::Numeric::Exact.new(3) * Horologium::Numeric::Exact.new(2)
     end
   end
 
   def test_division_rejects_an_exact_value
-    assert_raises(ArgumentError) do
+    assert_raises(Horologium::InvalidValueError) do
       Horologium::Numeric::Exact.new(3) / Horologium::Numeric::Exact.new(2)
     end
   end
@@ -134,5 +134,17 @@ class TestExact < Minitest::Test
   def test_it_reads_its_sign_from_the_value_it_holds
     assert_predicate Horologium::Numeric::Exact.new(Rational(1, 3)), :positive?
     assert_predicate Horologium::Numeric::Exact.new(Rational(-1, 3)), :negative?
+  end
+
+  def test_it_refuses_a_value_with_no_rational_form
+    assert_raises(Horologium::InvalidValueError) do
+      Horologium::Numeric::Exact.new(Float::NAN)
+    end
+  end
+
+  def test_it_refuses_something_that_is_not_a_number
+    assert_raises(Horologium::InvalidValueError) do
+      Horologium::Numeric::Exact.new(:soon)
+    end
   end
 end

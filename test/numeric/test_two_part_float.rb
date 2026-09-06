@@ -247,14 +247,14 @@ class TestTwoPartFloat < Minitest::Test
   end
 
   def test_multiplication_rejects_a_two_part_float
-    assert_raises(ArgumentError) do
+    assert_raises(Horologium::InvalidValueError) do
       Horologium::Numeric::TwoPartFloat.new(3.0) *
         Horologium::Numeric::TwoPartFloat.new(2.0)
     end
   end
 
   def test_division_rejects_a_two_part_float
-    assert_raises(ArgumentError) do
+    assert_raises(Horologium::InvalidValueError) do
       Horologium::Numeric::TwoPartFloat.new(3.0) /
         Horologium::Numeric::TwoPartFloat.new(2.0)
     end

@@ -30,6 +30,8 @@ module Horologium
 
     def self.nanoseconds: (Numeric::scalar count, ?precision: Symbol) -> Duration
 
+    private def self.scaled: (untyped count, untyped seconds_per_unit) -> untyped
+
     private def self.from_seconds: (Numeric::scalar seconds, Symbol precision) -> Duration
 
     def +: (Duration other) -> Duration

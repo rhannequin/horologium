@@ -68,7 +68,7 @@ module Horologium
         #   Horologium::Numeric::Exact] the Julian Date, in days
         # @raise [ParseError] when a String does not spell a Modified Julian
         #   Date
-        # @raise [ArgumentError] when it is none of the shapes above
+        # @raise [InvalidValueError] when it is none of the shapes above
         # @raise [UnknownPrecisionError] when the precision is not recognised
         # @example
         #   Horologium::Representations::ModifiedJulianDate.parse(

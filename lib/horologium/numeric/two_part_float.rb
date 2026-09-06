@@ -68,7 +68,7 @@ module Horologium
 
       # @param scalar [Integer, Float, Rational]
       # @return [Horologium::Numeric::TwoPartFloat]
-      # @raise [ArgumentError] when given anything but a plain number
+      # @raise [InvalidValueError] when given anything but a plain number
       def *(scalar) # rubocop:disable Naming/BinaryOperatorParameterName
         factor = scalar_float(scalar)
         high = @high + @low
@@ -85,7 +85,7 @@ module Horologium
 
       # @param scalar [Integer, Float, Rational]
       # @return [Horologium::Numeric::TwoPartFloat]
-      # @raise [ArgumentError] when given anything but a plain number
+      # @raise [InvalidValueError] when given anything but a plain number
       # @raise [ZeroDivisionError] when dividing by zero
       def /(scalar) # rubocop:disable Naming/BinaryOperatorParameterName
         divisor = scalar_float(scalar)
@@ -180,6 +180,22 @@ module Horologium
       #     Horologium::Numeric::TwoPartFloat.new(3.0, -0.25)
       #   # => true
       def self.normalize(high, low = 0.0)
+        normalized(
+          Precision.finite_float!(high),
+          Precision.finite_float!(low)
+        )
+      end
+
+      # {normalize} without the check, for the paths inside the library that
+      # have already made it. The check costs about as much as the arithmetic
+      # it guards, so paying it once where a value enters is worth doing and
+      # paying it again here is not.
+      #
+      # @api private
+      # @param high [Float] the high part
+      # @param low [Float] the low part
+      # @return [Horologium::Numeric::TwoPartFloat]
+      def self.normalized(high, low)
         rounded = high.round.to_f
         remainder = high - rounded
         sum = remainder + low
@@ -208,7 +224,17 @@ module Horologium
       #     2**53 + 1
       #   # => true
       def self.from_real(value)
-        high = value.to_f
+        parted(Precision.finite_float!(value), value)
+      end
+
+      # {from_real} without the check, for the paths inside the library that
+      # have already made it.
+      #
+      # @api private
+      # @param high [Float] the value as a Float
+      # @param value [Integer, Float, Rational] the value itself
+      # @return [Horologium::Numeric::TwoPartFloat]
+      def self.parted(high, value)
         new(high, (value.to_r - high.to_r).to_f)
       end
 
@@ -369,13 +395,13 @@ module Horologium
       #
       # @param scalar [Integer, Float, Rational] the number to check
       # @return [Float] the number as a Float
-      # @raise [ArgumentError] when it is not a plain number
+      # @raise [InvalidValueError] when it is not a plain number
       def scalar_float(scalar)
         case scalar
         when Integer, Float, Rational
-          scalar.to_f
+          Precision.number!(scalar).to_f
         else
-          raise ArgumentError,
+          raise InvalidValueError,
             "a TwoPartFloat multiplies and divides by a plain number, " \
             "got a #{scalar.class}"
         end

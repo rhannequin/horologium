@@ -31,6 +31,10 @@ module Horologium
 
       def self.normalize: (Float high, ?Float low) -> TwoPartFloat
 
+      def self.normalized: (Float high, Float low) -> TwoPartFloat
+
+      def self.parted: (Float high, untyped value) -> TwoPartFloat
+
       def self.from_real: (scalar value) -> TwoPartFloat
 
       def self.two_sum: (Float left, Float right) -> [ Float, Float ]

@@ -47,7 +47,8 @@ module Horologium
       # @return [Horologium::Instant]
       # @raise [UnknownScaleError] when no scale is registered under that name
       # @raise [ParseError] when a String does not spell a Julian Date
-      # @raise [ArgumentError] when the Julian Date is none of the shapes above
+      # @raise [InvalidValueError] when the Julian Date is none of the
+      #   shapes above
       # @raise [UnknownPrecisionError] when the precision is not recognised
       # @example The same instant, given in TT and read back in TAI
       #   instant = Horologium::Instant.from_julian_date(
@@ -90,7 +91,7 @@ module Horologium
       # @return [Horologium::Instant]
       # @raise [UnknownScaleError] when no scale is registered under that name
       # @raise [ParseError] when a String does not spell a Modified Julian Date
-      # @raise [ArgumentError] when it is none of the shapes
+      # @raise [InvalidValueError] when it is none of the shapes
       #   {from_julian_date} takes
       # @raise [UnknownPrecisionError] when the precision is not recognised
       def from_modified_julian_date(
@@ -136,7 +137,8 @@ module Horologium
       # @raise [UnknownScaleError] when no scale is registered under that name
       # @raise [InvalidCivilTimeError] when the fields are not a real date and
       #   time
-      # @raise [ArgumentError] when a field is not a number the library reads
+      # @raise [InvalidValueError] when a field is not a number the library
+      #   reads
       # @raise [UnknownPrecisionError] when the precision is not recognised
       # @example A fractional second, said exactly
       #   Horologium::Instant.from_civil(
@@ -436,7 +438,7 @@ module Horologium
       # @raise [ParseError] when the string is not in the subset the parser
       #   reads
       # @raise [InvalidCivilTimeError] when the date and time do not exist
-      # @raise [ArgumentError] when the value is not a String
+      # @raise [InvalidValueError] when the value is not a String
       # @raise [UnknownPrecisionError] when the precision is not recognised
       # @example A numeric offset, subtracted to reach the scale
       #   Horologium::Instant.from_iso8601(

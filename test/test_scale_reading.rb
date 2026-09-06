@@ -84,7 +84,7 @@ class TestScaleReading < Minitest::Test
   end
 
   def test_a_value_that_does_not_match_its_precision_is_refused
-    assert_raises(ArgumentError) do
+    assert_raises(Horologium::InvalidValueError) do
       Horologium::ScaleReading.new(
         :tt,
         Horologium::Numeric::Exact.new(2_443_144.5),

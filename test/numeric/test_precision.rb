@@ -67,7 +67,7 @@ class TestPrecision < Minitest::Test
   end
 
   def test_coerce_refuses_to_drop_an_exact_value_to_standard
-    assert_raises(ArgumentError) do
+    assert_raises(Horologium::InvalidValueError) do
       Horologium::Numeric::Precision.coerce(
         Horologium::Numeric::Exact.new(1),
         to: :standard
@@ -163,7 +163,7 @@ class TestPrecision < Minitest::Test
   end
 
   def test_adding_a_plain_number_is_refused_rather_than_promoted
-    assert_raises(ArgumentError) do
+    assert_raises(Horologium::InvalidValueError) do
       Horologium::Numeric::Precision.add(
         Horologium::Numeric::TwoPartFloat.new(1.0),
         Rational(1, 3)
@@ -172,7 +172,7 @@ class TestPrecision < Minitest::Test
   end
 
   def test_subtracting_a_plain_number_is_refused_rather_than_promoted
-    assert_raises(ArgumentError) do
+    assert_raises(Horologium::InvalidValueError) do
       Horologium::Numeric::Precision.subtract(
         Horologium::Numeric::TwoPartFloat.new(1.0),
         0.5
@@ -188,7 +188,7 @@ class TestPrecision < Minitest::Test
   end
 
   def test_validate_value_rejects_a_value_that_does_not_match_its_precision
-    assert_raises(ArgumentError) do
+    assert_raises(Horologium::InvalidValueError) do
       Horologium::Numeric::Precision.validate_value!(
         Horologium::Numeric::Exact.new(1),
         :standard
@@ -229,5 +229,27 @@ class TestPrecision < Minitest::Test
       Horologium::Numeric::TwoPartFloat.new(1.0, 0.5),
       Horologium::Numeric::Exact.new(Rational(3, 2))
     )
+  end
+
+  # An Integer can be a perfectly good number and still have no Float form,
+  # and the overflow only shows up later as an Infinity with no rational form.
+  def test_finite_float_refuses_a_number_that_overflows_a_float
+    error = assert_raises(Horologium::InvalidValueError) do
+      Horologium::Numeric::Precision.finite_float!(10**1000)
+    end
+
+    assert_includes error.message, "overflows a Float"
+  end
+
+  def test_a_standard_value_refuses_a_number_that_overflows_a_float
+    assert_raises(Horologium::InvalidValueError) do
+      Horologium::Numeric::Precision.build(10**1000, :standard)
+    end
+  end
+
+  def test_an_exact_value_holds_a_number_that_overflows_a_float
+    value = Horologium::Numeric::Precision.build(10**1000, :exact)
+
+    assert_equal 10**1000, value.to_r
   end
 end

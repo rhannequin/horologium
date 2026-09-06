@@ -49,7 +49,7 @@ module Horologium
     # @param value [Horologium::Numeric::TwoPartFloat,
     #   Horologium::Numeric::Exact] the Julian Date in that scale, in days
     # @param precision [Symbol] +:standard+ or +:exact+
-    # @raise [ArgumentError] when the value does not match the precision,
+    # @raise [InvalidValueError] when the value does not match the precision,
     #   which is how a scale that dropped the precision it was given is caught
     def initialize(scale, value, precision, time_scale)
       Numeric::Precision.validate_value!(value, precision)

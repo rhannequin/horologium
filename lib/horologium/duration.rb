@@ -65,7 +65,7 @@ module Horologium
       # @example
       #   Horologium::Duration.minutes(90)
       def minutes(count, precision: Horologium.current_precision)
-        from_seconds(count * SECONDS_PER_MINUTE, precision)
+        from_seconds(scaled(count, SECONDS_PER_MINUTE), precision)
       end
 
       # A duration of +count+ hours.
@@ -77,7 +77,7 @@ module Horologium
       # @example
       #   Horologium::Duration.hours(6)
       def hours(count, precision: Horologium.current_precision)
-        from_seconds(count * SECONDS_PER_HOUR, precision)
+        from_seconds(scaled(count, SECONDS_PER_HOUR), precision)
       end
 
       # A duration of +count+ days, each of {SECONDS_PER_DAY} SI seconds. This
@@ -91,7 +91,7 @@ module Horologium
       #   Horologium::Duration.days(1) == Horologium::Duration.seconds(86_400)
       #   # => true
       def days(count, precision: Horologium.current_precision)
-        from_seconds(count * SECONDS_PER_DAY, precision)
+        from_seconds(scaled(count, SECONDS_PER_DAY), precision)
       end
 
       # A duration of +count+ Julian years, each of exactly 365.25 days. It is
@@ -107,7 +107,7 @@ module Horologium
       #   Horologium::Duration.julian_years(1) ==
       #     Horologium::Duration.days(365.25) # => true
       def julian_years(count, precision: Horologium.current_precision)
-        from_seconds(count * SECONDS_PER_JULIAN_YEAR, precision)
+        from_seconds(scaled(count, SECONDS_PER_JULIAN_YEAR), precision)
       end
 
       # A duration of +count+ Julian centuries, each of a hundred Julian
@@ -121,7 +121,7 @@ module Horologium
       # @example
       #   Horologium::Duration.julian_centuries(0.25)
       def julian_centuries(count, precision: Horologium.current_precision)
-        from_seconds(count * SECONDS_PER_JULIAN_CENTURY, precision)
+        from_seconds(scaled(count, SECONDS_PER_JULIAN_CENTURY), precision)
       end
 
       # A duration of +count+ nanoseconds.
@@ -133,6 +133,8 @@ module Horologium
       # @example
       #   Horologium::Duration.nanoseconds(1)
       def nanoseconds(count, precision: Horologium.current_precision)
+        Numeric::Precision.number!(count)
+
         from_seconds(Rational(count) / NANOSECONDS_PER_SECOND, precision)
       end
 
@@ -156,6 +158,20 @@ module Horologium
       # @param seconds [Numeric] the number of SI seconds
       # @param precision [Symbol] the precision to build
       # @return [Horologium::Duration]
+      # A count of some unit, in seconds. The count is checked before it is
+      # multiplied, so a count that is not a number is refused by the library
+      # rather than by Ruby's own arithmetic.
+      #
+      # @param count [Numeric] the number of units
+      # @param seconds_per_unit [Numeric] the seconds one unit spans
+      # @return [Numeric] the count in seconds
+      # @raise [InvalidValueError] when the count is not a finite number
+      def scaled(count, seconds_per_unit)
+        Numeric::Precision.number!(count)
+
+        count * seconds_per_unit
+      end
+
       def from_seconds(seconds, precision)
         new(Numeric::Precision.build(seconds, precision), precision)
       end

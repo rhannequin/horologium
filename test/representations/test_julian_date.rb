@@ -205,7 +205,7 @@ class TestRepresentationsJulianDate < Minitest::Test
   end
 
   def test_it_rejects_a_value_it_cannot_read_as_a_julian_date
-    error = assert_raises(ArgumentError) do
+    error = assert_raises(Horologium::InvalidValueError) do
       Horologium::Representations::JulianDate.parse(
         nil,
         nil,
@@ -218,7 +218,7 @@ class TestRepresentationsJulianDate < Minitest::Test
   end
 
   def test_it_rejects_a_part_that_is_not_a_float
-    error = assert_raises(ArgumentError) do
+    error = assert_raises(Horologium::InvalidValueError) do
       Horologium::Representations::JulianDate.parse(
         2_456_463.0,
         Rational(1, 2),

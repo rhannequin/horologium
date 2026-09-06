@@ -11,6 +11,12 @@ module Horologium
                      | (TwoPartFloat | Exact value, to: :standard) -> TwoPartFloat
                      | (TwoPartFloat | Exact value, to: Symbol) -> (TwoPartFloat | Exact)
 
+      def self.number!: (untyped value) -> scalar
+
+      def self.finite_float!: (untyped value) -> Float
+
+      private def self.value!: (untyped value) -> (TwoPartFloat | Exact)
+
       def self.build_each: (scalar value) -> Hash[Symbol, TwoPartFloat | Exact]
 
       def self.build: (scalar value, Symbol precision) -> (TwoPartFloat | Exact)

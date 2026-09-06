@@ -226,7 +226,47 @@ class TestRepresentationsCivil < Minitest::Test
       Horologium::Instant.from_civil(-4800, 1, 1, scale: :tai)
     end
 
-    assert_includes error.message, "before -4799"
+    assert_includes error.message, "outside -4799 to 2733193"
+  end
+
+  def test_a_year_after_the_calendar_conversion_stops_is_refused
+    error = assert_raises(Horologium::InvalidCivilTimeError) do
+      Horologium::Instant.from_civil(2_733_194, 1, 1, scale: :tai)
+    end
+
+    assert_includes error.message, "outside -4799 to 2733193"
+  end
+
+  # The conversion is bounded at both ends, and both bounds are the same set
+  # of dates each way: a reading is never handed back a date {parse} would
+  # refuse, and the last day either way survives the trip.
+  def test_the_last_day_the_calendar_covers_reads_back
+    instant = Horologium::Instant.from_civil(
+      2_733_193, 12, 31, 23, 59, 59,
+      scale: :tai,
+      precision: :exact
+    )
+
+    civil = instant.as(:civil, scale: :tai)
+
+    assert_equal 2_733_193, civil.year
+    assert_equal Horologium::Instant.from_civil(
+      civil,
+      scale: :tai,
+      precision: :exact
+    ), instant
+  end
+
+  def test_an_instant_past_the_calendar_is_refused_rather_than_rendered
+    instant = Horologium::Instant.from_julian_date(
+      5e9,
+      scale: :tai,
+      precision: :exact
+    )
+
+    assert_raises(Horologium::InvalidCivilTimeError) do
+      instant.as(:civil, scale: :tai)
+    end
   end
 
   def test_a_month_outside_the_year_is_refused
@@ -301,7 +341,7 @@ class TestRepresentationsCivil < Minitest::Test
   end
 
   def test_a_value_that_is_not_a_civil_time_is_refused
-    error = assert_raises(ArgumentError) do
+    error = assert_raises(Horologium::InvalidValueError) do
       Horologium::Representations::Civil.parse(
         2_443_144.5,
         nil,
@@ -316,7 +356,7 @@ class TestRepresentationsCivil < Minitest::Test
   def test_a_whole_field_that_is_not_an_integer_is_refused
     civil = Horologium::Representations::CivilTime.new(2025.0, 5, 1)
 
-    error = assert_raises(ArgumentError) do
+    error = assert_raises(Horologium::InvalidValueError) do
       Horologium::Representations::Civil.parse(
         civil,
         nil,
@@ -329,7 +369,7 @@ class TestRepresentationsCivil < Minitest::Test
   end
 
   def test_a_second_the_library_does_not_read_is_refused
-    error = assert_raises(ArgumentError) do
+    error = assert_raises(Horologium::InvalidValueError) do
       Horologium::Instant.from_civil(2025, 5, 1, 12, 0, "30", scale: :tai)
     end
 

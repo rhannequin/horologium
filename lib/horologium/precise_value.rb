@@ -29,7 +29,7 @@ module Horologium
     #   Horologium::Numeric::Exact] the value
     # @param precision [Symbol] +:standard+ or +:exact+
     # @raise [UnknownPrecisionError] when the precision is not recognised
-    # @raise [ArgumentError] when the value does not match the precision
+    # @raise [InvalidValueError] when the value does not match the precision
     def initialize(value, precision)
       Numeric::Precision.validate_value!(value, precision)
 
