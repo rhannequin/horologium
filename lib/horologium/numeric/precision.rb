@@ -83,20 +83,40 @@ module Horologium
         #
         # @param value [Object] the value to check
         # @return [Integer, Float, Rational] the number, unchanged
+        # A Float is tried first, since that is what the hot paths hold.
+        #
         # @raise [InvalidValueError] when it is not a finite number
         def number!(value)
           case value
-          when Integer, Rational then value
           when Float
             return value if value.finite?
 
             raise InvalidValueError,
               "a number the library computes with is finite, got #{value}"
+          when Integer, Rational then value
           else
             raise InvalidValueError,
               "a number is an Integer, a Float, or a Rational, " \
               "got a #{value.class}"
           end
+        end
+
+        # Checks that a number survives becoming a Float. {number!} refuses a
+        # Float that is not finite, but an Integer or a Rational can be
+        # perfectly good and still overflow one, and the overflow only shows
+        # up later as an Infinity that cannot be turned back into a Rational.
+        #
+        # @param value [Object] the value to check
+        # @return [Float] the number as a Float
+        # @raise [InvalidValueError] when it is not a number, or has no finite
+        #   Float form
+        def finite_float!(value)
+          float = number!(value).to_f
+          return float if float.finite?
+
+          raise InvalidValueError,
+            "#{value} overflows a Float, so it cannot be held at :standard; " \
+            ":exact holds it exactly"
         end
 
         # Builds a value at a precision, from a plain number: an {Exact} for
@@ -112,7 +132,7 @@ module Horologium
           when :exact
             Exact.new(number!(value))
           else
-            TwoPartFloat.from_real(number!(value))
+            TwoPartFloat.from_real(value)
           end
         end
 
@@ -184,7 +204,11 @@ module Horologium
         # @param left [TwoPartFloat, Exact] one value
         # @param right [TwoPartFloat, Exact] the other value
         # @return [Integer] -1, 0, or 1
+        # @raise [InvalidValueError] when either side is not a value
         def compare(left, right)
+          value!(left)
+          value!(right)
+
           if left.is_a?(TwoPartFloat) && right.is_a?(TwoPartFloat)
             difference = (left.high - right.high) + (left.low - right.low)
 
@@ -249,13 +273,21 @@ module Horologium
         # @return [Exact] the value, exactly
         # @raise [InvalidValueError] when it is not a value
         def promote(value)
-          unless value.is_a?(TwoPartFloat) || value.is_a?(Exact)
-            raise InvalidValueError,
-              "arithmetic takes a TwoPartFloat or an Exact, " \
-              "got a #{value.class}; build it with .build first"
-          end
+          coerce(value!(value), to: :exact)
+        end
 
-          coerce(value, to: :exact)
+        # One side of an operation, checked to be a value the library holds
+        # numbers in rather than a bare number or something else entirely.
+        #
+        # @param value [Object] the value to check
+        # @return [TwoPartFloat, Exact] the same value
+        # @raise [InvalidValueError] when it is not one
+        def value!(value)
+          return value if value.is_a?(TwoPartFloat) || value.is_a?(Exact)
+
+          raise InvalidValueError,
+            "arithmetic takes a TwoPartFloat or an Exact, " \
+            "got a #{value.class}; build it with .build first"
         end
       end
     end

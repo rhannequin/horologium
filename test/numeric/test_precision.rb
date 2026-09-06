@@ -230,4 +230,26 @@ class TestPrecision < Minitest::Test
       Horologium::Numeric::Exact.new(Rational(3, 2))
     )
   end
+
+  # An Integer can be a perfectly good number and still have no Float form,
+  # and the overflow only shows up later as an Infinity with no rational form.
+  def test_finite_float_refuses_a_number_that_overflows_a_float
+    error = assert_raises(Horologium::InvalidValueError) do
+      Horologium::Numeric::Precision.finite_float!(10**1000)
+    end
+
+    assert_includes error.message, "overflows a Float"
+  end
+
+  def test_a_standard_value_refuses_a_number_that_overflows_a_float
+    assert_raises(Horologium::InvalidValueError) do
+      Horologium::Numeric::Precision.build(10**1000, :standard)
+    end
+  end
+
+  def test_an_exact_value_holds_a_number_that_overflows_a_float
+    value = Horologium::Numeric::Precision.build(10**1000, :exact)
+
+    assert_equal 10**1000, value.to_r
+  end
 end

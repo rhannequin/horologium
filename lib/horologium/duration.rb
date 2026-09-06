@@ -133,6 +133,8 @@ module Horologium
       # @example
       #   Horologium::Duration.nanoseconds(1)
       def nanoseconds(count, precision: Horologium.current_precision)
+        Numeric::Precision.number!(count)
+
         from_seconds(Rational(count) / NANOSECONDS_PER_SECOND, precision)
       end
 

@@ -172,12 +172,12 @@ module Horologium
         # @raise [UnknownPrecisionError] when the precision is not recognised
         # @raise [InvalidValueError] when the value is not a finite number
         def day(value, precision)
-          Numeric::Precision.number!(value)
+          number = Numeric::Precision.finite_float!(value)
 
           if Numeric::Precision.validate!(precision) == :exact
             Numeric::Exact.new(value)
           else
-            Numeric::TwoPartFloat.normalize(value, 0.0)
+            Numeric::TwoPartFloat.normalized(number, 0.0)
           end
         end
 
@@ -199,7 +199,7 @@ module Horologium
           if Numeric::Precision.validate!(precision) == :exact
             Numeric::Exact.new(Numeric::TwoPartFloat.new(day, fraction))
           else
-            Numeric::TwoPartFloat.normalize(day, fraction)
+            Numeric::TwoPartFloat.normalized(day, fraction)
           end
         end
 
@@ -213,7 +213,7 @@ module Horologium
         def part(value)
           case value
           when Float, Integer
-            value.to_f
+            Numeric::Precision.finite_float!(value)
           else
             raise InvalidValueError,
               "the two parts of a Julian Date are each a Float or an " \

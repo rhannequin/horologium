@@ -135,4 +135,16 @@ class TestExact < Minitest::Test
     assert_predicate Horologium::Numeric::Exact.new(Rational(1, 3)), :positive?
     assert_predicate Horologium::Numeric::Exact.new(Rational(-1, 3)), :negative?
   end
+
+  def test_it_refuses_a_value_with_no_rational_form
+    assert_raises(Horologium::InvalidValueError) do
+      Horologium::Numeric::Exact.new(Float::NAN)
+    end
+  end
+
+  def test_it_refuses_something_that_is_not_a_number
+    assert_raises(Horologium::InvalidValueError) do
+      Horologium::Numeric::Exact.new(:soon)
+    end
+  end
 end

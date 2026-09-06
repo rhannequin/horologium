@@ -180,6 +180,22 @@ module Horologium
       #     Horologium::Numeric::TwoPartFloat.new(3.0, -0.25)
       #   # => true
       def self.normalize(high, low = 0.0)
+        normalized(
+          Precision.finite_float!(high),
+          Precision.finite_float!(low)
+        )
+      end
+
+      # {normalize} without the check, for the paths inside the library that
+      # have already made it. The check costs about as much as the arithmetic
+      # it guards, so paying it once where a value enters is worth doing and
+      # paying it again here is not.
+      #
+      # @api private
+      # @param high [Float] the high part
+      # @param low [Float] the low part
+      # @return [Horologium::Numeric::TwoPartFloat]
+      def self.normalized(high, low)
         rounded = high.round.to_f
         remainder = high - rounded
         sum = remainder + low
@@ -208,7 +224,17 @@ module Horologium
       #     2**53 + 1
       #   # => true
       def self.from_real(value)
-        high = value.to_f
+        parted(Precision.finite_float!(value), value)
+      end
+
+      # {from_real} without the check, for the paths inside the library that
+      # have already made it.
+      #
+      # @api private
+      # @param high [Float] the value as a Float
+      # @param value [Integer, Float, Rational] the value itself
+      # @return [Horologium::Numeric::TwoPartFloat]
+      def self.parted(high, value)
         new(high, (value.to_r - high.to_r).to_f)
       end
 

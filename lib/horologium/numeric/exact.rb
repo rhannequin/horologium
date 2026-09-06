@@ -24,6 +24,12 @@ module Horologium
       #   faithfully; it does not recover precision already lost before
       #   construction.
       def initialize(value)
+        if !value.respond_to?(:to_r) || (value.is_a?(Float) && !value.finite?)
+          raise InvalidValueError,
+            "an exact value is a number with a rational form, got " \
+            "#{value.inspect}"
+        end
+
         @value = value.to_r
         freeze
       end
