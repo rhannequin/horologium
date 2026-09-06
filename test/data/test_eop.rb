@@ -37,6 +37,14 @@ class TestDataEop < Minitest::Test
       Horologium::Data::Eop.provenance_at(last_day + 2_400_000.5)
   end
 
+  def test_it_reports_the_date_the_series_reaches
+    last_day = (60_000..70_000).bsearch { |mjd| !series_reaches?(mjd) } - 1
+
+    assert_in_delta last_day + 2_400_000.5,
+      Horologium::Data::Eop.covers_until,
+      0.5
+  end
+
   def test_it_refuses_a_date_neither_source_reaches
     assert_raises(IERS::OutOfRangeError) do
       Horologium::Data::Eop.delta_t_at(2_378_000.0)

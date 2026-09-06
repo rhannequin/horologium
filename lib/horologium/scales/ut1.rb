@@ -41,7 +41,11 @@ module Horologium
         # @raise [UnknownPrecisionError] when the precision is not recognised
         def from_reference(value, precision)
           in_tt = TT.from_reference(value, precision)
-          subtract_delta_t(in_tt, index_date(value, in_tt), precision)
+          subtract_delta_t(
+            in_tt,
+            within_horizon(index_date(value, in_tt)),
+            precision
+          )
         end
 
         # A UT1 Julian Date, read back in TAI. UT1 is within a second of UTC,
@@ -66,7 +70,7 @@ module Horologium
 
           in_tt = add_delta_t(
             value,
-            index_date(approximate, approximate_tt),
+            within_horizon(index_date(approximate, approximate_tt)),
             precision
           )
           TT.to_reference(in_tt, precision)
@@ -84,7 +88,10 @@ module Horologium
         #
         # @return [Symbol]
         def provenance(value)
-          source.provenance_at(value.to_f)
+          julian_date = reading_index_date(value)
+          return :extrapolated if past_horizon?(julian_date)
+
+          source.provenance_at(julian_date)
         end
 
         private
@@ -103,15 +110,22 @@ module Horologium
         #   Horologium::Numeric::Exact] delta T in days
         # @raise [OutOfDataRangeError] where neither date is published
         def bootstrap_offset(value, precision)
-          in_days(value.to_f, precision)
+          in_days(clamped(value.to_f), precision)
         rescue OutOfDataRangeError
-          in_days(value.to_f + 1, precision)
+          in_days(clamped(value.to_f + 1), precision)
         end
 
         # The Julian Date to look delta T up at: the UTC one where UTC reaches
-        # the instant, the TT one before that. UTC is only ever the key here,
-        # never a step in the conversion, so a date UTC cannot name still
-        # reads in UT1.
+        # the instant, the TT one where it does not. UTC is only ever the key
+        # here, never a step in the conversion, so a date UTC cannot name
+        # still reads in UT1.
+        #
+        # +leap_second_horizon+ is UTC's policy about UTC readings, and it has
+        # no business deciding whether UT1 answers, so a strict refusal from
+        # it falls back the same way a pre-1961 date does rather than
+        # propagating. The key is then the TT date, which is out by up to 1.9
+        # microseconds, and that only happens past the leap second horizon in
+        # a mode the caller opted into.
         #
         # @param in_tai [Horologium::Numeric::TwoPartFloat,
         #   Horologium::Numeric::Exact] the instant in TAI
@@ -120,7 +134,7 @@ module Horologium
         # @return [Float] the Julian Date to read delta T at
         def index_date(in_tai, in_tt)
           UTC.from_reference(in_tai, :standard).to_f
-        rescue OutOfRangeError
+        rescue OutOfRangeError, OutOfDataRangeError
           in_tt.to_f
         end
 
@@ -149,6 +163,91 @@ module Horologium
           raise OutOfDataRangeError,
             "delta T, the difference between TT and UT1, is not published " \
             "for this date, so it cannot be read in UT1: #{e.message}"
+        end
+
+        # The date to read delta T at, held at the horizon once past it. The
+        # Earth's rotation is not going to be revised backwards, and the leap
+        # second system keeps UT1 within 0.9 s of UTC, so the last published
+        # delta T carries a bounded error rather than an unknown one. The
+        # reading says +:extrapolated+, and a caller who must not compute on
+        # one sets +ut1_horizon+ to +:raise+.
+        #
+        # @param julian_date [Float] the date the conversion wants
+        # @return [Float] that date, or the horizon where it is past it
+        # @raise [OutOfDataRangeError] in strict mode, past the horizon
+        def within_horizon(julian_date)
+          limit = horizon_date
+          return julian_date unless limit && julian_date > limit
+          return limit unless strict?
+
+          raise OutOfDataRangeError,
+            "the Earth orientation data reaches Julian Date #{limit}, and " \
+            "this moment is after it, where the rotation has not been " \
+            "measured yet. ut1_horizon is :raise, so it is refused; set it " \
+            "to :extrapolate to read it with the last published delta T."
+        end
+
+        # The same clamp with no policy attached, for the first pass of
+        # {to_reference}. That pass reads a UT1 coordinate rather than the UTC
+        # one the horizon is stated in, and the two sit up to 0.9 s apart,
+        # which is enough to put an instant the data covers on the far side of
+        # the line. Refusing there would refuse a covered instant, so this
+        # clamps and says nothing; the lookup that decides the answer runs
+        # through {within_horizon} and carries the policy.
+        #
+        # @param julian_date [Float]
+        # @return [Float]
+        def clamped(julian_date)
+          limit = horizon_date
+          (limit && julian_date > limit) ? limit : julian_date
+        end
+
+        # The date the delta T behind a reading was read at. Provenance
+        # describes that value, so it has to be asked at the same date, not at
+        # the UT1 coordinate the reading is expressed in.
+        #
+        # @param value [Horologium::Numeric::TwoPartFloat,
+        #   Horologium::Numeric::Exact] the Julian Date in UT1, in days
+        # @return [Float]
+        def reading_index_date(value)
+          in_tai = to_reference(value, :standard)
+          index_date(in_tai, TT.from_reference(in_tai, :standard))
+        end
+
+        # Whether a date is past the point the Earth orientation data reaches.
+        # False when the source cannot say, so there is no horizon.
+        #
+        # @param julian_date [Float]
+        # @return [Boolean]
+        def past_horizon?(julian_date)
+          limit = horizon_date
+          !limit.nil? && julian_date > limit
+        end
+
+        # The Julian Date the Earth orientation data reaches, from the source
+        # when it can say, or nil. A source answering +covers_until+ with
+        # anything but a number or nil is refused here rather than failing
+        # obscurely when the date is compared.
+        #
+        # @return [Float, nil]
+        # @raise [ConfigurationError] when the source's +covers_until+ is
+        #   neither a number nor nil
+        def horizon_date
+          return nil unless source.respond_to?(:covers_until)
+
+          case (limit = source.covers_until)
+          when nil then nil
+          when ::Integer, ::Float, ::Rational then limit.to_f
+          else
+            raise ConfigurationError,
+              "an Earth orientation source's covers_until must be a number " \
+              "or nil, got #{limit.inspect}"
+          end
+        end
+
+        # @return [Boolean]
+        def strict?
+          Horologium.configuration.ut1_horizon == :raise
         end
 
         # @return [#delta_t_at, #provenance_at]

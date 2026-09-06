@@ -18,6 +18,18 @@ module IERS
     def requested_mjd: () -> Float
   end
 
+  # The bundled data files, once parsed.
+  module Data
+    # One row of the finals series.
+    class FinalsEntry
+      # The Modified Julian Date of the row.
+      def mjd: () -> Float
+    end
+
+    # Every row of the finals series, in date order.
+    def self.finals_entries: () -> Array[FinalsEntry]
+  end
+
   # Delta T, TT - UT1, from the polynomial fit or the measured series.
   module DeltaT
     # One reading, with how it was arrived at.

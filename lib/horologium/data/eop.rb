@@ -43,6 +43,26 @@ module Horologium
           IERS::DeltaT.at(mjd: julian_date - MJD_OFFSET).delta_t
         end
 
+        # The Julian Date the published series vouches through, its last
+        # entry. Past it there is no delta T to read, and {Scales::UT1} holds
+        # the last one rather than refusing, the way UTC holds the last leap
+        # second offset. It is nil when the series is empty and there is no
+        # horizon to speak of.
+        #
+        # Written to be total rather than guarded: iers treats a finals file
+        # that parses to no rows as a series covering nothing, and +last(1)+
+        # carries that through as nil without a branch no bundled data can
+        # reach.
+        #
+        # @return [Float, nil] the Julian Date of the last entry, or nil where
+        #   the series has no entries and there is no horizon to report
+        def covers_until
+          IERS::Data.finals_entries
+            .last(1)
+            .map { |entry| entry.mjd + MJD_OFFSET }
+            .first
+        end
+
         # How the delta T at a point was arrived at. +:measured+ where the
         # published series observed it, +:extrapolated+ where the series
         # predicts it, and +:estimated+ where the series does not reach and
