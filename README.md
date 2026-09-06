@@ -141,6 +141,16 @@ Horologium::Instant.from_utc(2020, 1, 1).to(:ut1).provenance  # => :measured
 Horologium::Instant.from_ut1(1900, 1, 1).to(:ut1).provenance  # => :estimated
 ```
 
+Past the end of the published data the last known delta T is held rather than
+refused, and the reading says `:extrapolated`. The Earth's rotation is not
+revised backwards and the leap second system keeps UT1 within 0.9 seconds of
+UTC, so the error is bounded rather than unknown. A pipeline that must not
+compute on a value the next bulletin could revise turns that into a refusal.
+
+```rb
+Horologium.configure { |c| c.ut1_horizon = :raise }
+```
+
 A date that does not exist is refused rather than rolled over, and the message
 says which field is wrong.
 

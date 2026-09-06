@@ -305,6 +305,30 @@ class TestConfiguration < Minitest::Test
     end
   end
 
+  def test_it_extrapolates_past_the_ut1_horizon_by_default
+    assert_equal :extrapolate, Horologium.configuration.ut1_horizon
+  end
+
+  def test_the_ut1_horizon_can_be_set_to_raise
+    Horologium.configure { |c| c.ut1_horizon = :raise }
+
+    assert_equal :raise, Horologium.configuration.ut1_horizon
+  end
+
+  def test_it_refuses_an_unrecognised_ut1_horizon
+    assert_raises(Horologium::ConfigurationError) do
+      Horologium.configure { |c| c.ut1_horizon = :guess }
+    end
+  end
+
+  def test_it_refuses_a_ut1_horizon_once_frozen
+    Horologium.configure { |c| c.default_precision = :exact }
+
+    assert_raises(Horologium::ConfigurationError) do
+      Horologium.configuration.ut1_horizon = :raise
+    end
+  end
+
   def test_the_scale_names_list_the_registered_scales
     assert_equal %i[tai tt tdb tcg tcb gps utc ut1],
       Horologium.configuration.scale_names

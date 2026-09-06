@@ -26,6 +26,9 @@ module Horologium
     # The recognised ways to handle a leap second past the data's horizon.
     LEAP_SECOND_HORIZONS = %i[extrapolate raise].freeze
 
+    # The recognised ways to handle a UT1 reading past the data's horizon.
+    UT1_HORIZONS = %i[extrapolate raise].freeze
+
     # The source UTC reads its leap seconds from. It answers +tai_utc_at+ with
     # TAI - UTC at a point in UTC, given a Julian Day Number: a day's 0h for a
     # whole number, or part way through a day where a fraction is added, which
@@ -45,6 +48,15 @@ module Horologium
     # @return [#delta_t_at]
     attr_reader :eop_source
 
+    # What UT1 does with a date past the point the Earth orientation data
+    # reaches. +:extrapolate+, the default, reads it with the last published
+    # delta T and marks the reading +:extrapolated+. +:raise+ refuses it with
+    # {OutOfDataRangeError}, for a pipeline that must not lean on a value the
+    # next bulletin could revise.
+    #
+    # @return [Symbol] +:extrapolate+ or +:raise+
+    attr_reader :ut1_horizon
+
     # What UTC does with a date past the point the leap second data vouches
     # for. +:extrapolate+, the default, reads it in UTC with the last known
     # offset and marks the reading +:extrapolated+. +:raise+ refuses it with
@@ -58,6 +70,7 @@ module Horologium
       @default_precision = :standard
       @scales = BUILT_IN_SCALES.dup
       @eop_source = Data::Eop
+      @ut1_horizon = :extrapolate
       @leap_second_source = Data::LeapSeconds
       @leap_second_horizon = :extrapolate
     end
@@ -150,6 +163,26 @@ module Horologium
       end
 
       @leap_second_horizon = horizon
+    end
+
+    # Sets how UT1 handles a date past the Earth orientation data's horizon.
+    #
+    # @param horizon [Symbol] +:extrapolate+ or +:raise+
+    # @return [Symbol] the horizon that was set
+    # @raise [ConfigurationError] once the configuration is frozen, or when
+    #   the horizon is not recognised
+    def ut1_horizon=(horizon)
+      if frozen?
+        raise ConfigurationError, "the configuration is already frozen"
+      end
+
+      unless UT1_HORIZONS.include?(horizon)
+        raise ConfigurationError,
+          "ut1_horizon must be one of #{UT1_HORIZONS.join(", ")}, " \
+          "got #{horizon.inspect}"
+      end
+
+      @ut1_horizon = horizon
     end
 
     # Registers a time scale under a name, so an instant can be read in it

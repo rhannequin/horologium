@@ -17,6 +17,14 @@ module Horologium
 
       private def self.in_days: (Float julian_date, Symbol precision) -> (Numeric::TwoPartFloat | Numeric::Exact)
 
+      private def self.within_horizon: (Float julian_date) -> Float
+
+      private def self.past_horizon?: (Float julian_date) -> bool
+
+      private def self.horizon_date: () -> Float?
+
+      private def self.strict?: () -> bool
+
       private def self.source: () -> untyped
     end
   end

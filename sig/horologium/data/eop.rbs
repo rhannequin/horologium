@@ -5,6 +5,8 @@ module Horologium
 
       def self.delta_t_at: (Float julian_date) -> Float
 
+      def self.covers_until: () -> Float?
+
       def self.provenance_at: (Float julian_date) -> Symbol
     end
   end
