@@ -103,20 +103,23 @@ module Horologium
 
         # Checks that a number survives becoming a Float. {number!} refuses a
         # Float that is not finite, but an Integer or a Rational can be
-        # perfectly good and still overflow one, and the overflow only shows
-        # up later as an Infinity that cannot be turned back into a Rational.
+        # perfectly good and still not fit one. Too large and it becomes an
+        # Infinity that cannot be turned back into a Rational; too small and
+        # it becomes a zero, which is quieter and worse, since the arithmetic
+        # carries on and answers with nothing.
         #
         # @param value [Object] the value to check
         # @return [Float] the number as a Float
-        # @raise [InvalidValueError] when it is not a number, or has no finite
-        #   Float form
+        # @raise [InvalidValueError] when it is not a number, or does not fit
+        #   a Float
         def finite_float!(value)
-          float = number!(value).to_f
-          return float if float.finite?
+          number = number!(value)
+          float = number.to_f
+          return float if float.finite? && !(float.zero? && !number.zero?)
 
           raise InvalidValueError,
-            "#{value} overflows a Float, so it cannot be held at :standard; " \
-            ":exact holds it exactly"
+            "#{value} does not fit a Float, so it cannot be held at " \
+            ":standard; :exact holds it exactly"
         end
 
         # Builds a value at a precision, from a plain number: an {Exact} for

@@ -455,6 +455,106 @@ module Horologium
         )
       end
 
+      # Builds an instant from a Ruby +Time+. The Time is read in UTC, and
+      # every field it carries is used, so the conversion is exact: +subsec+
+      # is a Rational, not a rounded number of nanoseconds.
+      #
+      # A +Time+ cannot hold a leap second. +Time.utc(2016, 12, 31, 23, 59,
+      # 60)+ is silently the first moment of 2017, because POSIX time has no
+      # leap seconds and every day in it is 86,400 seconds long. So this is
+      # exact for everything a +Time+ can carry, but a source that held a
+      # second 60 lost it before Horologium saw it. Read such a timestamp with
+      # {from_utc} or {from_iso8601}, which do hold it.
+      #
+      # @param time [Time] the moment to read
+      # @param precision [Symbol] +:standard+ or +:exact+, taken from the
+      #   precision in effect when omitted
+      # @return [Horologium::Instant]
+      # @raise [InvalidValueError] when it is not a Time
+      # @raise [UnknownPrecisionError] when the precision is not recognised
+      # @example
+      #   Horologium::Instant.from_time(Time.utc(2025, 5, 1, 12))
+      def from_time(time, precision: Horologium.current_precision)
+        unless time.is_a?(Time)
+          raise InvalidValueError,
+            "a Time is expected, got a #{time.class}; a Date or a DateTime " \
+            "converts with #to_time"
+        end
+
+        utc = time.getutc
+        from_utc(
+          utc.year, utc.month, utc.day, utc.hour, utc.min,
+          utc.sec + Rational(utc.subsec),
+          precision: precision
+        )
+      end
+
+      # The instant the system clock reads now, through {from_time}.
+      #
+      # The clock's own accuracy is the limit here, not the library's: a
+      # machine that is not synchronised is wrong by however much it is wrong,
+      # and nothing downstream can tell.
+      #
+      # @param precision [Symbol] +:standard+ or +:exact+, taken from the
+      #   precision in effect when omitted
+      # @return [Horologium::Instant]
+      # @raise [UnknownPrecisionError] when the precision is not recognised
+      def now(precision: Horologium.current_precision)
+        from_time(Time.now, precision: precision)
+      end
+
+      # Builds an instant from Unix time, the seconds since 1970-01-01
+      # 00:00:00 UTC.
+      #
+      # Unix time does not count leap seconds: every day in it is 86,400
+      # seconds, so it is a way of writing a UTC date rather than a count of
+      # elapsed SI seconds, and it is read here the way POSIX reads it.
+      # Adding the same number of seconds to {Epochs::UNIX} lands somewhere
+      # else, and earlier: reaching a UTC date takes one more SI second for
+      # every leap second inserted along the way, so the count POSIX gives is
+      # short of the elapsed time by all of them.
+      #
+      # @param seconds [Integer, Float, Rational] the seconds since the epoch
+      # @param precision [Symbol] +:standard+ or +:exact+, taken from the
+      #   precision in effect when omitted
+      # @return [Horologium::Instant]
+      # @raise [InvalidValueError] when the count is not a finite number
+      # @raise [UnknownPrecisionError] when the precision is not recognised
+      # @example
+      #   Horologium::Instant.from_unix(1_370_351_716.32)
+      def from_unix(seconds, precision: Horologium.current_precision)
+        from_time(
+          Time.at(Numeric::Precision.number!(seconds), in: "UTC"),
+          precision: precision
+        )
+      end
+
+      # Builds an instant a duration after another one, which is what an
+      # epoch and an elapsed time say together.
+      #
+      # It is {Instant#+} under a name that reads as a constructor, for the
+      # places where the first argument is an origin rather than a moment in
+      # its own right.
+      #
+      # @param origin [Horologium::Instant] the instant to count from
+      # @param elapsed [Horologium::Duration] the time since it
+      # @return [Horologium::Instant]
+      # @raise [DimensionalError] when the arguments are not an instant and a
+      #   duration
+      # @example A quarter of a Julian century after J2000
+      #   Horologium::Instant.from_offset(
+      #     Horologium::Epochs::J2000,
+      #     Horologium::Duration.julian_centuries(0.25)
+      #   )
+      def from_offset(origin, elapsed)
+        unless origin.is_a?(self)
+          raise DimensionalError,
+            "an offset counts from an Instant, got a #{origin.class}"
+        end
+
+        origin + elapsed
+      end
+
       private
 
       # A civil time from the fields a constructor was called with. A
