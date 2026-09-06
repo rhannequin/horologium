@@ -9,6 +9,10 @@ module Horologium
 
       MINIMUM_DAY_NUMBER: Integer
 
+      MAXIMUM_YEAR: Integer
+
+      MAXIMUM_DAY_NUMBER: Integer
+
       HALF_DAY: Rational
 
       DAYS_IN_MONTH: Array[Integer]

@@ -116,13 +116,13 @@ class TestExact < Minitest::Test
   end
 
   def test_multiplication_rejects_an_exact_value
-    assert_raises(ArgumentError) do
+    assert_raises(Horologium::InvalidValueError) do
       Horologium::Numeric::Exact.new(3) * Horologium::Numeric::Exact.new(2)
     end
   end
 
   def test_division_rejects_an_exact_value
-    assert_raises(ArgumentError) do
+    assert_raises(Horologium::InvalidValueError) do
       Horologium::Numeric::Exact.new(3) / Horologium::Numeric::Exact.new(2)
     end
   end

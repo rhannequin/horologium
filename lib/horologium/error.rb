@@ -20,6 +20,12 @@ module Horologium
   # number. The message says what the shape is, and shows one.
   class ParseError < Error; end
 
+  # Raised when a value given where a number is expected is not one the
+  # library can compute with: not a number at all, or a Float that is not
+  # finite. A String that does not spell a number raises {ParseError}
+  # instead, since a String is a shape the library does read.
+  class InvalidValueError < Error; end
+
   # Raised when a precision the library does not recognise is given, to the
   # configuration or when building a value. It carries the known precisions so
   # the caller can see the valid choices.

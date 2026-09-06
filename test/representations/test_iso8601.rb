@@ -255,7 +255,7 @@ class TestRepresentationsIso8601 < Minitest::Test
   end
 
   def test_a_value_that_is_not_a_string_is_refused
-    error = assert_raises(ArgumentError) do
+    error = assert_raises(Horologium::InvalidValueError) do
       Horologium::Instant.from_iso8601(2_443_144, scale: :tai)
     end
 

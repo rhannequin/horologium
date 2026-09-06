@@ -125,7 +125,7 @@ module Horologium
         # @raise [ParseError] when the string is not in the subset the parser
         #   reads
         # @raise [InvalidCivilTimeError] when the date and time do not exist
-        # @raise [ArgumentError] when the value is not a String
+        # @raise [InvalidValueError] when the value is not a String
         # @raise [UnknownPrecisionError] when the precision is not recognised
         # @example
         #   Horologium::Representations::Iso8601.parse(
@@ -210,10 +210,10 @@ module Horologium
         # @return [Hash] the civil time under +:civil+ and the offset in
         #   seconds under +:offset_seconds+
         # @raise [ParseError] when the string is not in the subset it reads
-        # @raise [ArgumentError] when the value is not a String
+        # @raise [InvalidValueError] when the value is not a String
         def fields(value)
           unless value.is_a?(String)
-            raise ArgumentError,
+            raise InvalidValueError,
               "an ISO 8601 date and time is a String, got a #{value.class}"
           end
 

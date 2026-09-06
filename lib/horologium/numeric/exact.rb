@@ -42,14 +42,14 @@ module Horologium
 
       # @param scalar [Integer, Float, Rational]
       # @return [Horologium::Numeric::Exact]
-      # @raise [ArgumentError] when given anything but a plain number
+      # @raise [InvalidValueError] when given anything but a plain number
       def *(scalar) # rubocop:disable Naming/BinaryOperatorParameterName
         self.class.new(value * scalar_rational(scalar))
       end
 
       # @param scalar [Integer, Float, Rational]
       # @return [Horologium::Numeric::Exact]
-      # @raise [ArgumentError] when given anything but a plain number
+      # @raise [InvalidValueError] when given anything but a plain number
       def /(scalar) # rubocop:disable Naming/BinaryOperatorParameterName
         self.class.new(value / scalar_rational(scalar))
       end
@@ -115,13 +115,13 @@ module Horologium
       #
       # @param scalar [Integer, Float, Rational]
       # @return [Rational]
-      # @raise [ArgumentError] when it is not a plain number
+      # @raise [InvalidValueError] when it is not a plain number
       def scalar_rational(scalar)
         case scalar
         when Integer, Float, Rational
-          scalar.to_r
+          Precision.number!(scalar).to_r
         else
-          raise ArgumentError,
+          raise InvalidValueError,
             "an Exact multiplies and divides by a plain number, " \
             "got a #{scalar.class}"
         end

@@ -95,7 +95,7 @@ module Horologium
         # @return [Horologium::Numeric::TwoPartFloat,
         #   Horologium::Numeric::Exact] the Julian Date, in days
         # @raise [ParseError] when a String does not spell a Julian Date
-        # @raise [ArgumentError] when the Julian Date is none of the shapes
+        # @raise [InvalidValueError] when the Julian Date is none of the shapes
         #   above
         # @raise [UnknownPrecisionError] when the precision is not recognised
         # @example
@@ -144,7 +144,7 @@ module Horologium
         # @return [Horologium::Numeric::TwoPartFloat,
         #   Horologium::Numeric::Exact] the Julian Date, in days
         # @raise [ParseError] when a String does not spell a Julian Date
-        # @raise [ArgumentError] when it is not a number the library reads
+        # @raise [InvalidValueError] when it is not a number the library reads
         def single(value, precision)
           case value
           when String
@@ -154,7 +154,7 @@ module Horologium
           when Float
             day(value, precision)
           else
-            raise ArgumentError,
+            raise InvalidValueError,
               "a Julian Date is a String, a Rational, an Integer, a Float, " \
               "or a high and a low part each a Float or an Integer, got a " \
               "#{value.class}"
@@ -170,7 +170,10 @@ module Horologium
         # @return [Horologium::Numeric::TwoPartFloat,
         #   Horologium::Numeric::Exact] the Julian Date, in days
         # @raise [UnknownPrecisionError] when the precision is not recognised
+        # @raise [InvalidValueError] when the value is not a finite number
         def day(value, precision)
+          Numeric::Precision.number!(value)
+
           if Numeric::Precision.validate!(precision) == :exact
             Numeric::Exact.new(value)
           else
@@ -186,7 +189,8 @@ module Horologium
         # @param precision [Symbol] +:standard+ or +:exact+
         # @return [Horologium::Numeric::TwoPartFloat,
         #   Horologium::Numeric::Exact] the Julian Date, in days
-        # @raise [ArgumentError] when either part is not a Float or an Integer
+        # @raise [InvalidValueError] when either part is not a Float or an
+        #   Integer
         # @raise [UnknownPrecisionError] when the precision is not recognised
         def two_parts(high, low, precision)
           day = part(high)
@@ -205,13 +209,13 @@ module Horologium
         #
         # @param value [Float, Integer] the part, in days
         # @return [Float] the same part
-        # @raise [ArgumentError] when it is not a Float or an Integer
+        # @raise [InvalidValueError] when it is not a Float or an Integer
         def part(value)
           case value
           when Float, Integer
             value.to_f
           else
-            raise ArgumentError,
+            raise InvalidValueError,
               "the two parts of a Julian Date are each a Float or an " \
               "Integer, got a #{value.class}; pass a String or a Rational to " \
               "give a Julian Date exactly"

@@ -95,7 +95,7 @@ class TestDuration < Minitest::Test
   end
 
   def test_new_rejects_a_value_that_does_not_match_the_precision
-    assert_raises(ArgumentError) do
+    assert_raises(Horologium::InvalidValueError) do
       Horologium::Duration.new(Horologium::Numeric::Exact.new(1), :standard)
     end
   end

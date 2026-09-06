@@ -9,7 +9,10 @@ module Horologium
     # The calendar is the proleptic Gregorian one, extended backwards past its
     # 1582 introduction, with astronomical year numbering. The conversions are
     # the ones ERFA performs in +eraJd2cal+ and +eraCal2jd+, over the range
-    # those routines document, from the year {MINIMUM_YEAR} on.
+    # those routines document, from the year {MINIMUM_YEAR} to
+    # {MAXIMUM_YEAR}. A date outside it is refused rather than rendered,
+    # since past the end of the range the arithmetic stops meaning
+    # anything and a year of three hundred digits is not an answer.
     #
     # The whole conversion runs in exact Rational arithmetic, at both
     # precisions: a {Numeric::TwoPartFloat} pair is already an exact Rational,
@@ -44,6 +47,19 @@ module Horologium
       # @api private
       MINIMUM_DAY_NUMBER = -31_738
       private_constant :MINIMUM_DAY_NUMBER
+
+      # The latest year the calendar conversion covers. ERFA documents
+      # +eraJd2cal+ over Julian Dates up to 1e9, which falls in the year
+      # 2733194, so the last year that fits whole is the one before it.
+      MAXIMUM_YEAR = 2_733_193
+
+      # The Julian Day Number of {MAXIMUM_YEAR}-12-31, the latest day the
+      # calendar conversion covers, bounding the way out as {MAXIMUM_YEAR}
+      # bounds the way in.
+      #
+      # @api private
+      MAXIMUM_DAY_NUMBER = 999_999_669
+      private_constant :MAXIMUM_DAY_NUMBER
 
       # Half a day, the offset between a Julian Date, which starts at noon,
       # and the day the calendar counts, which starts at midnight.
@@ -126,7 +142,7 @@ module Horologium
         #   Horologium::Numeric::Exact] the Julian Date, in days
         # @raise [InvalidCivilTimeError] when the fields are not a real date
         #   and time
-        # @raise [ArgumentError] when the value is not a
+        # @raise [InvalidValueError] when the value is not a
         #   {Horologium::Representations::CivilTime}
         # @raise [UnknownPrecisionError] when the precision is not recognised
         def parse(value, _low, scale, precision)
@@ -154,7 +170,7 @@ module Horologium
         # @param second [Integer, Float, Rational] the second, whole or with a
         #   fraction under it
         # @return [Horologium::Representations::CivilTime]
-        # @raise [ArgumentError] when the second is not a number the library
+        # @raise [InvalidValueError] when the second is not a number the library
         #   reads
         def from_fields(year, month, day, hour, minute, second)
           whole, fraction = split_second(second)
@@ -230,19 +246,22 @@ module Horologium
         # +eraJd2cal+ performs. The intermediate quantities are cycles of the
         # calendar rather than dates, which is why they are named as they are.
         #
-        # A day before {MINIMUM_DAY_NUMBER} is refused, because {parse} stops
-        # at {MINIMUM_YEAR} and a date rendered below it could not be read
-        # back into the instant it came from.
+        # A day outside {MINIMUM_DAY_NUMBER} to {MAXIMUM_DAY_NUMBER} is
+        # refused, because {parse} stops at the same years and a date
+        # rendered beyond them could not be read back into the instant it
+        # came from.
         #
         # @param day_number [Integer] the Julian Day Number
         # @return [Array(Integer, Integer, Integer)] the year, month, and day
-        # @raise [InvalidCivilTimeError] before {MINIMUM_DAY_NUMBER}
+        # @raise [InvalidCivilTimeError] outside {MINIMUM_DAY_NUMBER} to
+        #   {MAXIMUM_DAY_NUMBER}
         def calendar(day_number)
-          if day_number < MINIMUM_DAY_NUMBER
+          if day_number < MINIMUM_DAY_NUMBER || day_number > MAXIMUM_DAY_NUMBER
             raise InvalidCivilTimeError,
-              "this instant is before #{MINIMUM_YEAR}-01-01, where the " \
-              "calendar conversion stops; the continuous scales have no such " \
-              "limit, so read it as a Julian Date instead"
+              "this instant is outside #{MINIMUM_YEAR}-01-01 to " \
+              "#{MAXIMUM_YEAR}-12-31, where the calendar conversion stops; " \
+              "the continuous scales have no such limit, so read it as a " \
+              "Julian Date instead"
           end
 
           remainder = day_number + 68_569
@@ -309,16 +328,17 @@ module Horologium
         # @param second [Integer, Float, Rational] the second
         # @return [Array(Integer, Float, Rational, Integer)] the whole second
         #   and the fraction under it
-        # @raise [ArgumentError] when it is not a number the library reads
+        # @raise [InvalidValueError] when it is not a number the library reads
         def split_second(second)
           case second
           when Integer
             [second, 0]
           when Float, Rational
-            whole = second.floor
-            [whole, second - whole]
+            value = Numeric::Precision.number!(second)
+            whole = value.floor
+            [whole, value - whole]
           else
-            raise ArgumentError,
+            raise InvalidValueError,
               "a second is an Integer, a Float, or a Rational, got a " \
               "#{second.class}; pass a Rational to give a fraction of a " \
               "second exactly"
@@ -333,11 +353,11 @@ module Horologium
         # @param civil [Horologium::Representations::CivilTime] the civil time
         # @return [Horologium::Representations::CivilTime] the same civil time
         # @raise [InvalidCivilTimeError] when the date does not exist
-        # @raise [ArgumentError] when it is not a CivilTime, or a whole field
-        #   is not an Integer
+        # @raise [InvalidValueError] when it is not a CivilTime, or a whole
+        #   field is not an Integer
         def validate!(civil)
           unless civil.is_a?(CivilTime)
-            raise ArgumentError,
+            raise InvalidValueError,
               "a civil time is a #{CivilTime}, got a #{civil.class}; build " \
               "one with Instant.from_civil"
           end
@@ -354,7 +374,7 @@ module Horologium
         #
         # @param civil [Horologium::Representations::CivilTime] the civil time
         # @return [void]
-        # @raise [ArgumentError] when one of them is not an Integer
+        # @raise [InvalidValueError] when one of them is not an Integer
         def validate_whole_fields!(civil)
           {
             "year" => civil.year,
@@ -366,7 +386,7 @@ module Horologium
           }.each do |name, value|
             next if value.is_a?(Integer)
 
-            raise ArgumentError,
+            raise InvalidValueError,
               "the #{name} of a civil time is an Integer, got a " \
               "#{value.class}"
           end
@@ -378,11 +398,12 @@ module Horologium
         # @return [void]
         # @raise [InvalidCivilTimeError] when the date does not exist
         def validate_date!(civil)
-          if civil.year < MINIMUM_YEAR
+          if civil.year < MINIMUM_YEAR || civil.year > MAXIMUM_YEAR
             raise InvalidCivilTimeError,
-              "the year #{civil.year} is before #{MINIMUM_YEAR}, where the " \
-              "calendar conversion stops; the continuous scales have no such " \
-              "limit, so give the instant as a Julian Date instead"
+              "the year #{civil.year} is outside #{MINIMUM_YEAR} to " \
+              "#{MAXIMUM_YEAR}, where the calendar conversion stops; the " \
+              "continuous scales have no such limit, so give the instant as " \
+              "a Julian Date instead"
           end
 
           unless (1..12).cover?(civil.month)

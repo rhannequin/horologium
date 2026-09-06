@@ -219,7 +219,7 @@ class TestInstant < Minitest::Test
   end
 
   def test_new_rejects_a_value_that_does_not_match_the_precision
-    assert_raises(ArgumentError) do
+    assert_raises(Horologium::InvalidValueError) do
       Horologium::Instant.new(Horologium::Numeric::Exact.new(1), :standard)
     end
   end
@@ -321,13 +321,13 @@ class TestInstant < Minitest::Test
   end
 
   def test_a_julian_date_of_an_unreadable_type_is_refused
-    assert_raises(ArgumentError) do
+    assert_raises(Horologium::InvalidValueError) do
       Horologium::Instant.from_julian_date(nil, scale: :tai)
     end
   end
 
   def test_the_low_part_of_a_julian_date_is_a_float
-    assert_raises(ArgumentError) do
+    assert_raises(Horologium::InvalidValueError) do
       Horologium::Instant.from_julian_date(
         2_456_463.0,
         Rational(52_272, 1_000_000),
