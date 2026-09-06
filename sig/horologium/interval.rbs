@@ -1,0 +1,39 @@
+module Horologium
+  class Interval
+    SEPARATOR: String
+
+    attr_reader start: Instant
+
+    attr_reader end: Instant
+
+    def self.from: (Instant start, Duration duration) -> Interval
+
+    def self.parse: (String value, scale: Symbol, ?precision: Symbol) -> Interval
+
+    private def self.read_end: (String value, Symbol scale, Symbol precision) -> Instant
+
+    private def self.refuse: (untyped value) -> bot
+
+    def initialize: (Instant start, Instant finish) -> void
+
+    def duration: () -> Duration
+
+    def cover?: (Instant instant) -> bool
+
+    def overlap?: (Interval other) -> bool
+
+    def intersection: (Interval other) -> Interval?
+
+    def to_iso8601: (scale: Symbol) -> String
+
+    def ==: (untyped other) -> bool
+
+    alias eql? ==
+
+    def hash: () -> Integer
+
+    def inspect: () -> String
+
+    private def validate_interval!: (untyped other) -> void
+  end
+end
