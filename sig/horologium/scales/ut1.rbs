@@ -1,0 +1,23 @@
+module Horologium
+  module Scales
+    class UT1 < Base
+      def self.from_reference: (Numeric::TwoPartFloat | Numeric::Exact value, Symbol precision) -> (Numeric::TwoPartFloat | Numeric::Exact)
+
+      def self.to_reference: (Numeric::TwoPartFloat | Numeric::Exact value, Symbol precision) -> (Numeric::TwoPartFloat | Numeric::Exact)
+
+      def self.provenance: (Numeric::TwoPartFloat | Numeric::Exact value) -> Symbol
+
+      private def self.bootstrap_offset: (Numeric::TwoPartFloat | Numeric::Exact value, Symbol precision) -> (Numeric::TwoPartFloat | Numeric::Exact)
+
+      private def self.index_date: (Numeric::TwoPartFloat | Numeric::Exact in_tai, Numeric::TwoPartFloat | Numeric::Exact in_tt) -> Float
+
+      private def self.subtract_delta_t: (Numeric::TwoPartFloat | Numeric::Exact in_tt, Float julian_date, Symbol precision) -> (Numeric::TwoPartFloat | Numeric::Exact)
+
+      private def self.add_delta_t: (Numeric::TwoPartFloat | Numeric::Exact value, Float julian_date, Symbol precision) -> (Numeric::TwoPartFloat | Numeric::Exact)
+
+      private def self.in_days: (Float julian_date, Symbol precision) -> (Numeric::TwoPartFloat | Numeric::Exact)
+
+      private def self.source: () -> untyped
+    end
+  end
+end

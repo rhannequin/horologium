@@ -16,7 +16,8 @@ module Horologium
       tcg: Scales::TCG,
       tcb: Scales::TCB,
       gps: Scales::GPS,
-      utc: Scales::UTC
+      utc: Scales::UTC,
+      ut1: Scales::UT1
     }.freeze
 
     # @return [Symbol] the default precision, +:standard+ until configured
@@ -36,6 +37,14 @@ module Horologium
     # @return [#tai_utc_at]
     attr_reader :leap_second_source
 
+    # The source UT1 reads delta T, TT - UT1, from. It answers +delta_t_at+
+    # with the seconds at a Julian Date, and +provenance_at+ with how that
+    # value was arrived at. {Data::Eop}, over the iers gem, is the default; a
+    # caller with its own Earth orientation data can set another here.
+    #
+    # @return [#delta_t_at]
+    attr_reader :eop_source
+
     # What UTC does with a date past the point the leap second data vouches
     # for. +:extrapolate+, the default, reads it in UTC with the last known
     # offset and marks the reading +:extrapolated+. +:raise+ refuses it with
@@ -48,6 +57,7 @@ module Horologium
     def initialize
       @default_precision = :standard
       @scales = BUILT_IN_SCALES.dup
+      @eop_source = Data::Eop
       @leap_second_source = Data::LeapSeconds
       @leap_second_horizon = :extrapolate
     end
@@ -94,6 +104,32 @@ module Horologium
       end
 
       @leap_second_source = source
+    end
+
+    # Sets the source UT1 reads delta T from. A source that does not answer
+    # both +delta_t_at+ and +provenance_at+ is refused here, at configuration
+    # time, rather than when an instant is first read in UT1.
+    #
+    # @param source [#delta_t_at] the source to read from
+    # @return [#delta_t_at] the source that was set
+    # @raise [ConfigurationError] once the configuration is frozen, or when
+    #   the source does not answer both methods
+    def eop_source=(source)
+      if frozen?
+        raise ConfigurationError, "the configuration is already frozen"
+      end
+
+      missing = %i[delta_t_at provenance_at].reject do |method|
+        source.respond_to?(method)
+      end
+
+      unless missing.empty?
+        raise ConfigurationError,
+          "an Earth orientation source must respond to " \
+          "#{missing.join(" and ")}, got #{source.inspect}"
+      end
+
+      @eop_source = source
     end
 
     # Sets how UTC handles a date past the leap second data's horizon.

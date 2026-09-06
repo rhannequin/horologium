@@ -1,0 +1,18 @@
+{
+  "description": "TAI Julian Dates converted to UT1, cross-checked against astropy. UT1 is the one scale here resting on published data rather than on a definition, and astropy and the iers gem read different tables, so astropy is no oracle for the value: at J2000 the two tables' delta UT1 are about 17 microseconds apart. It is still an oracle for the arithmetic. Each case carries the delta T the conversion is to use, and the test injects it through Configuration#eop_source so both sides start from one number. astropy reaches UT1 as UTC + delta UT1, Horologium as TT - delta T, and the two agree to well under a nanosecond. The cases sit in the measured era, from 1973 on, where a published delta UT1 exists to feed both sides; the polynomial era before it is covered by the unit tests instead.",
+  "source": {"astropy": "7.2.0", "pyerfa": "2.0.1.5", "iers": "0.3.0", "method": "astropy.time.Time(jd1, jd2, format='jd', scale='tai') with delta_ut1_utc set to IERS::UT1.at(mjd:).ut1_utc read at the UTC date Horologium indexes delta T by, UT1 read as .ut1.jd1/.ut1.jd2. Each delta_t is (TAI - UTC) + 32.184 - delta UT1 at that same date, the same input written the way Horologium consumes it."},
+  "cases": [
+    {"tai":[2451545.0,0.0],"delta_t":63.82894524161402,"ut1":[2451545.0,-0.0003662609402964586]},
+    {"tai":[2460000.0,0.5],"delta_t":69.19914217115462,"ut1":[2460000.0,0.49957158400264867]},
+    {"tai":[2443144.0,0.5],"delta_t":47.52149949692112,"ut1":[2443144.0,0.4998224826447116]},
+    {"tai":[2455197.0,0.25],"delta_t":66.06981008975698,"ut1":[2455197.0,0.24960780312396114]},
+    {"tai":[2458849.0,0.75],"delta_t":69.36123553555424,"ut1":[2458850.0,-0.2504302920779578]},
+    {"tai":[2447892.0,0.1],"delta_t":56.85459322659733,"ut1":[2447892.0,0.099714460726544]},
+    {"tai":[2461000.0,0.5],"delta_t":69.10037165421869,"ut1":[2461000.0,0.499572727179928]},
+    {"tai":[2452000.0,0.987654321],"delta_t":64.15877368040798,"ut1":[2452001.0,-0.01271575739907885]},
+    {"tai":[2456000.0,0.001],"delta_t":66.66919941449153,"ut1":[2456000.0,0.00060086574751746]},
+    {"tai":[2441685.0,0.5],"delta_t":43.37959955787132,"ut1":[2441685.0,0.49987042130141357]},
+    {"tai":[2450000.0,0.3333333333333333],"delta_t":61.42615015721833,"ut1":[2450000.0,0.3329948825213284]},
+    {"tai":[2459000.0,0.9],"delta_t":69.43830240139383,"ut1":[2459001.0,-0.10043118405557167]}
+  ]
+}

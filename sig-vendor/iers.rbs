@@ -1,5 +1,6 @@
 # Minimal signatures for the parts of the iers gem Horologium uses. The gem
-# ships no RBS of its own, so this declares only what Data::LeapSeconds calls.
+# ships no RBS of its own, so this declares only what Data::LeapSeconds and
+# Data::Eop call.
 
 # The iers gem, the source of leap second and Earth orientation data.
 module IERS
@@ -10,5 +11,43 @@ module IERS
 
     # The date the bundled leap second file stops vouching for itself.
     def self.expires_on: () -> Date?
+  end
+
+  # Raised where the data does not reach the date asked for.
+  class OutOfRangeError < StandardError
+    def requested_mjd: () -> Float
+  end
+
+  # Delta T, TT - UT1, from the polynomial fit or the measured series.
+  module DeltaT
+    # One reading, with how it was arrived at.
+    class Entry
+      # TT - UT1 in seconds.
+      def delta_t: () -> Float
+
+      # True where the measured series answered rather than the polynomial.
+      def measured?: () -> bool
+
+      # +:measured+ or +:estimated+.
+      def source: () -> Symbol
+    end
+
+    # Delta T at a moment, given as a Modified Julian Date.
+    def self.at: (?untyped input, ?jd: untyped, ?mjd: untyped) -> Entry
+  end
+
+  # UT1 - UTC, from the published Earth orientation series.
+  module UT1
+    # One reading, with the quality the series records for it.
+    class Entry
+      # UT1 - UTC in seconds.
+      def ut1_utc: () -> Float
+
+      # +:observed+ or +:predicted+.
+      def data_quality: () -> Symbol
+    end
+
+    # UT1 - UTC at a moment, given as a Modified Julian Date.
+    def self.at: (?untyped input, ?jd: untyped, ?mjd: untyped) -> Entry
   end
 end

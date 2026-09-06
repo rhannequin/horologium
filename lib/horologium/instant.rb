@@ -381,6 +381,42 @@ module Horologium
         )
       end
 
+      # Builds an instant from a UT1 calendar date and time. It is
+      # {from_civil} read in UT1, the scale the rotation of the Earth keeps.
+      #
+      # UT1 rests on published Earth orientation data rather than on a
+      # definition, so unlike the continuous scales it can refuse a date the
+      # data does not reach. It reaches much further back than UTC, though: a
+      # pre-1961 date has a UT1 reading, from a polynomial fit, where it can
+      # never have a UTC one.
+      #
+      # The fields are {from_civil}'s, and a {Representations::CivilTime}
+      # may be passed on its own.
+      #
+      # @return [Horologium::Instant]
+      # @raise [InvalidCivilTimeError] when the fields are not a real date and
+      #   time
+      # @raise [OutOfDataRangeError] where delta T is not published
+      # @raise [UnknownPrecisionError] when the precision is not recognised
+      # @see from_civil
+      def from_ut1(
+        year,
+        month = nil,
+        day = nil,
+        hour = 0,
+        minute = 0,
+        second = 0,
+        precision: Horologium.current_precision
+      )
+        from_representation(
+          Representations::Civil,
+          civil_time(year, month, day, hour, minute, second),
+          nil,
+          :ut1,
+          precision
+        )
+      end
+
       # Builds an instant from an ISO 8601 date and time read in a scale. The
       # string is read in the strict subset {Representations::Iso8601} parses:
       # a calendar date, an optional time of day after a +T+ down to a fraction

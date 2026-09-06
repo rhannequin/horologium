@@ -14,6 +14,8 @@ module Horologium
 
     attr_reader default_precision: Symbol
 
+    attr_reader eop_source: untyped
+
     attr_reader leap_second_source: untyped
 
     attr_reader leap_second_horizon: Symbol
@@ -23,6 +25,8 @@ module Horologium
     def scale_names: () -> Array[Symbol]
 
     def default_precision=: (Symbol precision) -> Symbol
+
+    def eop_source=: (untyped source) -> untyped
 
     def leap_second_source=: (untyped source) -> untyped
 
