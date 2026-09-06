@@ -11,9 +11,17 @@ module Horologium
   # seconds as a {Numeric::TwoPartFloat}, at +:exact+ as a {Numeric::Exact}.
   #
   # Two durations add and subtract to give another duration, and one negates.
-  # Mixing a +:standard+ and an +:exact+ operand gives an +:exact+ result.
-  # Adding an Instant to a Duration raises {DimensionalError}; it is
-  # {Instant#+} that shifts a point by a span.
+  # A duration also scales by a plain number, with {#*} and {#/}, which is
+  # what keeps it usable: a quantity that only combines with its own kind
+  # sends a caller back to raw seconds the moment they want half of one.
+  # {mean} averages a list of them in the split. Mixing a +:standard+ and an
+  # +:exact+ operand gives an +:exact+ result. Adding an Instant to a
+  # Duration raises {DimensionalError}; it is {Instant#+} that shifts a point
+  # by a span.
+  #
+  # A duration reads and writes ISO 8601 with {parse} and {#to_iso8601}, in
+  # the subset that is a quantity of time rather than a walk through a
+  # calendar.
   #
   # A duration reads back in a unit with {#in_seconds}, {#in_minutes},
   # {#in_hours}, {#in_days}, {#in_julian_years} and {#in_julian_centuries}.
@@ -223,6 +231,8 @@ module Horologium
       #   precision in effect when omitted
       # @return [Horologium::Duration]
       # @raise [ParseError] when the string is not in the subset
+      # @raise [InvalidValueError] at +:standard+, when a field is a number
+      #   too large to hold as a Float; +:exact+ holds it
       # @raise [UnknownPrecisionError] when the precision is not recognised
       # @example
       #   Horologium::Duration.parse("PT4H5M6S").in_seconds # => 14706.0
@@ -253,13 +263,6 @@ module Horologium
 
       private
 
-      # Builds a duration of +seconds+ SI seconds at the given precision. At
-      # +:exact+ the seconds stay a Rational; at +:standard+ they become a
-      # two-part float. Unit scaling happens on the plain input, before this.
-      #
-      # @param seconds [Numeric] the number of SI seconds
-      # @param precision [Symbol] the precision to build
-      # @return [Horologium::Duration]
       # A count of some unit, in seconds. The count is checked before it is
       # multiplied, so a count that is not a number is refused by the library
       # rather than by Ruby's own arithmetic.
@@ -300,6 +303,13 @@ module Horologium
           "the same, and P7D says the same thing"
       end
 
+      # Builds a duration of +seconds+ SI seconds at the given precision. At
+      # +:exact+ the seconds stay a Rational; at +:standard+ they become a
+      # two-part float. Unit scaling happens on the plain input, before this.
+      #
+      # @param seconds [Numeric] the number of SI seconds
+      # @param precision [Symbol] the precision to build
+      # @return [Horologium::Duration]
       def from_seconds(seconds, precision)
         new(Numeric::Precision.build(seconds, precision), precision)
       end
@@ -514,12 +524,6 @@ module Horologium
 
     private
 
-    # The duration counted in a unit. The division happens in the precision
-    # the duration is held in, so the digits survive it.
-    #
-    # @param seconds_per_unit [Integer] the SI seconds one unit holds
-    # @return [Float, Rational] a Float at +:standard+, a Rational at
-    #   +:exact+
     # The part of an ISO 8601 duration below a day, empty when there is none.
     #
     # @param hours [Integer]
@@ -539,6 +543,12 @@ module Horologium
       written << (fraction.zero? ? "#{seconds}S" : "#{seconds}.#{digits}S")
     end
 
+    # The duration counted in a unit. The division happens in the precision
+    # the duration is held in, so the digits survive it.
+    #
+    # @param seconds_per_unit [Integer] the SI seconds one unit holds
+    # @return [Float, Rational] a Float at +:standard+, a Rational at
+    #   +:exact+
     def in_unit(seconds_per_unit)
       return value.to_r / seconds_per_unit if precision == :exact
 

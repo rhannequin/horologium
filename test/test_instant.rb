@@ -592,13 +592,16 @@ class TestInstant < Minitest::Test
     end
   end
 
+  # Against one reading rather than between two, because the system clock is
+  # not monotonic: a step backwards from NTP between two reads would fail an
+  # ordering assertion without anything being wrong.
   def test_now_reads_the_system_clock
-    before = Horologium::Instant.from_time(Time.now)
     now = Horologium::Instant.now
-    after = Horologium::Instant.from_time(Time.now)
 
-    assert_operator now, :>=, before
-    assert_operator now, :<=, after
+    assert now.equal_within?(
+      Horologium::Instant.from_time(Time.now),
+      Horologium::Duration.minutes(1)
+    )
   end
 
   def test_an_instant_is_built_from_unix_time

@@ -162,6 +162,14 @@ class TestError < Minitest::Test
       },
       "Instant#equal_within?" => -> {
         an_instant.equal_within?(an_instant, value)
+      },
+      "Instant.from_time" => -> { i.from_time(value) },
+      "Instant.from_unix" => -> { i.from_unix(value) },
+      "Instant.from_offset origin" => -> {
+        i.from_offset(value, Horologium::Duration.zero)
+      },
+      "Instant.from_offset elapsed" => -> {
+        i.from_offset(an_instant, value)
       }
     }
   end
@@ -177,7 +185,12 @@ class TestError < Minitest::Test
       "Duration.julian_years" => -> { d.julian_years(value) },
       "Duration.julian_centuries" => -> { d.julian_centuries(value) },
       "Duration#+" => -> { d.seconds(1) + value },
-      "Duration#-" => -> { d.seconds(1) - value }
+      "Duration#-" => -> { d.seconds(1) - value },
+      "Duration#*" => -> { d.seconds(1) * value },
+      "Duration#/" => -> { d.seconds(1) / value },
+      "Duration.parse" => -> { d.parse(value) },
+      "Duration.mean" => -> { d.mean(value) },
+      "Duration.mean element" => -> { d.mean([d.seconds(1), value]) }
     }
   end
 
