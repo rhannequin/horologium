@@ -40,6 +40,36 @@ module Horologium
     # The number of SI seconds in a Julian century of 36,525 days.
     SECONDS_PER_JULIAN_CENTURY = 3_155_760_000
 
+    # The ISO 8601 duration fields the library reads, and the seconds each
+    # one counts. Years and months are absent because a duration cannot say
+    # how long they are.
+    #
+    # @api private
+    FIELDS = {
+      days: SECONDS_PER_DAY,
+      hours: SECONDS_PER_HOUR,
+      minutes: SECONDS_PER_MINUTE,
+      seconds: 1
+    }.freeze
+    private_constant :FIELDS
+
+    # The subset of ISO 8601 durations {parse} reads. Every field is
+    # optional here, so {parse} checks that at least one of them is there
+    # rather than leaving a bare +P+ or +PT+ to match.
+    #
+    # @api private
+    PATTERN = /
+      \A(?<sign>-)?P
+        (?:(?<days>\d+(?:\.\d+)?)D)?
+        (?:T
+          (?:(?<hours>\d+(?:\.\d+)?)H)?
+          (?:(?<minutes>\d+(?:\.\d+)?)M)?
+          (?:(?<seconds>\d+(?:\.\d+)?)S)?
+        )?
+      \z
+    /x
+    private_constant :PATTERN
+
     # The number of nanoseconds in a second.
     NANOSECONDS_PER_SECOND = 1_000_000_000
 
@@ -138,6 +168,70 @@ module Horologium
         from_seconds(Rational(count) / NANOSECONDS_PER_SECOND, precision)
       end
 
+      # The mean of some durations, computed in the split rather than by
+      # reading each one out as a Float and averaging those. Exactness is
+      # contagious, so a mean over any exact duration is exact.
+      #
+      # @param durations [Array<Horologium::Duration>] the durations
+      # @return [Horologium::Duration]
+      # @raise [DimensionalError] when the list is empty, or holds anything
+      #   but durations
+      # @example
+      #   Horologium::Duration.mean(
+      #     [Horologium::Duration.seconds(1), Horologium::Duration.seconds(3)]
+      #   ) == Horologium::Duration.seconds(2)
+      #   # => true
+      def mean(durations)
+        list = Array(durations)
+
+        if list.empty?
+          raise DimensionalError, "the mean of no durations is not a duration"
+        end
+
+        list.each do |duration|
+          next if duration.is_a?(self)
+
+          raise DimensionalError,
+            "the mean is of Durations, got a #{duration.class}"
+        end
+
+        list.sum(zero(precision: list.first.precision)) / list.length
+      end
+
+      # A duration read from an ISO 8601 duration string, in the subset that
+      # is a quantity of time rather than a walk through a calendar.
+      #
+      # +P+ opens it, +T+ opens the part below a day, and the fields are
+      # +D+, +H+, +M+ and +S+, each an optional number, the last of which may
+      # carry a fraction. A leading +-+ negates the whole of it.
+      #
+      # Years and months are refused, and weeks with them. A year is 365 days
+      # or 366 and a month is anywhere from 28 to 31, so +P1Y+ names a span
+      # the calendar resolves and a duration cannot (see §5.4's note on
+      # calendar arithmetic). +P1W+ is unambiguous at seven days, but it is
+      # not part of the subset either, and +P7D+ says the same thing.
+      #
+      # @param value [String] the duration
+      # @param precision [Symbol] +:standard+ or +:exact+, taken from the
+      #   precision in effect when omitted
+      # @return [Horologium::Duration]
+      # @raise [ParseError] when the string is not in the subset
+      # @raise [UnknownPrecisionError] when the precision is not recognised
+      # @example
+      #   Horologium::Duration.parse("PT4H5M6S").in_seconds # => 14706.0
+      def parse(value, precision: Horologium.current_precision)
+        match = value.is_a?(String) && PATTERN.match(value)
+        refuse(value) unless match
+
+        present = FIELDS.keys.select { |name| match[name] }
+        refuse(value) if present.empty?
+        refuse(value) if fraction_above_the_last?(match, present)
+
+        seconds = present.sum { |name| Rational(match[name]) * FIELDS[name] }
+
+        from_seconds(match[:sign] ? -seconds : seconds, precision)
+      end
+
       # A duration of no time at all.
       #
       # @param precision [Symbol] +:standard+ or +:exact+, taken from the
@@ -172,6 +266,31 @@ module Horologium
         count * seconds_per_unit
       end
 
+      # Whether a field other than the smallest one present carries a
+      # fraction. ISO 8601 allows a fraction on the last field only, so
+      # +PT1.5H1M+ is malformed: it says an hour and a half and then a
+      # minute, which is two ways of dividing the same hour.
+      #
+      # @param match [MatchData] the parsed fields
+      # @param present [Array<Symbol>] the fields that are there, largest
+      #   first
+      # @return [Boolean]
+      def fraction_above_the_last?(match, present)
+        present.first(present.length - 1).any? do |name|
+          match[name].include?(".")
+        end
+      end
+
+      # @param value [Object] what could not be read
+      # @raise [ParseError] always
+      def refuse(value)
+        raise ParseError,
+          "#{value.inspect} is not an ISO 8601 duration the library reads. " \
+          "It reads a quantity of time, such as PT4H5M6S or P3D, and not a " \
+          "calendar period: years, months and weeks are refused because a " \
+          "duration cannot say how long they are"
+      end
+
       def from_seconds(seconds, precision)
         new(Numeric::Precision.build(seconds, precision), precision)
       end
@@ -193,6 +312,36 @@ module Horologium
         Numeric::Precision.add(value, other.value),
         precision
       )
+    end
+
+    # A duration scaled by a plain number. Scaling is what keeps a duration
+    # usable: a quantity that can only be added to another of its kind sends
+    # a caller back to raw seconds the moment they need half of one, and the
+    # precision the type exists to protect goes with them.
+    #
+    # @param scalar [Integer, Float, Rational] the number to scale by
+    # @return [Horologium::Duration]
+    # @raise [InvalidValueError] when it is not a finite number
+    # @example
+    #   Horologium::Duration.hours(1) * 1.5 ==
+    #     Horologium::Duration.minutes(90)
+    #   # => true
+    def *(scalar) # rubocop:disable Naming/BinaryOperatorParameterName
+      self.class.new(value * Numeric::Precision.number!(scalar), precision)
+    end
+
+    # A duration divided by a plain number.
+    #
+    # @param scalar [Integer, Float, Rational] the number to divide by
+    # @return [Horologium::Duration]
+    # @raise [InvalidValueError] when it is not a finite number
+    # @raise [ZeroDivisionError] when dividing by zero
+    # @example
+    #   Horologium::Duration.hours(1) / 2 ==
+    #     Horologium::Duration.minutes(30)
+    #   # => true
+    def /(scalar) # rubocop:disable Naming/BinaryOperatorParameterName
+      self.class.new(value / Numeric::Precision.number!(scalar), precision)
     end
 
     # Negative when the other is the longer of the two.
@@ -319,6 +468,28 @@ module Horologium
     end
 
     # @return [String]
+    # The duration as an ISO 8601 string, in the subset {Duration.parse}
+    # reads. Whole days come out as a day field and the rest below the +T+,
+    # zero fields are left out, and the seconds carry a fraction when they
+    # have one, rounded to the nanosecond the way an instant's are.
+    #
+    # @return [String]
+    # @example
+    #   Horologium::Duration.seconds(14_706).to_iso8601 # => "PT4H5M6S"
+    def to_iso8601
+      total = (to_r * NANOSECONDS_PER_SECOND).round
+      return "PT0S" if total.zero?
+
+      sign = total.negative? ? "-" : ""
+      whole, fraction = total.abs.divmod(NANOSECONDS_PER_SECOND)
+      days, rest = whole.divmod(SECONDS_PER_DAY)
+      hours, rest = rest.divmod(SECONDS_PER_HOUR)
+      minutes, seconds = rest.divmod(SECONDS_PER_MINUTE)
+
+      "#{sign}P#{"#{days}D" if days.positive?}" \
+        "#{clock_part(hours, minutes, seconds, fraction)}"
+    end
+
     def inspect
       format("#<%s %s s (%s)>", self.class, to_f, precision)
     end
@@ -331,6 +502,25 @@ module Horologium
     # @param seconds_per_unit [Integer] the SI seconds one unit holds
     # @return [Float, Rational] a Float at +:standard+, a Rational at
     #   +:exact+
+    # The part of an ISO 8601 duration below a day, empty when there is none.
+    #
+    # @param hours [Integer]
+    # @param minutes [Integer]
+    # @param seconds [Integer] the whole seconds
+    # @param fraction [Integer] the nanoseconds under them
+    # @return [String]
+    def clock_part(hours, minutes, seconds, fraction)
+      return "" if [hours, minutes, seconds, fraction].all?(&:zero?)
+
+      written = +"T"
+      written << "#{hours}H" if hours.positive?
+      written << "#{minutes}M" if minutes.positive?
+      return written if seconds.zero? && fraction.zero?
+
+      digits = format("%09d", fraction).sub(/0+\z/, "")
+      written << (fraction.zero? ? "#{seconds}S" : "#{seconds}.#{digits}S")
+    end
+
     def in_unit(seconds_per_unit)
       return value.to_r / seconds_per_unit if precision == :exact
 

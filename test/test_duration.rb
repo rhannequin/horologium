@@ -307,4 +307,141 @@ class TestDuration < Minitest::Test
     assert_equal "#<Horologium::Duration 3600.0 s (standard)>",
       duration.inspect
   end
+
+  def test_a_duration_scales_by_a_number
+    assert_equal Horologium::Duration.minutes(90),
+      Horologium::Duration.hours(1) * 1.5
+  end
+
+  def test_a_duration_divides_by_a_number
+    assert_equal Horologium::Duration.minutes(30),
+      Horologium::Duration.hours(1) / 2
+  end
+
+  def test_scaling_stays_exact_at_the_exact_precision
+    duration = Horologium::Duration.seconds(1, precision: :exact)
+
+    assert_equal Rational(1, 3), (duration / 3).to_r
+  end
+
+  def test_dividing_by_zero_raises_the_error_ruby_raises
+    assert_raises(ZeroDivisionError) do
+      Horologium::Duration.seconds(1) / 0
+    end
+  end
+
+  def test_scaling_refuses_something_that_is_not_a_number
+    assert_raises(Horologium::InvalidValueError) do
+      Horologium::Duration.seconds(1) * :twice
+    end
+  end
+
+  def test_the_mean_of_some_durations
+    assert_equal Horologium::Duration.seconds(2),
+      Horologium::Duration.mean(
+        [Horologium::Duration.seconds(1), Horologium::Duration.seconds(3)]
+      )
+  end
+
+  def test_the_mean_is_exact_when_any_of_them_is
+    mean = Horologium::Duration.mean(
+      [
+        Horologium::Duration.seconds(1, precision: :exact),
+        Horologium::Duration.seconds(2)
+      ]
+    )
+
+    assert_equal :exact, mean.precision
+  end
+
+  def test_the_mean_of_no_durations_is_refused
+    assert_raises(Horologium::DimensionalError) do
+      Horologium::Duration.mean([])
+    end
+  end
+
+  def test_the_mean_of_things_that_are_not_durations_is_refused
+    assert_raises(Horologium::DimensionalError) do
+      Horologium::Duration.mean([1, 2])
+    end
+  end
+
+  def test_it_reads_an_iso_8601_duration
+    assert_equal 14_706,
+      Horologium::Duration.parse("PT4H5M6S", precision: :exact).in_seconds
+  end
+
+  def test_it_reads_a_duration_of_whole_days
+    assert_equal 259_200,
+      Horologium::Duration.parse("P3D", precision: :exact).in_seconds
+  end
+
+  def test_it_reads_a_negative_duration
+    assert_equal(-3600,
+      Horologium::Duration.parse("-PT1H", precision: :exact).in_seconds)
+  end
+
+  def test_it_reads_a_fraction_on_the_smallest_field
+    assert_equal Rational(1, 2),
+      Horologium::Duration.parse("PT0.5S", precision: :exact).in_seconds
+  end
+
+  def test_a_calendar_period_is_not_a_duration
+    %w[P1Y P1M P1W].each do |value|
+      assert_raises(Horologium::ParseError) do
+        Horologium::Duration.parse(value)
+      end
+    end
+  end
+
+  def test_a_duration_with_no_fields_is_refused
+    %w[P PT].each do |value|
+      assert_raises(Horologium::ParseError) do
+        Horologium::Duration.parse(value)
+      end
+    end
+  end
+
+  def test_a_fraction_above_the_smallest_field_is_refused
+    assert_raises(Horologium::ParseError) do
+      Horologium::Duration.parse("PT1.5H1M")
+    end
+  end
+
+  def test_it_refuses_something_that_is_not_a_duration_string
+    [nil, 5, "banana", "1H", "PT1X"].each do |value|
+      assert_raises(Horologium::ParseError) do
+        Horologium::Duration.parse(value)
+      end
+    end
+  end
+
+  def test_it_writes_an_iso_8601_duration
+    assert_equal "PT4H5M6S", Horologium::Duration.seconds(14_706).to_iso8601
+  end
+
+  def test_it_writes_whole_days_as_a_day_field
+    assert_equal "P3D", Horologium::Duration.seconds(259_200).to_iso8601
+  end
+
+  def test_it_writes_no_time_at_all
+    assert_equal "PT0S", Horologium::Duration.zero.to_iso8601
+  end
+
+  def test_it_writes_a_fraction_of_a_second
+    assert_equal "PT0.5S", Horologium::Duration.seconds(0.5).to_iso8601
+  end
+
+  def test_it_writes_a_negative_duration
+    assert_equal "-PT1H", Horologium::Duration.seconds(-3600).to_iso8601
+  end
+
+  def test_every_written_duration_reads_back
+    [0, 1, -1, 0.5, 14_706, 259_200, 93_784.5, 86_401, -3600].each do |seconds|
+      duration = Horologium::Duration.seconds(seconds, precision: :exact)
+
+      assert_equal duration,
+        Horologium::Duration.parse(duration.to_iso8601, precision: :exact)
+    end
+  end
 end

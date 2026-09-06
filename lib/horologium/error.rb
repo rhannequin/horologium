@@ -3,6 +3,11 @@
 module Horologium
   # Base class for all errors raised by Horologium. Every error the library
   # raises descends from it, so a caller can rescue Horologium as a unit.
+  #
+  # One error is deliberately left as Ruby's own: dividing a value by zero
+  # raises +ZeroDivisionError+, the way dividing a number by zero does.
+  # Wrapping it would give the same condition two names and surprise a caller
+  # who already knows the first one.
   class Error < StandardError; end
 
   # Raised when the configuration is changed after it has been frozen, or

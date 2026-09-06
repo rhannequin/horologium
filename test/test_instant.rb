@@ -558,4 +558,77 @@ class TestInstant < Minitest::Test
     assert_equal "#<Horologium::Instant -40000.5 TAI JD (standard)>",
       instant.inspect
   end
+
+  def test_an_instant_is_built_from_a_ruby_time
+    expected =
+      Horologium::Instant.from_utc(2025, 5, 1, 12, precision: :exact)
+
+    assert_equal expected,
+      Horologium::Instant.from_time(Time.utc(2025, 5, 1, 12), precision: :exact)
+  end
+
+  def test_a_time_is_read_in_utc_whatever_zone_it_carries
+    utc = Time.utc(2025, 5, 1, 12)
+
+    assert_equal Horologium::Instant.from_time(utc, precision: :exact),
+      Horologium::Instant.from_time(utc.localtime("+05:30"), precision: :exact)
+  end
+
+  def test_the_fraction_of_a_second_survives_the_bridge
+    time = Time.at(Rational(1, 3), in: "UTC")
+
+    assert_equal Rational(1, 3),
+      Horologium::Instant.from_time(time, precision: :exact)
+        .as(:civil, scale: :utc).second_fraction
+  end
+
+  def test_it_refuses_something_that_is_not_a_time
+    assert_raises(Horologium::InvalidValueError) do
+      Horologium::Instant.from_time("now")
+    end
+  end
+
+  def test_now_reads_the_system_clock
+    before = Horologium::Instant.from_time(Time.now)
+    now = Horologium::Instant.now
+    after = Horologium::Instant.from_time(Time.now)
+
+    assert_operator now, :>=, before
+    assert_operator now, :<=, after
+  end
+
+  def test_an_instant_is_built_from_unix_time
+    assert_equal Horologium::Instant.from_utc(1970, 1, 1, precision: :exact),
+      Horologium::Instant.from_unix(0, precision: :exact)
+  end
+
+  def test_unix_time_is_not_seconds_since_the_unix_epoch
+    from_unix = Horologium::Instant.from_unix(1_700_000_000, precision: :exact)
+    from_epoch = Horologium::Epochs::UNIX +
+      Horologium::Duration.seconds(1_700_000_000, precision: :exact)
+
+    refute_equal from_unix, from_epoch
+    assert_in_delta 29.0, (from_unix - from_epoch).in_seconds.to_f, 0.001
+  end
+
+  def test_unix_time_refuses_something_that_is_not_a_number
+    assert_raises(Horologium::InvalidValueError) do
+      Horologium::Instant.from_unix(:now)
+    end
+  end
+
+  def test_an_instant_is_built_from_an_epoch_and_an_elapsed_time
+    assert_equal Horologium::Epochs::J2000 +
+      Horologium::Duration.julian_centuries(0.25, precision: :exact),
+      Horologium::Instant.from_offset(
+        Horologium::Epochs::J2000,
+        Horologium::Duration.julian_centuries(0.25, precision: :exact)
+      )
+  end
+
+  def test_an_offset_counts_from_an_instant
+    assert_raises(Horologium::DimensionalError) do
+      Horologium::Instant.from_offset(2_451_545.0, Horologium::Duration.zero)
+    end
+  end
 end

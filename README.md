@@ -85,6 +85,33 @@ Horologium::Instant.from_civil(2025, 5, 1, 12, 0, 0, scale: :tt)
 Horologium::Instant.from_civil(2025, 5, 1, 12, 0, Rational(1, 4), scale: :tt)
 ```
 
+Ruby's own `Time` is a bridge in, and the system clock is one line. A `Time`
+is read in UTC and every field it carries is used, so nothing is rounded on
+the way: `subsec` is a `Rational`, not a count of nanoseconds.
+
+```rb
+Horologium::Instant.now
+Horologium::Instant.from_time(Time.utc(2025, 5, 1, 12))
+Horologium::Instant.from_unix(1_370_351_716.32)
+
+Horologium::Instant.from_offset(
+  Horologium::Epochs::J2000,
+  Horologium::Duration.julian_centuries(0.25)
+)
+```
+
+Unix time is not a count of elapsed seconds. It has no leap seconds, so it is
+a way of writing a UTC date, and reaching a UTC date takes one more SI second
+for every leap second inserted along the way. `from_unix(1_700_000_000)` and
+`Epochs::UNIX + Duration.seconds(1_700_000_000)` are about 29 seconds apart,
+and the first one is the later.
+
+A `Time` cannot hold a leap second either. `Time.utc(2016, 12, 31, 23, 59, 60)`
+is silently the first moment of 2017, because POSIX time has no leap seconds
+and every day in it is 86,400 seconds long. `from_time` is exact for
+everything a `Time` can carry, but a timestamp that held a second 60 lost it
+before Horologium saw it; read that one with `from_utc` or `from_iso8601`.
+
 Each scale has its own shortcut, so the scale is in the name instead of a
 keyword.
 
@@ -294,16 +321,40 @@ Horologium::Duration.julian_years(1) ==
 Horologium::Duration.julian_centuries(0.25)
 ```
 
-Durations add, subtract, and negate among themselves, and read back out in SI
-seconds.
+Durations add, subtract, and negate among themselves, scale by a plain number,
+and read back out in SI seconds.
 
 ```rb
 Horologium::Duration.seconds(30) + Horologium::Duration.seconds(12)
 Horologium::Duration.seconds(30) - Horologium::Duration.seconds(42)  # negative
 -Horologium::Duration.seconds(3)
 
+Horologium::Duration.hours(1) * 1.5  # => 90 minutes
+Horologium::Duration.hours(1) / 2    # => 30 minutes
+
+Horologium::Duration.mean(
+  [Horologium::Duration.seconds(1), Horologium::Duration.seconds(3)]
+)  # => 2 seconds
+
 Horologium::Duration.days(1).to_r  # => (86400/1), the whole value
 Horologium::Duration.days(1).to_f  # => 86400.0
+```
+
+Scaling matters more than it looks. A quantity you can only add to another of
+its kind sends you back to raw seconds the moment you need half of one, and
+the precision the type exists to protect goes with you.
+
+A duration reads and writes ISO 8601, in the subset that is a quantity of time
+rather than a walk through a calendar. Years, months and weeks are refused: a
+year is 365 days or 366 and a month is anywhere from 28 to 31, so `P1Y` names
+a span the calendar resolves and a duration cannot.
+
+```rb
+Horologium::Duration.parse("PT4H5M6S").in_seconds  # => 14706.0
+Horologium::Duration.parse("P3D").in_seconds       # => 259200.0
+Horologium::Duration.seconds(14_706).to_iso8601    # => "PT4H5M6S"
+
+Horologium::Duration.parse("P1Y")  # => raises ParseError
 ```
 
 A duration also reads in a unit. The division happens inside the precision the

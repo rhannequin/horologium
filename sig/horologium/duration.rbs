@@ -14,6 +14,26 @@ module Horologium
 
     NANOSECONDS_PER_SECOND: Integer
 
+    FIELDS: Hash[Symbol, Integer]
+
+    PATTERN: Regexp
+
+    def self.mean: (Array[Duration] durations) -> Duration
+
+    def self.parse: (untyped value, ?precision: Symbol) -> Duration
+
+    private def self.fraction_above_the_last?: (MatchData match, Array[Symbol] present) -> bool
+
+    private def self.refuse: (untyped value) -> bot
+
+    def *: (untyped scalar) -> Duration
+
+    def /: (untyped scalar) -> Duration
+
+    def to_iso8601: () -> String
+
+    private def clock_part: (Integer hours, Integer minutes, Integer seconds, Integer fraction) -> String
+
     def self.seconds: (Numeric::scalar count, ?precision: Symbol) -> Duration
 
     def self.minutes: (Numeric::scalar count, ?precision: Symbol) -> Duration

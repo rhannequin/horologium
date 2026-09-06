@@ -37,6 +37,14 @@ module Horologium
     def self.from_ut1: (Representations::CivilTime civil, ?precision: Symbol) -> Instant
                      | (Integer year, Integer month, Integer day, ?Integer hour, ?Integer minute, ?Representations::Civil::second second, ?precision: Symbol) -> Instant
 
+    def self.from_time: (untyped time, ?precision: Symbol) -> Instant
+
+    def self.now: (?precision: Symbol) -> Instant
+
+    def self.from_unix: (untyped seconds, ?precision: Symbol) -> Instant
+
+    def self.from_offset: (untyped origin, untyped elapsed) -> Instant
+
     def self.from_iso8601: (String value, scale: Symbol, ?precision: Symbol) -> Instant
 
     private def self.civil_time: (untyped year, untyped month, untyped day, untyped hour, untyped minute, untyped second) -> Representations::CivilTime
