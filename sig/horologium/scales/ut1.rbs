@@ -19,6 +19,10 @@ module Horologium
 
       private def self.within_horizon: (Float julian_date) -> Float
 
+      private def self.clamped: (Float julian_date) -> Float
+
+      private def self.reading_index_date: (Numeric::TwoPartFloat | Numeric::Exact value) -> Float
+
       private def self.past_horizon?: (Float julian_date) -> bool
 
       private def self.horizon_date: () -> Float?

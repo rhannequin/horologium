@@ -142,10 +142,13 @@ Horologium::Instant.from_ut1(1900, 1, 1).to(:ut1).provenance  # => :estimated
 ```
 
 Past the end of the published data the last known delta T is held rather than
-refused, and the reading says `:extrapolated`. The Earth's rotation is not
-revised backwards and the leap second system keeps UT1 within 0.9 seconds of
-UTC, so the error is bounded rather than unknown. A pipeline that must not
-compute on a value the next bulletin could revise turns that into a refusal.
+refused, and the reading says `:extrapolated`. Holding it is a projection, not
+a bounded value: delta T follows the Earth's rotation, which drifts, and every
+leap second nobody has announced yet adds a second of its own. Over the months
+the data usually runs ahead it is worth milliseconds, but the error grows the
+further out you go, and over years it reaches seconds. The recent drift has
+been about 0.04 seconds a year, the last half century about 0.47. A pipeline
+that must not compute on it turns the reading into a refusal.
 
 ```rb
 Horologium.configure { |c| c.ut1_horizon = :raise }

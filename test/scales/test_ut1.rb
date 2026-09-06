@@ -160,6 +160,56 @@ class TestScalesUT1 < Minitest::Test
     assert_equal :measured, instant.to(:ut1).provenance
   end
 
+  # The horizon is a UTC date, since that is how the series is indexed, and a
+  # UT1 coordinate sits up to 0.9 s from the UTC one. An instant the data
+  # covers must not be called extrapolated because its UT1 name crossed the
+  # line the instant itself did not.
+  def test_an_instant_inside_the_horizon_is_not_extrapolated_by_its_ut1_name
+    source = Class.new do
+      def delta_t_at(_julian_date) = 32.184 + 37 - 0.8
+
+      def provenance_at(_julian_date) = :measured
+
+      def covers_until = 2_461_652.5
+    end.new
+
+    Horologium.configure { |c| c.eop_source = source }
+
+    instant = Horologium::Instant.from_julian_date(
+      2_461_652.5 - Rational(1, 864_000),
+      scale: :utc,
+      precision: :exact
+    )
+
+    assert_equal :measured, instant.to(:ut1).provenance
+  end
+
+  # Two horizons, two policies. Refusing extrapolated leap seconds is about
+  # reading UTC, and UT1 only uses the UTC date as a lookup key, so it says
+  # nothing about whether UT1 answers.
+  def test_a_strict_leap_second_horizon_does_not_refuse_ut1
+    Horologium.configure do |c|
+      c.leap_second_horizon = :raise
+      c.ut1_horizon = :extrapolate
+    end
+
+    instant = Horologium::Instant.from_tt(2030, 1, 1, precision: :exact)
+
+    assert_equal :extrapolated, instant.to(:ut1).provenance
+  end
+
+  def test_both_horizons_strict_still_refuses
+    Horologium.configure do |c|
+      c.leap_second_horizon = :raise
+      c.ut1_horizon = :raise
+    end
+
+    assert_raises(Horologium::OutOfDataRangeError) do
+      Horologium::Instant.from_tt(2030, 1, 1, precision: :exact)
+        .as(:julian_date, scale: :ut1)
+    end
+  end
+
   def test_it_refuses_a_source_whose_horizon_is_not_a_number
     source = Class.new do
       def delta_t_at(_julian_date) = 70.0
