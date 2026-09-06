@@ -2,9 +2,6 @@
 
 require "test_helper"
 
-# UT1 is the scale the rotation of the Earth keeps, and the only one here that
-# is measured rather than defined. The conversion is UT1 = TT - delta T, which
-# is what lets it reach dates UTC cannot name.
 class TestScalesUT1 < Minitest::Test
   def teardown
     Horologium.reset_configuration!
@@ -64,10 +61,6 @@ class TestScalesUT1 < Minitest::Test
       :<, 1
   end
 
-  # The door in the wall. UTC is defined from 1961 and refuses anything
-  # earlier, but delta T is estimated back to 1800, so the instant exists and
-  # has a UT1 name and a TT name. It just has no UTC name, because there was
-  # not one.
   def test_a_pre_1961_instant_reads_in_ut1_where_it_cannot_read_in_utc
     instant = Horologium::Instant.from_ut1(1955, 1, 1, 12, precision: :exact)
 
@@ -82,6 +75,25 @@ class TestScalesUT1 < Minitest::Test
     instant = Horologium::Instant.from_ut1(1972, 7, 1, precision: :exact)
 
     assert_equal :estimated, instant.to(:ut1).provenance
+  end
+
+  def test_an_instant_at_the_earliest_covered_date_reads_back
+    instant = Horologium::Instant.from_julian_date(
+      2_378_495.0000116,
+      scale: :tt,
+      precision: :exact
+    )
+
+    round_trip = Horologium::Instant.from_julian_date(
+      instant.as(:julian_date, scale: :ut1, as: :rational),
+      scale: :ut1,
+      precision: :exact
+    )
+
+    assert instant.equal_within?(
+      round_trip,
+      Horologium::Duration.nanoseconds(1)
+    )
   end
 
   def test_it_refuses_a_date_before_the_polynomial_reaches

@@ -58,7 +58,10 @@ module Horologium
         # @raise [OutOfDataRangeError] where delta T is not published
         # @raise [UnknownPrecisionError] when the precision is not recognised
         def to_reference(value, precision)
-          approximate_tt = add_delta_t(value, value.to_f, precision)
+          approximate_tt = Numeric::Precision.add(
+            value,
+            bootstrap_offset(value, precision)
+          )
           approximate = TT.to_reference(approximate_tt, precision)
 
           in_tt = add_delta_t(
@@ -85,6 +88,25 @@ module Horologium
         end
 
         private
+
+        # Delta T for the first pass, in days. The UT1 coordinate is the
+        # natural key for it, and a good one everywhere except within delta T
+        # of the lower edge of the data, where the coordinate sits just
+        # outside a range the instant itself is inside: the conversion out
+        # subtracted delta T to get here, so a UT1 value can be a few seconds
+        # earlier than the earliest date the source answers for. A day on is
+        # back inside, and delta T moves by about a millisecond over a day at
+        # that end of the fit, which is far closer than this pass needs to be.
+        # The second lookup is the one that decides the answer.
+        #
+        # @return [Horologium::Numeric::TwoPartFloat,
+        #   Horologium::Numeric::Exact] delta T in days
+        # @raise [OutOfDataRangeError] where neither date is published
+        def bootstrap_offset(value, precision)
+          in_days(value.to_f, precision)
+        rescue OutOfDataRangeError
+          in_days(value.to_f + 1, precision)
+        end
 
         # The Julian Date to look delta T up at: the UTC one where UTC reaches
         # the instant, the TT one before that. UTC is only ever the key here,

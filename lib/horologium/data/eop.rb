@@ -35,8 +35,10 @@ module Horologium
         #
         # @param julian_date [Float] the Julian Date to read at
         # @return [Float] TT - UT1 in seconds
-        # @raise [IERS::OutOfRangeError] before 1800, and through 1972, where
-        #   the iers series the measured branch reads has not started
+        # @raise [IERS::OutOfRangeError] where neither source reaches the
+        #   date: before the polynomial starts in 1800, and after the
+        #   published series ends, the two together covering everything in
+        #   between
         def delta_t_at(julian_date)
           IERS::DeltaT.at(mjd: julian_date - MJD_OFFSET).delta_t
         end

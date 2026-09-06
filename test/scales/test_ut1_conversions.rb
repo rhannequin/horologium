@@ -3,18 +3,11 @@
 require "test_helper"
 require "json"
 
-# Cross-checks the TAI to UT1 conversion against astropy. UT1 is the one scale
-# that rests on published data, and astropy and the iers gem read different
-# tables, so the fixture carries the delta T both sides are to use and the
-# test injects it. What is compared is the arithmetic: astropy reaches UT1 as
-# UTC + delta UT1, Horologium as TT - delta T.
 class TestUT1Conversions < Minitest::Test
   FIXTURE = JSON.parse(
     File.read(File.expand_path("../fixtures/ut1_conversions.json", __dir__))
   ).freeze
 
-  # A source answering with one fixed delta T, so the conversion is fed the
-  # same number astropy was.
   class FixedDeltaT
     def initialize(seconds)
       @seconds = seconds
