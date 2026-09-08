@@ -1,5 +1,80 @@
 # Changelog
 
+## 0.0.5 - 2026-09-08
+
+All eight scales are in, so an instant reads in any of them, and the domain
+model is complete: the point, the quantity, and the span between two points.
+A `Time` bridges in from the standard library, a duration scales and reads
+ISO 8601, and everything the library cannot compute with is refused by name
+rather than by whatever Ruby happened to raise.
+
+### Breaking changes
+
+- A value the library cannot read raises `InvalidValueError` instead of
+  `ArgumentError`. `Error`'s promise is that a caller can rescue Horologium as
+  a unit, and it did not hold: a Float that was not finite came back as
+  `FloatDomainError` and a Symbol given to a `Duration` constructor as
+  `NoMethodError`. Dividing by zero is the one error left as Ruby's own
+- The civil calendar is bounded above as well as below, from -4799 to 2733193,
+  the range ERFA documents for its calendar routines. Julian Date 5e9 used to
+  read back as the year 13684822 rather than being refused
+
+### Features
+
+- Add `TCG` and `TCB`, the coordinate times of the Earth-centred and
+  barycentric frames, each running ahead of the scale it is defined on at a
+  rate fixed by definition and counted from 1977-01-01 00:00:00 TAI. TCG
+  inverts exactly at `:exact`; TCB's own edge does too, but the way to TAI
+  goes through TDB's floating-point model
+- Add `GPS`, a fixed 19 SI seconds behind TAI, which is where it stays because
+  it counts SI seconds and never takes a leap second
+- Add `UT1`, the scale the rotation of the Earth keeps and the only one here
+  that is measured rather than defined. It converts as TT minus delta T, which
+  is what lets it reach back to 1800: UTC is undefined before 1961 and refuses
+  the date, so a pre-1961 instant has a UT1 name where it can never have a UTC
+  one. A reading says whether the value was observed, predicted, or fitted
+- Add `Configuration#eop_source`, the Earth orientation data UT1 reads, and
+  `#ut1_horizon`, which chooses between reading past the end of the published
+  data with the last known delta T and refusing to
+- Add `Instant.now`, `.from_time`, `.from_unix` and `.from_offset`. A `Time`
+  is read in UTC and every field it carries is used, so nothing is rounded on
+  the way in. Unix time is read the way POSIX reads it, which is not a count
+  of elapsed seconds: it has no leap seconds, so reaching a UTC date costs an
+  extra SI second for each one inserted along the way
+- Add `Duration#*` and `#/`, which scale a duration by a plain number, and
+  `Duration.mean`, which averages a list of them in the split
+- Add `Duration.parse` and `Duration#to_iso8601`, reading and writing the
+  subset of ISO 8601 that is a quantity of time. Years and months are refused
+  because a duration cannot say how long they are; weeks are seven days
+  exactly but sit outside the subset all the same
+- Add `Interval`, a span between two instants, with `duration`, `cover?`,
+  `overlap?`, `intersection` and ISO 8601 either way. It holds its start and
+  excludes its end, so one window runs into the next without the two
+  overlapping on the moment they share. Its length is elapsed SI seconds, so a
+  two-hour window across the 2016 leap second is 7,201 seconds long
+- Add `InvalidValueError` and `InvalidIntervalError`
+
+### Fixes
+
+- Refuse a number that does not fit a Float where it has to become one, rather
+  than carrying on with an Infinity or a zero. Building a `:standard` value
+  from an Integer too large for a Float used to fail later, when the Infinity
+  had no rational form, and scaling a duration by a number too small used to
+  answer with no duration at all
+- Read every part of a two-part Julian Date. A NaN in either part used to
+  build an instant and surface later, in a reading, in a civil time, or in a
+  comparison
+- Read UT1 back into TAI within delta T of the earliest date the data covers.
+  Converting out subtracts delta T, so an instant that close to the edge
+  landed on a UT1 coordinate just before it, and reading that back refused
+- Report no overlap between a span of no time and anything, including a span
+  that surrounds it. It covers no instant, so there is no instant for the two
+  of them to share
+- Stop writing warnings to stderr. `Integer#to_f` warns on its way out of
+  range, so the guard that refuses such a number announced it first
+
+**Full Changelog**: https://github.com/rhannequin/horologium/compare/v0.0.4...v0.0.5
+
 ## 0.0.4 - 2026-09-05
 
 The epochs astronomy counts from arrive as instants, a duration reads back in
