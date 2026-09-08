@@ -25,6 +25,11 @@ module Horologium
   # number. The message says what the shape is, and shows one.
   class ParseError < Error; end
 
+  # Raised when two instants are not a span: an interval that ends before it
+  # starts. Two instants at the same moment are a span of no time, which is a
+  # real one, so only the order is refused.
+  class InvalidIntervalError < Error; end
+
   # Raised when a value given where a number is expected is not one the
   # library can compute with: not a number at all, or a Float that is not
   # finite. A String that does not spell a number raises {ParseError}

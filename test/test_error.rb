@@ -121,6 +121,7 @@ class TestError < Minitest::Test
   def entry_points(value)
     instant_entry_points(value)
       .merge(duration_entry_points(value))
+      .merge(interval_entry_points(value))
       .merge(numeric_entry_points(value))
   end
 
@@ -191,6 +192,22 @@ class TestError < Minitest::Test
       "Duration.parse" => -> { d.parse(value) },
       "Duration.mean" => -> { d.mean(value) },
       "Duration.mean element" => -> { d.mean([d.seconds(1), value]) }
+    }
+  end
+
+  def interval_entry_points(value)
+    v = Horologium::Interval
+    span = v.from(an_instant, Horologium::Duration.hours(1))
+    {
+      "Interval.new start" => -> { v.new(value, an_instant) },
+      "Interval.new end" => -> { v.new(an_instant, value) },
+      "Interval.from start" => -> { v.from(value, Horologium::Duration.zero) },
+      "Interval.from duration" => -> { v.from(an_instant, value) },
+      "Interval.parse" => -> { v.parse(value, scale: :utc) },
+      "Interval#cover?" => -> { span.cover?(value) },
+      "Interval#overlap?" => -> { span.overlap?(value) },
+      "Interval#intersection" => -> { span.intersection(value) },
+      "Interval#to_iso8601" => -> { span.to_iso8601(scale: value) }
     }
   end
 
