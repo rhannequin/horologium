@@ -2,59 +2,36 @@
 
 module Horologium
   module Scales
-    # Barycentric Coordinate Time, the coordinate time of a reference frame at
-    # the barycentre of the solar system, outside the gravity wells of the Sun
-    # and the planets. A clock there ticks faster than one on the Earth, so
-    # TCB runs ahead of TDB at a fixed rate of about 0.49 seconds a year. The
-    # rate is a defining constant, so the TCB to TDB edge needs no external
-    # data.
+    # Barycentric Coordinate Time, the coordinate time of a frame at the
+    # barycentre of the solar system. A clock there ticks faster than one on the
+    # Earth, so TCB gains on TDB at the rate L_B, about half a second a year.
     #
-    # TCB is defined on TDB, so this conversion goes through it. TDB itself
-    # rests on the floating-point {Data::BarycentricModel}, so while the TCB
-    # to TDB edge is exact, the whole conversion from TAI inherits the model's
-    # accuracy the way {TDB} does. Reading TCB back in TAI does not return the
-    # value given to the last bit, either: the TDB edge reads its correction
-    # at TT on the way out and at TDB on the way back, and the two differ by
-    # the couple of milliseconds between the scales. The round trip comes back
-    # within about a third of a picosecond.
-    #
-    # The scales were set to read the same at {TT_TCG_TCB_ORIGIN_JULIAN_DATE},
-    # 1977-01-01 00:00:00 TAI, up to the small constant {TDB_0} that keeps TDB
-    # continuous with the scale it replaced.
-    #
-    # @example TCB runs ahead of TDB
-    #   instant = Horologium::Instant.from_julian_date(
-    #     2_451_545.0,
-    #     scale: :tt
-    #   )
-    #   instant.to(:tcb).as(:julian_date) # => 2451545.000130251
+    # Source:
+    #  Title: IAU 2006 Resolution B3
+    #  Implementation: ERFA eraTdbtcb and eraTcbtdb
     class TCB < Base
-      # L_B, the defining constant 1 - d(TDB)/d(TCB). It is exact by
-      # definition, not a measurement, so it is held as a Rational.
+      # L_B, the defining constant 1 - d(TDB)/d(TCB), held as a Rational
+      # because it is exact by definition.
       L_B = Rational(1_550_519_768, 10**17)
 
-      # The fixed offset in the TDB definition, in SI seconds. It is what
-      # keeps TDB continuous with the ephemeris time scale it replaced, and it
-      # is why TDB and TCB do not read exactly the same at the origin.
+      # The fixed offset in the TDB definition, in SI seconds. It keeps TDB
+      # continuous with the ephemeris time scale it replaced, and it is why TDB
+      # and TCB don't read quite the same at the origin.
       TDB_0 = Rational(-655, 10**7)
 
-      # The same offset in days, because a Julian Date counts days.
+      # The same offset in days.
       TDB_0_IN_DAYS = TDB_0 / Duration::SECONDS_PER_DAY
 
-      # The rate TCB gains on TDB, L_B / (1 - L_B). Going from TDB to TCB
-      # multiplies by this; coming back multiplies by {L_B}, which is what
-      # makes the pair exact inverses.
+      # The rate TCB gains on TDB. Going out multiplies by this and coming
+      # back multiplies by {L_B}, which makes the pair exact inverses.
       #
       # @api private
       RATE_FROM_TDB = L_B / (1 - L_B)
       private_constant :RATE_FROM_TDB
 
-      # The two rates at each precision. A two-part float multiplies by a
-      # Float, so holding the Rationals alone would work out the same Floats
-      # on every conversion, and their denominators are wide enough for that
-      # to cost more than the arithmetic they feed. An unrecognised precision
-      # is refused before either table is read, by the conversion into TDB on
-      # the way out and by {ORIGINS} on the way back.
+      # The rates at each precision. A two-part float multiplies by a Float,
+      # and these denominators are wide enough that converting them on every
+      # call costs more than the arithmetic does.
       #
       # @api private
       RATES = {standard: RATE_FROM_TDB.to_f, exact: RATE_FROM_TDB}.freeze
@@ -64,9 +41,6 @@ module Horologium
       BACK_RATES = {standard: L_B.to_f, exact: L_B}.freeze
       private_constant :BACK_RATES
 
-      # The origin and the TDB offset at each precision, built once, so a
-      # conversion does not build them again every time.
-      #
       # @api private
       ORIGINS = Numeric::Precision.build_each(TT_TCG_TCB_ORIGIN_JULIAN_DATE)
       private_constant :ORIGINS
@@ -76,9 +50,8 @@ module Horologium
       private_constant :OFFSETS
 
       class << self
-        # A TAI Julian Date, read in TCB. It reads TAI in TDB first, takes the
-        # {TDB_0} offset off, then adds the rate over the time since the
-        # origin.
+        # Reads TAI in TDB, takes the {TDB_0} offset off, then adds the rate
+        # over the time since the origin.
         #
         # @param value [Horologium::Numeric::TwoPartFloat,
         #   Horologium::Numeric::Exact] the Julian Date in TAI, in days
@@ -93,9 +66,8 @@ module Horologium
           Numeric::Precision.add(shifted, elapsed * RATES[precision])
         end
 
-        # A TCB Julian Date, read back in TAI. It removes the rate over the
-        # time since the origin, puts the {TDB_0} offset back, then reads the
-        # TDB Julian Date in TAI.
+        # Removes the rate over the time since the origin, puts the {TDB_0}
+        # offset back, then reads the TDB Julian Date in TAI.
         #
         # @param value [Horologium::Numeric::TwoPartFloat,
         #   Horologium::Numeric::Exact] the Julian Date in TCB, in days

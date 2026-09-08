@@ -3,20 +3,8 @@
 module Horologium
   # A span between two instants: an observation campaign, an eclipse window, a
   # satellite pass. It is the third of the value objects, alongside {Instant},
-  # the point, and {Duration}, the quantity.
-  #
-  # **An interval holds its start and excludes its end.** An instant exactly
-  # at the end is not covered. That is what lets one window run into the next
-  # without the two overlapping on the moment they share, and it is why two
-  # windows that merely touch intersect in nothing rather than in an instant
-  # of no duration.
-  #
-  # Its duration is elapsed SI seconds, which is not the same as the clock
-  # difference between its ends. A window across a leap second is a second
-  # longer than the clock says, and this is the one place in the library where
-  # that shows up without anyone asking about leap seconds at all.
-  #
-  # An Interval is frozen, and two of them are equal when their ends are.
+  # the point, and {Duration}, the quantity. An interval holds its start and
+  # excludes its end. An instant exactly at the end is not covered.
   #
   # @example The window across the 2016 leap second is 7,201 seconds
   #   window = Horologium::Interval.parse(
@@ -49,11 +37,6 @@ module Horologium
       #   duration. The start is checked here rather than left to the
       #   constructor, because the end is worked out from it first.
       # @raise [InvalidIntervalError] when the duration is negative
-      # @example
-      #   Horologium::Interval.from(
-      #     Horologium::Instant.from_utc(2025, 5, 1),
-      #     Horologium::Duration.hours(2)
-      #   )
       def from(start, duration)
         unless start.is_a?(Instant)
           raise DimensionalError,
@@ -68,15 +51,8 @@ module Horologium
         new(start, start + duration)
       end
 
-      # An interval read from an ISO 8601 interval, two instants separated by
-      # a +/+. Each end is read by {Instant.from_iso8601}, in the strict
-      # subset it parses, and in the scale given: an ISO 8601 string names no
-      # scale of its own, so neither does an interval of them.
-      #
-      # Repeating intervals (+R5/…+) are not read. Repetition is scheduling,
-      # and scheduling is not what this library is for. The forms that give a
-      # duration on one side rather than two instants are not read either;
-      # {from} is how a start and a length make an interval here.
+      # An interval read from an ISO 8601 interval, two instants separated by a
+      # +/+.
       #
       # @param value [String] the interval
       # @param scale [Symbol] the scale both ends are read in
@@ -85,11 +61,6 @@ module Horologium
       # @return [Horologium::Interval]
       # @raise [ParseError] when it is not two instants separated by a +/+
       # @raise [InvalidIntervalError] when it ends before it starts
-      # @example
-      #   Horologium::Interval.parse(
-      #     "2016-12-31T23:00Z/2017-01-01T01:00Z",
-      #     scale: :utc
-      #   )
       def parse(value, scale:, precision: Horologium.current_precision)
         refuse(value) unless value.is_a?(String)
 
@@ -149,16 +120,14 @@ module Horologium
       freeze
     end
 
-    # How long the span runs, in elapsed SI seconds. A window across a leap
-    # second is a second longer than the clock reading it suggests.
+    # How long the span runs, in elapsed SI seconds.
     #
     # @return [Horologium::Duration]
     def duration
       self.end - start
     end
 
-    # Whether an instant falls in the span. The start is in it and the end is
-    # not, so a span of no time covers nothing.
+    # Whether an instant falls in the span.
     #
     # @param instant [Horologium::Instant] the instant to place
     # @return [Boolean]
@@ -172,13 +141,7 @@ module Horologium
       instant >= start && instant < self.end
     end
 
-    # Whether two spans share any time at all. Two that merely touch, where
-    # one ends exactly where the other starts, do not.
-    #
-    # Neither does a span of no time, with anything, including a span that
-    # surrounds it. It covers no instant, so there is no instant for the two
-    # of them to share, and reporting an overlap there would hand back an
-    # intersection of no time as though it were one.
+    # Whether two spans share any time at all.
     #
     # @param other [Horologium::Interval] the other span
     # @return [Boolean]
@@ -211,9 +174,6 @@ module Horologium
     # @param scale [Symbol] the scale to write both ends in
     # @return [String]
     # @raise [UnknownScaleError] when no scale is registered under that name
-    # @example
-    #   window.to_iso8601(scale: :utc)
-    #   # => "2016-12-31T23:00:00.000000000Z/2017-01-01T01:00:00.000000000Z"
     def to_iso8601(scale:)
       [start, self.end]
         .map { |one| one.as(:iso8601, scale: scale) }
@@ -232,10 +192,7 @@ module Horologium
     end
 
     # Stricter than +==+: the ends must match in precision too, the way
-    # {Instant#eql?} is stricter than {Instant#==}. It has to be, because
-    # {#hash} reads the ends and their hashes carry their precision, and a
-    # pair that is +eql?+ with different hashes would sit twice in a Hash or
-    # a Set.
+    # {Instant#eql?} is stricter than {Instant#==}.
     #
     # @param other [Object]
     # @return [Boolean]

@@ -6,16 +6,6 @@ module Horologium
     # ({TwoPartFloat}), or +:exact+, the lossless Rational ({Exact}). This
     # module holds the rules that decide the precision of a result and coerce a
     # value from one precision into another.
-    #
-    # The rule for a result is that exactness is contagious: an operation
-    # between two +:standard+ values stays +:standard+, but mixing +:standard+
-    # with +:exact+ promotes to +:exact+ rather than dropping to +:standard+.
-    # Promotion loses nothing, because a two-part float pair is already an
-    # exact Rational. What +:exact+ guarantees is Horologium's own arithmetic.
-    # It cannot bring back precision an input already lost when it was built.
-    #
-    # A scale registered with {Horologium::Configuration#register_scale} builds
-    # and combines its values here, so this module is public API.
     module Precision
       # The recognised precisions.
       NAMES = %i[standard exact].freeze
@@ -33,9 +23,7 @@ module Horologium
           end
         end
 
-        # The precision a result takes from its two operands. Same precision
-        # passes through; a mix of +:standard+ and +:exact+ promotes to
-        # +:exact+.
+        # The precision a result takes from its two operands.
         #
         # @param left [Symbol] one operand's precision
         # @param right [Symbol] the other operand's precision
@@ -49,11 +37,7 @@ module Horologium
           :standard
         end
 
-        # Coerces a numeric value into a precision, losslessly. Promoting a
-        # +:standard+ value to +:exact+ keeps its exact value; a value already
-        # in the target precision is returned unchanged. There is no lossy
-        # path: the contagion rule never moves an +:exact+ value down to
-        # +:standard+, and asking for that raises an error.
+        # Coerces a numeric value into a precision, losslessly.
         #
         # @param value [TwoPartFloat, Exact] the value to coerce
         # @param to [Symbol] the target precision
@@ -76,10 +60,7 @@ module Horologium
           end
         end
 
-        # Checks that a value is a number the library can compute with. A
-        # Float that is not finite is refused here rather than at the point
-        # it turns into a Rational, where Ruby raises a FloatDomainError the
-        # caller cannot rescue as a Horologium error.
+        # Checks that a value is a number the library can compute with.
         #
         # @param value [Object] the value to check
         # @return [Integer, Float, Rational] the number, unchanged
@@ -101,12 +82,7 @@ module Horologium
           end
         end
 
-        # Checks that a number survives becoming a Float. {number!} refuses a
-        # Float that is not finite, but an Integer or a Rational can be
-        # perfectly good and still not fit one. Too large and it becomes an
-        # Infinity that cannot be turned back into a Rational; too small and
-        # it becomes a zero, which is quieter and worse, since the arithmetic
-        # carries on and answers with nothing.
+        # Checks that a number survives becoming a Float.
         #
         # @param value [Object] the value to check
         # @return [Float] the number as a Float
@@ -139,18 +115,12 @@ module Horologium
           end
         end
 
-        # Builds a constant at every precision, once, so a conversion that
-        # leans on it does not build it again on every call. The result is a
-        # frozen Hash keyed by precision, which answers an unrecognised
-        # precision with {UnknownPrecisionError} rather than +nil+, so a
-        # caller reads it with +[]+ and needs no fetch of its own.
+        # Builds a constant at every precision, once, so a conversion that leans
+        # on it doesn't build it again on every call.
         #
         # @param value [Integer, Float, Rational] the number to hold
         # @return [Hash{Symbol => TwoPartFloat, Exact}] the number at each
         #   precision
-        # @example
-        #   OFFSETS = Numeric::Precision.build_each(Rational(19, 86_400))
-        #   OFFSETS[:exact] # => a Numeric::Exact
         def build_each(value)
           table = Hash.new do |_, precision|
             raise UnknownPrecisionError.new(precision, NAMES)
@@ -159,11 +129,7 @@ module Horologium
           table.freeze
         end
 
-        # Whether an Integer is too large to become a Float. It is asked
-        # before the conversion rather than after it, because +Integer#to_f+
-        # warns on its way out of range where +Float#to_f+ and
-        # +Rational#to_f+ answer with an Infinity and say nothing, and a
-        # library has no business writing to a caller's stderr (§4.2).
+        # Whether an Integer is too large to become a Float.
         #
         # @param number [Integer, Float, Rational] the number to measure
         # @return [Boolean]
@@ -171,11 +137,7 @@ module Horologium
           number.is_a?(Integer) && number.abs > Float::MAX
         end
 
-        # Adds two values. Two standard values add as two-part floats; if
-        # either is exact, both are promoted to exact Rationals first. Build a
-        # plain number into a value with {build} before adding it: a bare
-        # Float or Rational is refused, because promoting it would quietly
-        # move the result to +:exact+.
+        # Adds two values.
         #
         # @param left [TwoPartFloat, Exact] one value
         # @param right [TwoPartFloat, Exact] the other value
@@ -208,13 +170,7 @@ module Horologium
         end
 
         # Orders two values by the number they denote, whatever precision each
-        # is held in. Two two-part floats are compared through the difference
-        # of their parts, which is where the answer already is.
-        #
-        # That difference answers only when it is finite and away from zero.
-        # Reaching zero says the values are close rather than equal, and parts
-        # large enough to overflow can cancel into a NaN, so both cases are
-        # settled exactly instead.
+        # is held in.
         #
         # @param left [TwoPartFloat, Exact] one value
         # @param right [TwoPartFloat, Exact] the other value

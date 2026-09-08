@@ -3,30 +3,12 @@
 module Horologium
   module Representations
     # The calendar date and time of day an instant falls on, in the scale it is
-    # read in. It is the shape a person reads, where a Julian Date is the shape
-    # a series takes.
+    # read in.
     #
-    # The calendar is the proleptic Gregorian one, extended backwards past its
-    # 1582 introduction, with astronomical year numbering. The conversions are
-    # the ones ERFA performs in +eraJd2cal+ and +eraCal2jd+, over the range
-    # those routines document, from the year {MINIMUM_YEAR} to
-    # {MAXIMUM_YEAR}. A date outside it is refused rather than rendered,
-    # since past the end of the range the arithmetic stops meaning
-    # anything and a year of three hundred digits is not an answer.
-    #
-    # The whole conversion runs in exact Rational arithmetic, at both
-    # precisions: a {Numeric::TwoPartFloat} pair is already an exact Rational,
-    # so nothing is lost on the way in or out, and precision only re-enters
-    # when the fraction of a second is rendered in the type asked for. That
-    # makes it more accurate than +eraJd2cal+, which does the same work in
-    # double precision, and slower. Reading a civil date is a display step;
-    # the Julian Date and the Duration are what arithmetic runs on.
-    #
-    # @example
-    #   instant = Horologium::Instant.from_civil(2025, 5, 1, 12, scale: :tt)
-    #
-    #   instant.as(:civil, scale: :tt).hour   # => 12
-    #   instant.as(:civil, scale: :tai).hour  # => 11
+    # Source:
+    #  Title: Explanatory Supplement to the Astronomical Almanac
+    #  Notes: the proleptic Gregorian calendar, astronomical year numbering
+    #  Implementation: ERFA eraJd2cal and eraCal2jd
     class Civil
       # The types the fraction of a second can come out as. A Julian Date's
       # +:two_part+ is not among them: the fraction is smaller than 1, where
@@ -40,8 +22,8 @@ module Horologium
       MINIMUM_YEAR = -4799
 
       # The Julian Day Number of {MINIMUM_YEAR}-01-01, the earliest day the
-      # calendar conversion covers. It bounds the way out as {MINIMUM_YEAR}
-      # bounds the way in, so a reading is never handed back a date that
+      # calendar conversion covers. It bounds readings as {MINIMUM_YEAR}
+      # bounds parsing, so a reading is never handed back a date that
       # {parse} would refuse to read.
       #
       # @api private
@@ -54,8 +36,8 @@ module Horologium
       MAXIMUM_YEAR = 2_733_193
 
       # The Julian Day Number of {MAXIMUM_YEAR}-12-31, the latest day the
-      # calendar conversion covers, bounding the way out as {MAXIMUM_YEAR}
-      # bounds the way in.
+      # calendar conversion covers, bounding readings as {MAXIMUM_YEAR}
+      # bounds parsing.
       #
       # @api private
       MAXIMUM_DAY_NUMBER = 999_999_669
@@ -89,12 +71,6 @@ module Horologium
       class << self
         # The reading, as a calendar date and a time of day.
         #
-        # The date and the whole second come from the exact value, whatever the
-        # precision, so they are the fields the instant really falls on. Only
-        # the fraction of a second is rendered in the type asked for: a Float
-        # by default, a Rational under +as: :rational+, which keeps the whole
-        # of it.
-        #
         # @param reading [Horologium::ScaleReading] the instant, read in a
         #   scale
         # @param output [Symbol] one of {OUTPUTS}
@@ -103,12 +79,6 @@ module Horologium
         #   {OUTPUTS}
         # @raise [InvalidCivilTimeError] before {MINIMUM_YEAR}, where the
         #   calendar conversion stops
-        # @example
-        #   instant = Horologium::Instant.from_julian_date(
-        #     2_443_144.5,
-        #     scale: :tai
-        #   )
-        #   instant.to(:tai).as(:civil) # => 1977-01-01 00:00:00
         def render(reading, output)
           validate_output!(output)
 
@@ -124,14 +94,7 @@ module Horologium
         end
 
         # A civil time as it was given, as a Julian Date in days, at the
-        # precision asked for. This is the way in, where {render} is the way
-        # out. The Julian Date is in the scale the civil time was read in; it
-        # is {Instant.from_civil} that reads it back in TAI.
-        #
-        # Nothing is lost: the date becomes a whole number of days by integer
-        # arithmetic, and the time of day an exact fraction of one. A civil
-        # time is therefore an exact way to build an instant, where a Julian
-        # Date given as a single Float is not.
+        # precision asked for.
         #
         # @param value [Horologium::Representations::CivilTime] the civil time
         # @param _low [nil] unused; a civil time has no low part
@@ -157,9 +120,8 @@ module Horologium
           )
         end
 
-        # A civil time built from the fields as a caller writes them, where
-        # the whole second and the fraction under it are one number. It is what
-        # {Instant.from_civil} passes to {parse}.
+        # A civil time built from the fields as a caller writes them, where the
+        # whole second and the fraction under it are one number.
         #
         # @api private
         # @param year [Integer] the year, in astronomical numbering
@@ -181,13 +143,6 @@ module Horologium
         private
 
         # The civil time at a day number and a count of seconds into that day.
-        #
-        # The fraction of a second is rendered first, because rendering it as a
-        # Float can round it up to a whole second. When it does, the second it
-        # rounds into is the second the instant is really in, so the count of
-        # seconds moves up to it and the fields are read from there. Without
-        # this the fields would say 12:00:00 and the fraction 1.0, which is a
-        # time that does not exist.
         #
         # @param day_number [Integer] the Julian Day Number of the day
         # @param seconds [Rational] the seconds into the day
@@ -222,11 +177,7 @@ module Horologium
           )
         end
 
-        # The hour, minute, and second a count of seconds into the day falls
-        # on. Below 86,400 the count divides into the clock as usual. At or
-        # above it, which only a day holding a leap second reaches, the extra
-        # seconds are the leap second in the last minute, read as 23:59:60 and
-        # up rather than rolling into the next hour.
+        # The hour, minute, and second a count of seconds into the day falls on.
         #
         # @param whole [Integer] the whole seconds into the day
         # @return [Array(Integer, Integer, Integer)] the hour, minute, second
@@ -243,13 +194,7 @@ module Horologium
         end
 
         # The calendar date a Julian Day Number falls on, the conversion
-        # +eraJd2cal+ performs. The intermediate quantities are cycles of the
-        # calendar rather than dates, which is why they are named as they are.
-        #
-        # A day outside {MINIMUM_DAY_NUMBER} to {MAXIMUM_DAY_NUMBER} is
-        # refused, because {parse} stops at the same years and a date
-        # rendered beyond them could not be read back into the instant it
-        # came from.
+        # +eraJd2cal+ performs.
         #
         # @param day_number [Integer] the Julian Day Number
         # @return [Array(Integer, Integer, Integer)] the year, month, and day
@@ -281,11 +226,7 @@ module Horologium
         end
 
         # The Julian Day Number of a calendar date, the conversion +eraCal2jd+
-        # performs. It is written so that every operand of an integer division
-        # is non-negative from {MINIMUM_YEAR} on, because Ruby's division
-        # floors where C's truncates, and the two disagree on negative
-        # operands. Transcribing the C literally is a bug that only shows in
-        # January and February.
+        # performs.
         #
         # @param year [Integer] the year, in astronomical numbering
         # @param month [Integer] the month, from 1 to 12
@@ -320,10 +261,7 @@ module Horologium
           (output == :float) ? fraction.to_f : fraction
         end
 
-        # A second split into the whole second and the fraction under it. A
-        # String is refused: a fractional second is said exactly as a Rational,
-        # and reading one out of text is what a parser does with the whole
-        # timestamp.
+        # A second split into the whole second and the fraction under it.
         #
         # @param second [Integer, Float, Rational] the second
         # @return [Array(Integer, Float, Rational, Integer)] the whole second
@@ -345,10 +283,8 @@ module Horologium
           end
         end
 
-        # Checks that a civil time is one the library reads, and that its
-        # fields make a calendar date that exists. The time of day is left to
-        # {validate_time!}, which {parse} calls once it has asked the scale how
-        # long the day is: whether a second 60 is legal depends on the day.
+        # Checks that a civil time is one the library reads, and that its fields
+        # make a calendar date that exists.
         #
         # @param civil [Horologium::Representations::CivilTime] the civil time
         # @return [Horologium::Representations::CivilTime] the same civil time
@@ -368,9 +304,8 @@ module Horologium
           civil
         end
 
-        # Checks that the fields a calendar and a clock count in whole units
-        # are whole. A Float year or minute means the caller has the fields in
-        # the wrong order or the wrong units, and rounding it would hide that.
+        # Checks that the fields a calendar and a clock count in whole units are
+        # whole.
         #
         # @param civil [Horologium::Representations::CivilTime] the civil time
         # @return [void]
@@ -440,11 +375,7 @@ module Horologium
           validate_second!(civil, seconds_in_day)
         end
 
-        # Checks the second of a civil time. A minute holds 60 seconds, 0 to
-        # 59, except the last minute of a day that holds a leap second, which
-        # holds 61 and reaches second 60. The extra second the day carries over
-        # 86,400 lands there, so the top of the range comes from the day
-        # length rather than being fixed.
+        # Checks the second of a civil time.
         #
         # @param civil [Horologium::Representations::CivilTime] the civil time
         # @param seconds_in_day [Integer] the seconds in the day
@@ -465,8 +396,8 @@ module Horologium
         end
 
         # The highest second the minute of a civil time reaches: 59, unless it
-        # is the last minute of a day longer than 86,400 seconds, where the
-        # leap second lands. On a 86,401-second day the last minute reaches 60.
+        # is the last minute of a day longer than 86,400 seconds, where the leap
+        # second lands.
         #
         # @param civil [Horologium::Representations::CivilTime] the civil time
         # @param seconds_in_day [Integer] the seconds in the day
@@ -477,8 +408,8 @@ module Horologium
           SECONDS_PER_MINUTE - 1 + (seconds_in_day - Duration::SECONDS_PER_DAY)
         end
 
-        # Whether a civil time is in the last minute of its day, the only
-        # minute a leap second can fall in.
+        # Whether a civil time is in the last minute of its day, the only minute
+        # a leap second can fall in.
         #
         # @param civil [Horologium::Representations::CivilTime] the civil time
         # @return [Boolean]
@@ -486,9 +417,7 @@ module Horologium
           civil.hour == 23 && civil.minute == 59
         end
 
-        # The message for a second outside its minute. A second 60 the day does
-        # not reach is named as the leap second it would be; anything else
-        # states the range.
+        # The message for a second outside its minute.
         #
         # @param civil [Horologium::Representations::CivilTime] the civil time
         # @param highest [Integer] the highest second the minute reaches

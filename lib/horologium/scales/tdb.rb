@@ -5,18 +5,7 @@ module Horologium
     # Barycentric Dynamical Time, the scale the planetary ephemerides are
     # written in. It keeps almost the rate of TT, apart from periodic
     # relativistic terms worth at most about two milliseconds;
-    # {Data::BarycentricModel} gives the difference. TDB is defined on TT, so
-    # this conversion goes through TT, which is a fixed 32.184 seconds from
-    # TAI.
-    #
-    # The difference is a floating-point model, so unlike the constant offsets
-    # of TAI and TT this edge is not exact, even at +:exact+. Reading the
-    # model at +:exact+ stores its result faithfully, but the model itself
-    # stays a float computation.
-    #
-    # @example
-    #   instant = Horologium::Instant.from_julian_date(2_460_796.5, scale: :tt)
-    #   instant.to(:tdb).as(:julian_date) # => 2460796.5000000168
+    # {Data::BarycentricModel} gives the difference.
     class TDB < Base
       class << self
         # A TAI Julian Date, read in TDB. It reads TAI in TT first, then adds
@@ -53,9 +42,7 @@ module Horologium
         private
 
         # The TDB - TT difference at a Julian Date, in days, as a value at the
-        # given precision. The model reads the date as a Float; at +:exact+
-        # the difference is stored faithfully as a Rational, but it is still a
-        # float the model computed.
+        # given precision.
         #
         # @param julian_date [Horologium::Numeric::TwoPartFloat,
         #   Horologium::Numeric::Exact] a TT Julian Date on the way out, a TDB

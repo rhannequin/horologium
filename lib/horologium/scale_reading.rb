@@ -2,14 +2,6 @@
 
 module Horologium
   # An instant seen in one time scale. It is what {Instant#to} returns.
-  #
-  # An instant is a point on the timeline and knows no scale; +to+ chooses the
-  # scale it is read in, and +as+ chooses the shape it comes out in. A reading
-  # is frozen, and keeps the precision of the instant it came from.
-  #
-  # @example
-  #   instant = Horologium::Instant.from_julian_date(2_443_144.5, scale: :tai)
-  #   instant.to(:tt).as(:julian_date) # => 2443144.5003725
   class ScaleReading
     # The representations a reading can be taken as.
     REPRESENTATIONS = {
@@ -61,25 +53,14 @@ module Horologium
       freeze
     end
 
-    # How well founded the reading is. +:measured+ for a reading that rests on
-    # constants, models, or confirmed data; +:extrapolated+ for a UTC reading
-    # past the point its leap second data vouches for, where the offset is the
-    # last known one and a new leap second could overturn it.
-    #
-    # The scale that took the reading answers this when it is asked. Most
-    # readings are taken without anyone reading it, and in UTC the answer
-    # costs more than the reading. It is the scale the reading came from, so a
-    # configuration changed afterwards does not move the answer.
+    # How well founded the reading is.
     #
     # @return [Symbol] +:measured+ or +:extrapolated+
     def provenance
       time_scale.provenance(value)
     end
 
-    # The reading, in the representation asked for. The whole reading is
-    # handed to the representation, not only the value, because a
-    # representation may need the scale to render it. A civil date in UTC has
-    # to ask the scale whether the day it falls in holds a leap second.
+    # The reading, in the representation asked for.
     #
     # @param representation [Symbol] one of the keys of {REPRESENTATIONS}
     # @param as [Symbol] the type to come out as, passed on to the
@@ -90,9 +71,6 @@ module Horologium
     #   the library has
     # @raise [UnknownOutputError] when the representation does not come out in
     #   the type asked for
-    # @example
-    #   instant = Horologium::Instant.from_julian_date(2_443_144.5, scale: :tai)
-    #   instant.to(:tt).as(:julian_date, as: :rational)
     def as(representation, as: :float)
       REPRESENTATIONS.fetch(representation) {
         raise UnknownRepresentationError.new(
@@ -102,8 +80,7 @@ module Horologium
       }.render(self, as)
     end
 
-    # Same scale, same moment in it, whatever precision each carries. This is
-    # how {Instant} compares.
+    # Same scale, same moment in it, whatever precision each carries.
     #
     # @param other [Object]
     # @return [Boolean]

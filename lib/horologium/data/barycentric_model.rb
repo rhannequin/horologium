@@ -2,27 +2,20 @@
 
 module Horologium
   # The reference data the scales read from, bundled with the library so a
-  # conversion needs no external files. So far it holds the model behind the
-  # TDB scale.
+  # conversion needs no external files. So far it holds the model behind the TDB
+  # scale.
   module Data
-    # The difference TDB - TT, in seconds, from the Fairhead & Bretagnon
-    # (1990) series that ERFA uses. TDB keeps almost the rate of TT, apart from
+    # The difference TDB - TT, in seconds, from the Fairhead & Bretagnon (1990)
+    # series that ERFA uses. TDB keeps almost the rate of TT, apart from
     # periodic terms that come from the Earth's motion through the Sun's
-    # gravity. The largest is an annual term of about 1.7 milliseconds, and the
-    # two scales never drift more than about 2 milliseconds apart.
+    # gravity.
     #
-    # The value is geocentric. The full model has a further part that depends
-    # on where on the Earth the observer stands, worth a few microseconds.
-    # Horologium leaves it out and reads the difference at the Earth's centre.
-    #
-    # The series is floating-point at any precision. Read at +:exact+ the
-    # difference is stored faithfully as a Rational, but the model itself
-    # stays a float computation: +:exact+ keeps the arithmetic that follows
-    # it, not the model.
-    #
-    # Ported from ERFA's +dtdb.c+, which derives from IAU SOFA. The
-    # amplitudes below are in microseconds. See
-    # https://github.com/liberfa/erfa.
+    # Source:
+    #  Title: An analytical formula for the variation of the TDB - TT
+    #    difference
+    #  Authors: L. Fairhead and P. Bretagnon
+    #  Journal: Astronomy and Astrophysics, 229, 240 (1990)
+    #  Implementation: ERFA eraDtdb, the full 787-term series
     module BarycentricModel
       # The Julian Date of J2000.0, where the series starts counting.
       J2000 = 2_451_545.0
@@ -35,10 +28,6 @@ module Horologium
       class << self
         # The difference TDB - TT at a TT Julian Date, in seconds.
         #
-        # The same series serves both directions. TDB and TT never diverge
-        # by more than about two milliseconds, so reading it at a TDB Julian
-        # Date instead moves the result by far less than a nanosecond.
-        #
         # @param tt_julian_date [Float] the Julian Date in TT, in days
         # @return [Float] TDB - TT, in seconds
         def tdb_minus_tt(tt_julian_date)
@@ -48,9 +37,7 @@ module Horologium
 
         private
 
-        # The Fairhead & Bretagnon series, in microseconds. Each group of
-        # terms carries a rising power of t, combined from the highest power
-        # down by Horner's rule, the way ERFA sums them.
+        # The Fairhead & Bretagnon series, in microseconds.
         #
         # @param t [Float] the time since J2000.0, in Julian millennia
         # @return [Float] the periodic part, in microseconds
@@ -60,7 +47,7 @@ module Horologium
           end
         end
 
-        # One group of terms summed, smallest first, the way ERFA sums them.
+        # One group of terms summed, smallest first, matching ERFA's order.
         #
         # @param terms [Array<Array(Float, Float, Float)>] each an amplitude
         #   in microseconds, a frequency, and a phase
@@ -72,9 +59,8 @@ module Horologium
           end
         end
 
-        # A small correction that swaps the IAU planetary masses the series
-        # was built with for the JPL ones, in microseconds. ERFA carries it
-        # alongside the series.
+        # A small correction that swaps the IAU planetary masses the series was
+        # built with for the JPL ones, in microseconds.
         #
         # @param t [Float] the time since J2000.0, in Julian millennia
         # @return [Float] the correction, in microseconds

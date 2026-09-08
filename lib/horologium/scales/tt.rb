@@ -7,16 +7,10 @@ module Horologium
     # seconds ahead of TAI. The offset is fixed by definition, so this
     # conversion needs no external data.
     #
-    # The 32.184 seconds come from Ephemeris Time, the scale used before
-    # atomic clocks. TT continues it, and the offset is the gap between the
-    # two when TAI took over.
-    #
-    # @example At the origin epoch, TT is 32.184 s ahead of TAI
-    #   instant = Horologium::Instant.from_julian_date(
-    #     2_443_144.5,
-    #     scale: :tai
-    #   )
-    #   instant.to(:tt).as(:julian_date) # => 2443144.5003725
+    # Source:
+    #  Title: IAU 1991 Resolution A4, Recommendation IV
+    #  Notes: TT is TAI + 32.184 s, continuing Ephemeris Time
+    #  Implementation: ERFA eraTaitt and eraTttai
     class TT < Base
       # The SI seconds TT is ahead of TAI.
       SECONDS_AHEAD_OF_TAI = Rational(32_184, 1_000)
@@ -24,7 +18,7 @@ module Horologium
       # The same offset in days, because a Julian Date counts days.
       DAYS_AHEAD_OF_TAI = SECONDS_AHEAD_OF_TAI / Duration::SECONDS_PER_DAY
 
-      # The offset at each precision, built once, so a conversion does not
+      # The offset at each precision, built once, so a conversion doesn't
       # build it again every time.
       #
       # @api private
