@@ -28,7 +28,7 @@ module Horologium
 
     def ==: (untyped other) -> bool
 
-    alias eql? ==
+    def eql?: (untyped other) -> bool
 
     def hash: () -> Integer
 

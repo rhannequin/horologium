@@ -70,6 +70,25 @@ class TestInterval < Minitest::Test
     refute empty.cover?(@start)
   end
 
+  # It covers no instant, so there is no instant for it to share with
+  # anything, even a span that surrounds it. Reporting an overlap there would
+  # hand back an intersection of no time as though it were one.
+  def test_a_span_of_no_time_overlaps_nothing
+    empty = Horologium::Interval.new(@middle, @middle)
+
+    refute @window.overlap?(empty)
+    refute empty.overlap?(@window)
+    refute empty.overlap?(empty)
+    assert_nil @window.intersection(empty)
+    assert_nil empty.intersection(@window)
+  end
+
+  def test_no_intersection_is_ever_a_span_of_no_time
+    other = Horologium::Interval.new(@middle, @finish)
+
+    assert_predicate @window.intersection(other).duration, :positive?
+  end
+
   def test_two_windows_that_share_time_overlap
     other = Horologium::Interval.new(
       @middle,
@@ -193,6 +212,25 @@ class TestInterval < Minitest::Test
     assert_equal Horologium::Interval.new(@start, @finish), @window
     assert_equal 1,
       {Horologium::Interval.new(@start, @finish) => 1, @window => 2}.size
+  end
+
+  # +eql?+ has to be at least as strict as +hash+, or a pair that is +eql?+
+  # with different hashes sits twice in a Hash. The ends carry their precision
+  # into their hashes, so +eql?+ reads it too, and +==+ stays loose.
+  def test_eql_is_stricter_than_equality_and_matches_hash
+    ends = [2_460_796.5, 2_460_797.5]
+    standard = Horologium::Interval.new(
+      *ends.map { |jd| Horologium::Instant.from_julian_date(jd, scale: :tai) }
+    )
+    exact = Horologium::Interval.new(
+      *ends.map do |jd|
+        Horologium::Instant.from_julian_date(jd, scale: :tai, precision: :exact)
+      end
+    )
+
+    assert_equal exact, standard
+    refute standard.eql?(exact)
+    assert_equal 2, {standard => 1, exact => 2}.size
   end
 
   # Only where the two precisions denote the same instant. A Julian Date on a

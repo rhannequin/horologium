@@ -175,13 +175,21 @@ module Horologium
     # Whether two spans share any time at all. Two that merely touch, where
     # one ends exactly where the other starts, do not.
     #
+    # Neither does a span of no time, with anything, including a span that
+    # surrounds it. It covers no instant, so there is no instant for the two
+    # of them to share, and reporting an overlap there would hand back an
+    # intersection of no time as though it were one.
+    #
     # @param other [Horologium::Interval] the other span
     # @return [Boolean]
     # @raise [DimensionalError] when given anything but an interval
     def overlap?(other)
       validate_interval!(other)
 
-      start < other.end && other.start < self.end
+      start < self.end &&
+        other.start < other.end &&
+        start < other.end &&
+        other.start < self.end
     end
 
     # The span two spans share, or nil where they share none.
@@ -222,9 +230,22 @@ module Horologium
         start == other.start &&
         self.end == other.end
     end
-    alias_method :eql?, :==
 
-    # @return [Integer] a hash matching {#==}
+    # Stricter than +==+: the ends must match in precision too, the way
+    # {Instant#eql?} is stricter than {Instant#==}. It has to be, because
+    # {#hash} reads the ends and their hashes carry their precision, and a
+    # pair that is +eql?+ with different hashes would sit twice in a Hash or
+    # a Set.
+    #
+    # @param other [Object]
+    # @return [Boolean]
+    def eql?(other)
+      other.is_a?(self.class) &&
+        start.eql?(other.start) &&
+        self.end.eql?(other.end)
+    end
+
+    # @return [Integer] a hash matching {#eql?}
     def hash
       [self.class, start, self.end].hash
     end
