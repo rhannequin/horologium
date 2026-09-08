@@ -20,9 +20,7 @@ module Horologium
     # @return [Symbol] +:standard+ or +:exact+
     attr_reader :precision
 
-    # Wraps a numeric value in a precision. The value must match the
-    # precision: a {Numeric::Exact} for +:exact+, a {Numeric::TwoPartFloat}
-    # for +:standard+.
+    # Wraps a numeric value in a precision.
     #
     # @api private
     # @param value [Horologium::Numeric::TwoPartFloat,
@@ -38,10 +36,7 @@ module Horologium
       freeze
     end
 
-    # Orders by the value denoted, across precisions. The same value compares
-    # equal whatever the precision, so +==+ (from Comparable) and sorting
-    # ignore it. The comparison happens in the precision the values are held
-    # in; see {Numeric::Precision.compare}.
+    # Orders by the value denoted, across precisions.
     #
     # @param other [Object] the value to compare with
     # @return [Integer, nil] -1, 0, or 1, or nil when other is not the same
@@ -69,9 +64,7 @@ module Horologium
 
     protected
 
-    # The value denoted, as a Rational. {#eql?} and {#hash} read it, because
-    # they need one number for a value the two precisions spell differently.
-    # {#<=>} does not, so ordering two values never builds one.
+    # The value denoted, as a Rational.
     #
     # @api private
     # @return [Rational]

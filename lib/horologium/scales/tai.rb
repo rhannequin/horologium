@@ -3,15 +3,8 @@
 module Horologium
   module Scales
     # International Atomic Time, the scale atomic clocks keep. The library
-    # stores an instant as a TAI Julian Date, so reading an instant in TAI
+    # stores an instant as a TAI Julian Date. Reading an instant in TAI
     # returns the value it already holds.
-    #
-    # @example
-    #   instant = Horologium::Instant.from_julian_date(
-    #     2_443_144.5,
-    #     scale: :tai
-    #   )
-    #   instant.to(:tai).as(:julian_date) # => 2443144.5
     class TAI < Base
       class << self
         # The value, unchanged: instants are stored in TAI.

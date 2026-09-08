@@ -4,27 +4,8 @@ module Horologium
   module Representations
     # An instant written as an extended ISO 8601 date and time, in the scale it
     # is read in: +2025-05-01T12:00:00.000000000+. It is a formatting of the
-    # calendar date {Civil} reads, so the two agree on every field, and the
-    # string is the shape a log, a fixture, or another tool reads.
-    #
-    # The scale is not written into the string. There is no ISO 8601
-    # designator for TAI or TT, and +Z+ means UTC, so a bare time here is a
-    # coordinate in the scale you asked for, not a claim about which scale that
-    # is. UTC writes the +Z+ that belongs to it, where a leap second and a zero
-    # offset are real; the continuous scales carry neither.
-    #
-    # The fraction of a second is written to nanosecond resolution, nine
-    # digits, the resolution the example in the design carries. That is display
-    # resolution, not the whole of what an instant holds: for the exact value,
-    # read it as a {JulianDate} or a {Civil} with +as: :rational+. On the way
-    # in, the parser keeps every digit it is given, unbounded at +:exact+, so a
-    # string says as much as it likes and nothing is dropped before the
-    # library.
-    #
-    # @example
-    #   instant = Horologium::Instant.from_julian_date(2_443_144.5, scale: :tai)
-    #   instant.as(:iso8601, scale: :tai) # => "1977-01-01T00:00:00.000000000"
-    #   instant.as(:iso8601, scale: :tt)  # => "1977-01-01T00:00:32.184000000"
+    # calendar date {Civil} reads. The two agree on every field, and the
+    # string is what a log, a fixture, or another tool reads.
     class Iso8601
       # The strict subset of ISO 8601 the parser reads: a full calendar date,
       # and an optional time of day after a +T+, down to an optional fraction
@@ -57,14 +38,7 @@ module Horologium
       private_constant :HALF_DAY
 
       class << self
-        # The reading, written as an ISO 8601 string. The +as+ type a Julian
-        # Date chooses does not apply here: an ISO 8601 reading is always a
-        # String, so the type is ignored.
-        #
-        # The instant is rounded to the nearest nanosecond first, so a fraction
-        # that would round up to a whole second carries into the clock before
-        # the fields are read, and the fields never show a time that does not
-        # exist.
+        # The reading, written as an ISO 8601 string.
         #
         # @param reading [Horologium::ScaleReading] the instant, read in a
         #   scale
@@ -72,18 +46,12 @@ module Horologium
         # @return [String] the date and time, in extended ISO 8601
         # @raise [InvalidCivilTimeError] before {Civil::MINIMUM_YEAR}, where
         #   the calendar conversion stops
-        # @example
-        #   instant = Horologium::Instant.from_julian_date(
-        #     2_443_144.5,
-        #     scale: :tai
-        #   )
-        #   instant.to(:tai).as(:iso8601) # => "1977-01-01T00:00:00.000000000"
         def render(reading, _output = :string)
           civil = Civil.render(nanosecond_reading(reading), :rational)
           nanoseconds =
             (civil.second_fraction * Duration::NANOSECONDS_PER_SECOND).round
 
-          # A continuous scale writes no designator, so a bare time is a
+          # A continuous scale writes no designator. A bare time is a
           # coordinate in the scale it was read in; UTC writes "Z".
           designator = Horologium
             .configuration
@@ -103,17 +71,7 @@ module Horologium
         end
 
         # An ISO 8601 string, read as a Julian Date in days, at the precision
-        # asked for. This is the way in, where {render} is the way out. The
-        # Julian Date is in the scale the string is read in; it is
-        # {Instant.from_iso8601} that reads it back in TAI.
-        #
-        # Nothing is dropped: the date and time become an exact fraction of a
-        # day, and every digit of the fraction of a second is kept, unbounded
-        # at +:exact+. A numeric offset is subtracted here, in the scale, as
-        # plain arithmetic on the fields; it is not a time zone and consults no
-        # zone data. It counts against the day's SI length, so it shifts by SI
-        # seconds on a leap second day and through the pre-1972 drift alike, not
-        # by a stretched fraction of the day.
+        # asked for.
         #
         # @param value [String] the date and time, in extended ISO 8601
         # @param _low [nil] unused; an ISO 8601 string has no low part
@@ -127,13 +85,6 @@ module Horologium
         # @raise [InvalidCivilTimeError] when the date and time do not exist
         # @raise [InvalidValueError] when the value is not a String
         # @raise [UnknownPrecisionError] when the precision is not recognised
-        # @example
-        #   Horologium::Representations::Iso8601.parse(
-        #     "2016-12-31T23:59:59.5Z",
-        #     nil,
-        #     Horologium::Scales::TAI,
-        #     :exact
-        #   )
         def parse(value, _low, scale, precision)
           fields = fields(value)
           in_scale = Civil.parse(fields.fetch(:civil), nil, scale, precision)
@@ -156,17 +107,6 @@ module Horologium
         # civil fields gives a whole number of nanoseconds and any carry into
         # the next second or the next day has already happened.
         #
-        # The grid is the day's own length, which the scale gives. On a leap
-        # second day that is 86,401 seconds, so the seconds of the day are
-        # rounded to whole nanoseconds against that, not against a fixed
-        # 86,400. A day of the usual length lands on the same grid either way.
-        #
-        # The rounded value is held exactly, whatever the instant's precision,
-        # because the reading is on its way to a String. Holding it as a
-        # two-part float would round the clean grid value again, and near a
-        # whole second that second rounding can push the last minute a
-        # nanosecond the wrong way.
-        #
         # @param reading [Horologium::ScaleReading] the reading to round
         # @return [Horologium::ScaleReading] the rounded reading, held exactly
         def nanosecond_reading(reading)
@@ -187,7 +127,7 @@ module Horologium
         end
 
         # The date part of a civil time, the year written to at least four
-        # digits and a sign only when the year is negative, so the string round
+        # digits, and a sign only when the year is negative. The string round
         # trips through the parser whatever the year.
         #
         # @param civil [Horologium::Representations::CivilTime] the civil time
@@ -233,8 +173,7 @@ module Horologium
           }
         end
 
-        # 0 when the group was not there, so an omitted time of day is
-        # midnight.
+        # 0 when the group was not there, so an omitted time of day is midnight.
         #
         # @param group [String, nil]
         # @return [Integer]
@@ -253,9 +192,7 @@ module Horologium
         end
 
         # The offset a zone spells, in seconds, to subtract from the wall time
-        # to reach the scale. +Z+ and no zone are a zero offset; +hh:mm+ ahead
-        # of the scale is a positive offset, subtracted so the coordinate is
-        # earlier, as ISO 8601 means it.
+        # to reach the scale.
         #
         # @param zone [String, nil] +Z+, a numeric offset, or nil
         # @return [Integer] the offset, in seconds
@@ -269,7 +206,7 @@ module Horologium
           sign * (hours * 3_600 + minutes * 60)
         end
 
-        # Refuses a string the parser does not read, naming the subset and
+        # Refuses a string the parser doesn't read, naming the subset and
         # showing one it does.
         #
         # @param value [String] the string that was refused

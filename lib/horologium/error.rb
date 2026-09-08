@@ -1,44 +1,33 @@
 # frozen_string_literal: true
 
 module Horologium
-  # Base class for all errors raised by Horologium. Every error the library
-  # raises descends from it, so a caller can rescue Horologium as a unit.
-  #
-  # One error is deliberately left as Ruby's own: dividing a value by zero
-  # raises +ZeroDivisionError+, the way dividing a number by zero does.
-  # Wrapping it would give the same condition two names and surprise a caller
-  # who already knows the first one.
+  # Base class for all errors raised by Horologium. A caller can rescue the
+  # library as a unit. The one exception is dividing a value by zero, which
+  # raises Ruby's own +ZeroDivisionError+.
   class Error < StandardError; end
 
-  # Raised when the configuration is changed after it has been frozen, or
-  # given something it cannot use. The configuration is set once, inside
-  # {Horologium.configure}, and locked afterwards.
+  # Raised when the configuration is changed after it has been frozen, or given
+  # something it cannot use.
   class ConfigurationError < Error; end
 
-  # Raised when an operation mixes quantities that do not combine, such as
-  # adding two instants. Only a point plus or minus a duration, and the
-  # difference of two points, are meaningful.
+  # Raised when an operation mixes quantities that don't combine, such as adding
+  # two instants.
   class DimensionalError < Error; end
 
-  # Raised when a value the library reads is not written in a shape it
-  # accepts, such as a Julian Date given as a String that does not spell a
-  # number. The message says what the shape is, and shows one.
+  # Raised when a value the library reads is not written in a shape it accepts,
+  # such as a Julian Date given as a String that doesn't spell a number.
   class ParseError < Error; end
 
   # Raised when two instants are not a span: an interval that ends before it
-  # starts. Two instants at the same moment are a span of no time, which is a
-  # real one, so only the order is refused.
+  # starts.
   class InvalidIntervalError < Error; end
 
-  # Raised when a value given where a number is expected is not one the
-  # library can compute with: not a number at all, or a Float that is not
-  # finite. A String that does not spell a number raises {ParseError}
-  # instead, since a String is a shape the library does read.
+  # Raised when a value given where a number is expected is not one the library
+  # can compute with: not a number at all, or a Float that is not finite.
   class InvalidValueError < Error; end
 
-  # Raised when a precision the library does not recognise is given, to the
-  # configuration or when building a value. It carries the known precisions so
-  # the caller can see the valid choices.
+  # Raised when a precision the library doesn't recognise is given, to the
+  # configuration or when building a value.
   class UnknownPrecisionError < Error
     # The precisions the library recognises.
     #
@@ -56,28 +45,21 @@ module Horologium
     end
   end
 
-  # Raised when a calendar date and time of day do not exist: a day the month
-  # does not have, an hour past the end of the day, a second 60 where no leap
-  # second was inserted, or a year before the calendar conversion starts. The
-  # message says which field is wrong and what it may hold.
+  # Raised when a calendar date and time of day don't exist: a day the month
+  # doesn't have, an hour past the end of the day, a second 60 where no leap
+  # second was inserted, or a year before the calendar conversion starts.
   class InvalidCivilTimeError < Error; end
 
   # Raised when a moment falls outside a scale's domain of validity, such as a
-  # UTC reading before 1961, where the published TAI - UTC series starts. The
-  # instant itself is still a point on the timeline; it is only the label in
-  # that scale that has no meaning, so the message names a scale that does
-  # reach it.
+  # UTC reading before 1961, where the published TAI - UTC series starts.
   class OutOfRangeError < Error; end
 
   # Raised when a conversion would rest on data past the point its source
   # vouches for, and the caller has asked for strict handling rather than an
-  # extrapolation. A leap second read for a date beyond the table's expiry is
-  # the case: the offset is the last known one, correct until a new leap
-  # second is announced, and strict mode refuses to lean on it.
+  # extrapolation.
   class OutOfDataRangeError < Error; end
 
-  # Raised when a time scale that is not registered is asked for. It carries
-  # the registered scales so the caller can see the valid choices.
+  # Raised when a time scale that is not registered is asked for.
   class UnknownScaleError < Error
     # The scales registered when the error was raised.
     #
@@ -95,8 +77,7 @@ module Horologium
     end
   end
 
-  # Raised when a representation the library does not have is asked for. It
-  # carries the known representations so the caller can see the valid choices.
+  # Raised when a representation the library doesn't have is asked for.
   class UnknownRepresentationError < Error
     # The representations the library has.
     #
@@ -114,9 +95,7 @@ module Horologium
     end
   end
 
-  # Raised when a representation is asked to come out in a type it does not
-  # have. It carries the types it does have so the caller can see the valid
-  # choices.
+  # Raised when a representation is asked to come out in a type it doesn't have.
   class UnknownOutputError < Error
     # The types the representation can come out as.
     #

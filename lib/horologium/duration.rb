@@ -2,30 +2,7 @@
 
 module Horologium
   # An amount of time in SI seconds, with no date and no scale attached.
-  # +Duration.days(1)+ is always 86,400 SI seconds. Because of leap seconds a
-  # civil day can be a second longer or shorter, so a Duration and a calendar
-  # day are different things.
-  #
-  # A Duration is frozen. Its precision is set when it is built, from the
-  # precision in effect unless you pass one. At +:standard+ it holds the
-  # seconds as a {Numeric::TwoPartFloat}, at +:exact+ as a {Numeric::Exact}.
-  #
-  # Two durations add and subtract to give another duration, and one negates.
-  # A duration also scales by a plain number, with {#*} and {#/}, which is
-  # what keeps it usable: a quantity that only combines with its own kind
-  # sends a caller back to raw seconds the moment they want half of one.
-  # {mean} averages a list of them in the split. Mixing a +:standard+ and an
-  # +:exact+ operand gives an +:exact+ result. Adding an Instant to a
-  # Duration raises {DimensionalError}; it is {Instant#+} that shifts a point
-  # by a span.
-  #
-  # A duration reads and writes ISO 8601 with {parse} and {#to_iso8601}, in
-  # the subset that is a quantity of time rather than a walk through a
-  # calendar.
-  #
-  # A duration reads back in a unit with {#in_seconds}, {#in_minutes},
-  # {#in_hours}, {#in_days}, {#in_julian_years} and {#in_julian_centuries}.
-  # They come out as a Float at +:standard+ and a Rational at +:exact+.
+  # +Duration.days(1)+ is always 86,400 SI seconds.
   #
   # @example A day is a fixed number of SI seconds
   #   Horologium::Duration.days(1) == Horologium::Duration.seconds(86_400)
@@ -61,15 +38,15 @@ module Horologium
     }.freeze
     private_constant :FIELDS
 
-    # The fields that sit below the +T+. A +T+ that opens none of them is not
-    # a duration, however well formed the day field before it is.
+    # The fields below the +T+. A +T+ with none of them after it is not a
+    # duration, whatever the day field before it says.
     #
     # @api private
     CLOCK_FIELDS = %i[hours minutes seconds].freeze
     private_constant :CLOCK_FIELDS
 
     # The subset of ISO 8601 durations {parse} reads. Every field is
-    # optional here, so {parse} checks that at least one of them is there
+    # optional here. {parse} checks that at least one of them is there
     # rather than leaving a bare +P+ or +PT+ to match.
     #
     # @api private
@@ -107,8 +84,6 @@ module Horologium
       # @param precision [Symbol] +:standard+ or +:exact+, taken from the
       #   precision in effect when omitted
       # @return [Horologium::Duration]
-      # @example
-      #   Horologium::Duration.minutes(90)
       def minutes(count, precision: Horologium.current_precision)
         from_seconds(scaled(count, SECONDS_PER_MINUTE), precision)
       end
@@ -119,52 +94,37 @@ module Horologium
       # @param precision [Symbol] +:standard+ or +:exact+, taken from the
       #   precision in effect when omitted
       # @return [Horologium::Duration]
-      # @example
-      #   Horologium::Duration.hours(6)
       def hours(count, precision: Horologium.current_precision)
         from_seconds(scaled(count, SECONDS_PER_HOUR), precision)
       end
 
-      # A duration of +count+ days, each of {SECONDS_PER_DAY} SI seconds. This
-      # counts time and is not tied to the calendar.
+      # A duration of +count+ days, each of {SECONDS_PER_DAY} SI seconds.
       #
       # @param count [Numeric] the number of days
       # @param precision [Symbol] +:standard+ or +:exact+, taken from the
       #   precision in effect when omitted
       # @return [Horologium::Duration]
-      # @example
-      #   Horologium::Duration.days(1) == Horologium::Duration.seconds(86_400)
-      #   # => true
       def days(count, precision: Horologium.current_precision)
         from_seconds(scaled(count, SECONDS_PER_DAY), precision)
       end
 
-      # A duration of +count+ Julian years, each of exactly 365.25 days. It is
-      # the astronomical constant, and a calendar year holds 365 or 366 days,
-      # so shifting an instant by a Julian year lands a few hours away from
-      # the same date next year.
+      # A duration of +count+ Julian years, each of exactly 365.25 days.
       #
       # @param count [Numeric] the number of Julian years
       # @param precision [Symbol] +:standard+ or +:exact+, taken from the
       #   precision in effect when omitted
       # @return [Horologium::Duration]
-      # @example
-      #   Horologium::Duration.julian_years(1) ==
-      #     Horologium::Duration.days(365.25) # => true
       def julian_years(count, precision: Horologium.current_precision)
         from_seconds(scaled(count, SECONDS_PER_JULIAN_YEAR), precision)
       end
 
-      # A duration of +count+ Julian centuries, each of a hundred Julian
-      # years, or 36,525 days. It is the unit the astronomical series count
-      # their time in.
+      # A duration of +count+ Julian centuries, each of a hundred Julian years,
+      # or 36,525 days.
       #
       # @param count [Numeric] the number of Julian centuries
       # @param precision [Symbol] +:standard+ or +:exact+, taken from the
       #   precision in effect when omitted
       # @return [Horologium::Duration]
-      # @example
-      #   Horologium::Duration.julian_centuries(0.25)
       def julian_centuries(count, precision: Horologium.current_precision)
         from_seconds(scaled(count, SECONDS_PER_JULIAN_CENTURY), precision)
       end
@@ -175,27 +135,19 @@ module Horologium
       # @param precision [Symbol] +:standard+ or +:exact+, taken from the
       #   precision in effect when omitted
       # @return [Horologium::Duration]
-      # @example
-      #   Horologium::Duration.nanoseconds(1)
       def nanoseconds(count, precision: Horologium.current_precision)
         Numeric::Precision.number!(count)
 
         from_seconds(Rational(count) / NANOSECONDS_PER_SECOND, precision)
       end
 
-      # The mean of some durations, computed in the split rather than by
-      # reading each one out as a Float and averaging those. Exactness is
-      # contagious, so a mean over any exact duration is exact.
+      # The mean of some durations, computed in the split rather than by reading
+      # each one out as a Float and averaging those.
       #
       # @param durations [Array<Horologium::Duration>] the durations
       # @return [Horologium::Duration]
       # @raise [DimensionalError] when the list is empty, or holds anything
       #   but durations
-      # @example
-      #   Horologium::Duration.mean(
-      #     [Horologium::Duration.seconds(1), Horologium::Duration.seconds(3)]
-      #   ) == Horologium::Duration.seconds(2)
-      #   # => true
       def mean(durations)
         list = Array(durations)
 
@@ -213,18 +165,8 @@ module Horologium
         list.sum(zero(precision: list.first.precision)) / list.length
       end
 
-      # A duration read from an ISO 8601 duration string, in the subset that
-      # is a quantity of time rather than a walk through a calendar.
-      #
-      # +P+ opens it, +T+ opens the part below a day, and the fields are
-      # +D+, +H+, +M+ and +S+, each an optional number, the last of which may
-      # carry a fraction. A leading +-+ negates the whole of it.
-      #
-      # Years and months are refused, and weeks with them. A year is 365 days
-      # or 366 and a month is anywhere from 28 to 31, so +P1Y+ names a span
-      # the calendar resolves and a duration cannot (see §5.4's note on
-      # calendar arithmetic). +P1W+ is unambiguous at seven days, but it is
-      # not part of the subset either, and +P7D+ says the same thing.
+      # A duration read from an ISO 8601 duration string, in the subset that is
+      # a quantity of time, not a calendar period.
       #
       # @param value [String] the duration
       # @param precision [Symbol] +:standard+ or +:exact+, taken from the
@@ -234,8 +176,6 @@ module Horologium
       # @raise [InvalidValueError] at +:standard+, when a field is a number
       #   too large to hold as a Float; +:exact+ holds it
       # @raise [UnknownPrecisionError] when the precision is not recognised
-      # @example
-      #   Horologium::Duration.parse("PT4H5M6S").in_seconds # => 14706.0
       def parse(value, precision: Horologium.current_precision)
         match = value.is_a?(String) && PATTERN.match(value)
         refuse(value) unless match
@@ -255,17 +195,13 @@ module Horologium
       # @param precision [Symbol] +:standard+ or +:exact+, taken from the
       #   precision in effect when omitted
       # @return [Horologium::Duration]
-      # @example
-      #   Horologium::Duration.zero.zero? # => true
       def zero(precision: Horologium.current_precision)
         from_seconds(0, precision)
       end
 
       private
 
-      # A count of some unit, in seconds. The count is checked before it is
-      # multiplied, so a count that is not a number is refused by the library
-      # rather than by Ruby's own arithmetic.
+      # A count of some unit, in seconds.
       #
       # @param count [Numeric] the number of units
       # @param seconds_per_unit [Numeric] the seconds one unit spans
@@ -277,10 +213,7 @@ module Horologium
         count * seconds_per_unit
       end
 
-      # Whether a field other than the smallest one present carries a
-      # fraction. ISO 8601 allows a fraction on the last field only, so
-      # +PT1.5H1M+ is malformed: it says an hour and a half and then a
-      # minute, which is two ways of dividing the same hour.
+      # Whether a field other than the smallest one present carries a fraction.
       #
       # @param match [MatchData] the parsed fields
       # @param present [Array<Symbol>] the fields that are there, largest
@@ -303,9 +236,7 @@ module Horologium
           "the same, and P7D says the same thing"
       end
 
-      # Builds a duration of +seconds+ SI seconds at the given precision. At
-      # +:exact+ the seconds stay a Rational; at +:standard+ they become a
-      # two-part float. Unit scaling happens on the plain input, before this.
+      # Builds a duration of +seconds+ SI seconds at the given precision.
       #
       # @param seconds [Numeric] the number of SI seconds
       # @param precision [Symbol] the precision to build
@@ -333,18 +264,11 @@ module Horologium
       )
     end
 
-    # A duration scaled by a plain number. Scaling is what keeps a duration
-    # usable: a quantity that can only be added to another of its kind sends
-    # a caller back to raw seconds the moment they need half of one, and the
-    # precision the type exists to protect goes with them.
+    # A duration scaled by a plain number.
     #
     # @param scalar [Integer, Float, Rational] the number to scale by
     # @return [Horologium::Duration]
     # @raise [InvalidValueError] when it is not a finite number
-    # @example
-    #   Horologium::Duration.hours(1) * 1.5 ==
-    #     Horologium::Duration.minutes(90)
-    #   # => true
     def *(scalar) # rubocop:disable Naming/BinaryOperatorParameterName
       self.class.new(value * Numeric::Precision.number!(scalar), precision)
     end
@@ -355,10 +279,6 @@ module Horologium
     # @return [Horologium::Duration]
     # @raise [InvalidValueError] when it is not a finite number
     # @raise [ZeroDivisionError] when dividing by zero
-    # @example
-    #   Horologium::Duration.hours(1) / 2 ==
-    #     Horologium::Duration.minutes(30)
-    #   # => true
     def /(scalar) # rubocop:disable Naming/BinaryOperatorParameterName
       self.class.new(value / Numeric::Precision.number!(scalar), precision)
     end
@@ -416,8 +336,6 @@ module Horologium
     #
     # @return [Float, Rational] a Float at +:standard+, a Rational at
     #   +:exact+
-    # @example
-    #   Horologium::Duration.days(1).in_seconds # => 86400.0
     def in_seconds
       in_unit(1)
     end
@@ -426,8 +344,6 @@ module Horologium
     #
     # @return [Float, Rational] a Float at +:standard+, a Rational at
     #   +:exact+
-    # @example
-    #   Horologium::Duration.hours(1).in_minutes # => 60.0
     def in_minutes
       in_unit(SECONDS_PER_MINUTE)
     end
@@ -436,8 +352,6 @@ module Horologium
     #
     # @return [Float, Rational] a Float at +:standard+, a Rational at
     #   +:exact+
-    # @example
-    #   Horologium::Duration.days(1).in_hours # => 24.0
     def in_hours
       in_unit(SECONDS_PER_HOUR)
     end
@@ -446,8 +360,6 @@ module Horologium
     #
     # @return [Float, Rational] a Float at +:standard+, a Rational at
     #   +:exact+
-    # @example
-    #   Horologium::Duration.hours(12).in_days # => 0.5
     def in_days
       in_unit(SECONDS_PER_DAY)
     end
@@ -460,13 +372,10 @@ module Horologium
       in_unit(SECONDS_PER_JULIAN_YEAR)
     end
 
-    # The duration in Julian centuries of 36,525 days each. It is the time
-    # argument the astronomical series are written for.
+    # The duration in Julian centuries of 36,525 days each.
     #
     # @return [Float, Rational] a Float at +:standard+, a Rational at
     #   +:exact+
-    # @example
-    #   Horologium::Duration.days(36_525).in_julian_centuries # => 1.0
     def in_julian_centuries
       in_unit(SECONDS_PER_JULIAN_CENTURY)
     end
@@ -478,31 +387,18 @@ module Horologium
       value.to_r
     end
 
-    # The duration in SI seconds. A Float has about 15 digits, so a long
-    # duration loses its small end here; use {#to_r} for the whole of it.
+    # The duration in SI seconds.
     #
     # @return [Float]
     def to_f
       value.to_f
     end
 
-    # The duration as an ISO 8601 string, in the subset {Duration.parse}
-    # reads. Whole days come out as a day field and the rest below the +T+,
-    # zero fields are left out, and the seconds carry a fraction when they
-    # have one.
-    #
-    # **The string holds nanoseconds, and not everything fits.** The fraction
-    # is rounded onto the nanosecond grid, the way an instant's ISO 8601 is,
-    # so a duration on that grid reads back into itself and one finer than it
-    # does not: an exact third of a second writes as +PT0.333333333S+, and a
-    # quarter of a nanosecond writes as +PT0S+. A third of a second has no
-    # finite decimal form at any resolution, so this is a property of the
-    # format rather than of the choice of grid. Use {#to_r} where the whole
-    # value has to survive; this is an interchange form, like {#to_f}.
+    # The duration as an ISO 8601 string, in the subset {Duration.parse} reads.
+    # The fraction is rounded onto the nanosecond grid, so a duration finer
+    # than that doesn't read back into itself; {#to_r} is the lossless read.
     #
     # @return [String]
-    # @example
-    #   Horologium::Duration.seconds(14_706).to_iso8601 # => "PT4H5M6S"
     def to_iso8601
       total = (to_r * NANOSECONDS_PER_SECOND).round
       return "PT0S" if total.zero?
@@ -543,8 +439,7 @@ module Horologium
       written << (fraction.zero? ? "#{seconds}S" : "#{seconds}.#{digits}S")
     end
 
-    # The duration counted in a unit. The division happens in the precision
-    # the duration is held in, so the digits survive it.
+    # The duration counted in a unit.
     #
     # @param seconds_per_unit [Integer] the SI seconds one unit holds
     # @return [Float, Rational] a Float at +:standard+, a Rational at

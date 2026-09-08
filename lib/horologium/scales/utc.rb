@@ -3,32 +3,14 @@
 module Horologium
   module Scales
     # Coordinated Universal Time, the civil scale of clocks and calendars. It
-    # keeps close to the Earth's rotation by holding a leap second now and
-    # then, so a UTC day is usually 86,400 SI seconds but 86,401 on a day that
-    # gains one. TAI runs without them, so the gap between the two, TAI - UTC,
-    # steps up by a second at each.
+    # keeps close to the Earth's rotation by holding a leap second now and then,
+    # so a UTC day is usually 86,400 SI seconds but 86,401 on a day that gains
+    # one.
     #
-    # A UTC Julian Date is not uniform time: a day gaining a leap second still
-    # spans one unit of it, so its fraction is stretched over 86,401 seconds.
-    # This is the convention ERFA uses, and it is why {Representations::Civil}
-    # asks the scale how long the day is. The conversion to and from TAI reads
-    # the leap seconds from {Data::LeapSeconds}, and does the arithmetic at the
-    # instant's precision, so a UTC to TAI round trip is exact at +:exact+ and
-    # within a nanosecond at +:standard+.
-    #
-    # UTC runs from 1961-01-01, the start of the published TAI - UTC series.
-    # From 1972 it steps by whole leap seconds. From 1961 to 1972 it was
-    # steered by rate adjustments instead: TAI - UTC drifts by a fraction of a
-    # second a day, so a UTC second there is fractionally longer than an SI
-    # second and the civil clock still counts 86,400 of them a day, with no
-    # second 60. {Data::LeapSeconds} reads both regimes. A reading before 1961
-    # raises {OutOfRangeError} and names the continuous scales, which reach any
-    # date.
-    #
-    # @example A leap second is read and written as second 60
-    #   instant = Horologium::Instant.from_utc(2016, 12, 31, 23, 59, 60)
-    #   instant.as(:iso8601, scale: :utc)
-    #   # => "2016-12-31T23:59:60.000000000Z"
+    # Source:
+    #  Title: IERS Bulletin C, and the pre-1972 drift formulae
+    #  Notes: TAI - UTC from 1961, integer leap seconds from 1972
+    #  Implementation: ERFA eraDat, eraUtctai and eraTaiutc
     class UTC < Base
       # The Julian Day Number of 1961-01-01, the first day the published
       # TAI - UTC series covers. A reading on an earlier day is refused.
@@ -59,10 +41,9 @@ module Horologium
       private_constant :GUESSABLE
 
       class << self
-        # A TAI Julian Date, read in UTC. It finds the UTC day the instant
-        # falls in, then takes the fraction through that day back off the leap
-        # second spread and the drift, so it reads as a plain time of day. This
-        # inverts {to_reference} in closed form, exactly at +:exact+.
+        # A TAI Julian Date, read in UTC. It finds the UTC day the instant falls
+        # in, then takes the fraction through that day back off the leap second
+        # spread and the drift, leaving a plain time of day.
         #
         # @param value [Horologium::Numeric::TwoPartFloat,
         #   Horologium::Numeric::Exact] the Julian Date in TAI, in days
@@ -102,10 +83,9 @@ module Horologium
           refuse
         end
 
-        # A UTC Julian Date, read back in TAI. It takes the fraction through
-        # the UTC day, spreads it over the day's real length with the leap
-        # second and the drift included, and adds it to the TAI of that day's
-        # 0h. This is the conversion ERFA performs in +eraUtctai+.
+        # A UTC Julian Date, read back in TAI. It takes the fraction through the
+        # UTC day, spreads it over the day's real length with the leap second
+        # and the drift included, and adds it to the TAI of that day's 0h.
         #
         # @param value [Horologium::Numeric::TwoPartFloat,
         #   Horologium::Numeric::Exact] the Julian Date in UTC, in days
@@ -134,12 +114,9 @@ module Horologium
           )
         end
 
-        # The seconds the civil clock counts in a UTC day: 86,400, and 86,401
-        # on a day that holds a whole leap second, where the last minute reaches
-        # second 60. Before 1972 the day is always 86,400 civil seconds; the
-        # drift in TAI - UTC there is spread across the day as slightly longer
-        # seconds, not shown as an extra one. The conversion to and from TAI
-        # uses the SI length instead, which the drift stretches.
+        # The seconds the civil clock counts in a UTC day: 86,400, and 86,401 on
+        # a day that holds a whole leap second, where the last minute reaches
+        # second 60.
         #
         # @param day_number [Integer] the Julian Day Number of the day
         # @return [Integer] the civil seconds in that day
@@ -154,11 +131,7 @@ module Horologium
         end
 
         # The SI seconds a UTC day spans: 86,400, one more on a day that holds a
-        # leap second, and a fraction more through the pre-1972 drift. It is the
-        # length the conversion to TAI stretches the day over, where
-        # {seconds_in_day} is the whole count the civil clock shows. A numeric
-        # ISO 8601 offset counts against this, so it shifts by SI seconds even
-        # on a drift day.
+        # leap second, and a fraction more through the pre-1972 drift.
         #
         # @param day_number [Integer] the Julian Day Number of the day
         # @return [Integer, Rational] the SI seconds in that day
@@ -173,18 +146,14 @@ module Horologium
           ) * Duration::SECONDS_PER_DAY
         end
 
-        # UTC writes +Z+, where a zero offset is a real thing.
+        # UTC writes +Z+, since a zero offset is a real thing there.
         #
         # @return [String]
         def zone_designator
           "Z"
         end
 
-        # How well founded a UTC reading is. +:measured+ up to the date the
-        # leap second data vouches for, +:extrapolated+ past it, where the
-        # offset is the last known one and a new leap second could overturn
-        # it. A source that states no expiry is taken as +:measured+
-        # throughout, since there is no horizon to be past.
+        # How well founded a UTC reading is.
         #
         # @param value [Horologium::Numeric::TwoPartFloat,
         #   Horologium::Numeric::Exact] the Julian Date in UTC, in days
@@ -196,8 +165,7 @@ module Horologium
         private
 
         # Refuses a date past the data horizon when the configuration asks for
-        # it. In the default mode it does nothing, and the reading is marked
-        # +:extrapolated+ instead.
+        # it.
         #
         # @param day_number [Integer] the Julian Day Number of the UTC day
         # @return [void]
@@ -215,7 +183,6 @@ module Horologium
         end
 
         # Whether a day is past the point the leap second data vouches for.
-        # False when the source states no expiry, so there is no horizon.
         #
         # @param day_number [Integer] the Julian Day Number of the UTC day
         # @return [Boolean]
@@ -224,10 +191,8 @@ module Horologium
           !limit.nil? && day_number > limit.jd
         end
 
-        # The date the leap second data vouches through, from the source when
-        # it can say, or nil. A source that answers +expires_on+ with anything
-        # but a date or nil is refused here, rather than failing obscurely when
-        # the date is asked for its Julian Day Number.
+        # The date the leap second data vouches through, from the source when it
+        # can say, or nil.
         #
         # @return [Date, nil]
         # @raise [ConfigurationError] when the source's +expires_on+ is neither
@@ -250,9 +215,8 @@ module Horologium
           Horologium.configuration.leap_second_horizon == :raise
         end
 
-        # The fraction through the UTC day a Julian Date falls, from 0 at its
-        # 0h to just under 1 at the next. It is the part {to_reference} spreads
-        # over the day's length, and {unstretch} takes it back off.
+        # The fraction through the UTC day a Julian Date falls, from 0 at its 0h
+        # to just under 1 at the next.
         #
         # @param value [Horologium::Numeric::TwoPartFloat,
         #   Horologium::Numeric::Exact] the Julian Date in UTC, in days
@@ -268,9 +232,7 @@ module Horologium
         end
 
         # The fraction through the UTC day a TAI Julian Date falls, taken back
-        # off the day's length. It inverts what {to_reference} does to the day
-        # fraction, so {from_reference} reads a plain time of day. The 0h and
-        # the day's length come from the caller, which has them already.
+        # off the day's length.
         #
         # @param value [Horologium::Numeric::TwoPartFloat,
         #   Horologium::Numeric::Exact] the Julian Date in TAI, in days
@@ -283,16 +245,7 @@ module Horologium
           Numeric::Precision.subtract(value, midnight) / scale
         end
 
-        # Whether a TAI instant falls before a UTC day's 0h. It is told at the
-        # instant's own precision, and the subtraction is error-free, so an
-        # instant built at a day's 0h is not pushed into the day before it by a
-        # rounding crumb, where an exact comparison would read one that is not
-        # there. This is what lets the search settle and the first day stand.
-        #
-        # The sign comes off the difference itself. A two-part difference is
-        # only zero when its parts cancel, which is when the instant sits on
-        # the 0h, so this reads the same answer as spelling it out as a
-        # Rational.
+        # Whether a TAI instant falls before a UTC day's 0h.
         #
         # @param value [Horologium::Numeric::TwoPartFloat,
         #   Horologium::Numeric::Exact] the Julian Date in TAI, in days
@@ -304,10 +257,7 @@ module Horologium
         end
 
         # The UTC day a TAI Julian Date is likely to fall in, read off the
-        # Floats. It is at most a day out, which is what {from_reference}
-        # settles by stepping, so it does not have to be exact. A date past
-        # {GUESSABLE}, where a Float no longer holds every day, is worked out
-        # exactly.
+        # Floats.
         #
         # @param value [Horologium::Numeric::TwoPartFloat,
         #   Horologium::Numeric::Exact] the Julian Date in TAI, in days
@@ -319,10 +269,7 @@ module Horologium
           (days + 0.5).floor
         end
 
-        # The TAI Julian Date of a UTC day's 0h. A TAI instant reads in the UTC
-        # day whose 0h it falls on or after, up to the next, and this rises with
-        # the day even across a leap second or a drift step, so the search for
-        # that day settles.
+        # The TAI Julian Date of a UTC day's 0h.
         #
         # @param day [Integer] the Julian Day Number of the day
         # @param precision [Symbol] +:standard+ or +:exact+
@@ -338,11 +285,7 @@ module Horologium
         end
 
         # How much longer a UTC day is than 86,400 SI seconds, as the factor the
-        # day fraction is multiplied by. It carries the whole leap second spread
-        # across the day, the same one {seconds_in_day} shows the clock, and
-        # before 1972 the fractional drift. A fractional step at a boundary is
-        # not spread in: it stays a clean discontinuity there, since the next
-        # day's 0h offset already sits past it.
+        # day fraction is multiplied by.
         #
         # @param day [Integer] the Julian Day Number of the day
         # @param dat0 [Integer, Rational] TAI - UTC at the day's 0h
@@ -358,8 +301,7 @@ module Horologium
 
         # The drift in TAI - UTC across a day, its change from 0h to 0h were
         # there no jump at the boundary: zero from 1972 on, a fraction of a
-        # second before then. It is read as twice the change over the first half
-        # of the day, so a jump at the next 0h does not enter it.
+        # second before then.
         #
         # @param day [Integer] the Julian Day Number of the day
         # @param dat0 [Integer, Rational] TAI - UTC at the day's 0h
@@ -371,7 +313,7 @@ module Horologium
         # The whole leap seconds a UTC day holds, the whole-second part of the
         # step in TAI - UTC across it: one on a leap day, none on an ordinary
         # one, and none in the drift era, where the step is a fraction the civil
-        # clock does not show.
+        # clock doesn't show.
         #
         # @param dat0 [Integer, Rational] TAI - UTC at the day's 0h
         # @param next_dat0 [Integer, Rational] TAI - UTC at the next day's 0h
@@ -380,11 +322,7 @@ module Horologium
           (next_dat0.to_r - dat0.to_r).to_i
         end
 
-        # TAI - UTC at a point in UTC, from the configured source. A whole
-        # number of seconds from 1972 on, where leap seconds are whole, and a
-        # Rational fraction of a second in the drift era from 1961 to 1972. The
-        # point is a day's 0h by its Julian Day Number, or part way through a
-        # day where a fraction is added, as {drift_rate} reads it at 12h.
+        # TAI - UTC at a point in UTC, from the configured source.
         #
         # @param day_number [Integer, Rational] the Julian Day Number of the
         #   day, or a point through it

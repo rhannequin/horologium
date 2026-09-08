@@ -2,24 +2,17 @@
 
 module Horologium
   module Numeric
-    # A number stored as the sum of two Floats, a high part and a low part.
-    # The low part carries the bits that do not fit in the high part, so the
-    # pair holds about twice the precision of a single Float.
+    # A number stored as the sum of two Floats, a high part and a low part. The
+    # low part carries the bits that don't fit in the high part, so the pair
+    # holds about twice the precision of a single Float.
     #
-    # The value is frozen on creation, and every operation returns a new one.
+    # Source:
+    #  Title: Adaptive Precision Floating-Point Arithmetic and Fast Robust
+    #    Geometric Predicates
+    #  Author: Jonathan R. Shewchuk
+    #  Notes: error-free transformations, after Knuth and Dekker
+    #  Implementation: the two-part convention ERFA and astropy use
     #
-    # The representation and the way it is normalized follow the convention
-    # used by ERFA (a relicensed version of the SOFA library). The error-free
-    # transformations come from Shewchuk's work on robust floating-point
-    # arithmetic, and go back to Knuth and Dekker.
-    #
-    # @example Keeping precision a single Float would lose
-    #   a = Horologium::Numeric::TwoPartFloat.new(1.0)
-    #   b = Horologium::Numeric::TwoPartFloat.new(1e-16)
-    #   a + b == Horologium::Numeric::TwoPartFloat.new(1.0, 1e-16)
-    #   # => true
-    #   1.0 + 1e-16 == 1.0
-    #   # => true (the correction is lost)
     # @see https://github.com/liberfa/erfa
     # @see https://www.cs.cmu.edu/~quake/robust.html
     class TwoPartFloat
@@ -108,10 +101,7 @@ module Horologium
         )
       end
 
-      # The two parts added with no loss. Each Float is an exact rational, so
-      # their sum is exact and keeps the low part. A zero low part has nothing
-      # to add, and that is the common case: it is how a value built from a
-      # single number is held.
+      # The two parts added with no loss.
       #
       # @return [Rational]
       def to_r
@@ -120,17 +110,14 @@ module Horologium
         high.to_r + low.to_r
       end
 
-      # The value as a single Float. One Float cannot hold what two hold, so
-      # the extra precision the split carries is dropped here. Do it at the
-      # end, once the arithmetic is done.
+      # The value as a single Float.
       #
       # @return [Float]
       def to_f
         high + low
       end
 
-      # Whether the two parts add up to nothing. A pair that cancels, such as
-      # a high part of 1.0 and a low part of -1.0, reads as zero.
+      # Whether the two parts add up to nothing.
       #
       # @return [Boolean]
       def zero?
@@ -167,18 +154,12 @@ module Horologium
       end
 
       # Rebuilds a (high, low) pair into a canonical form: high is the nearest
-      # integer and low is the leftover fraction, between -0.5 and 0.5. Use it
-      # when the parts do not already follow that form, for example when low is
-      # larger than one half.
+      # integer and low is the leftover fraction, between -0.5 and 0.5.
       #
       # @param high [Float] the high part
       # @param low [Float] the low part
       # @return [Horologium::Numeric::TwoPartFloat] the value with high on the
       #   integer grid and low the fraction, between -0.5 and 0.5
-      # @example A low part above one half carries into the high part
-      #   Horologium::Numeric::TwoPartFloat.normalize(2.0, 0.75) ==
-      #     Horologium::Numeric::TwoPartFloat.new(3.0, -0.25)
-      #   # => true
       def self.normalize(high, low = 0.0)
         normalized(
           Precision.finite_float!(high),
@@ -187,9 +168,7 @@ module Horologium
       end
 
       # {normalize} without the check, for the paths inside the library that
-      # have already made it. The check costs about as much as the arithmetic
-      # it guards, so paying it once where a value enters is worth doing and
-      # paying it again here is not.
+      # have already made it.
       #
       # @api private
       # @param high [Float] the high part
@@ -213,16 +192,11 @@ module Horologium
         new(new_high, new_low)
       end
 
-      # Builds a two-part float from a single real number, keeping the
-      # precision a single Float would lose. The high part is the nearest
-      # Float and the low part carries the remainder.
+      # Builds a two-part float from a single real number, keeping the precision
+      # a single Float would lose.
       #
       # @param value [Numeric] the number to represent
       # @return [Horologium::Numeric::TwoPartFloat]
-      # @example An integer past a Float's reach keeps its last digit
-      #   Horologium::Numeric::TwoPartFloat.from_real(2**53 + 1).to_r ==
-      #     2**53 + 1
-      #   # => true
       def self.from_real(value)
         parted(Precision.finite_float!(value), value)
       end
@@ -239,9 +213,6 @@ module Horologium
       end
 
       # Adds left and right and also returns the rounding error of the addition.
-      # Adding the two results back together gives left + right with no loss.
-      # This is the two-sum algorithm, due to Knuth. It works for any two
-      # Floats.
       #
       # @api private
       # @param left [Float]
@@ -253,9 +224,7 @@ module Horologium
         [sum, sum_error(left, right, sum)]
       end
 
-      # The rounding error of an addition whose sum you already have. It is
-      # {two_sum} without the pair, for the arithmetic below, where boxing a
-      # pair of Floats costs more than the addition it carries.
+      # The rounding error of an addition whose sum you already have.
       #
       # @api private
       # @param left [Float]
@@ -268,9 +237,7 @@ module Horologium
         (left - (sum - right_virtual)) + (right - right_virtual)
       end
 
-      # Subtracts right from left and also returns the rounding error. Adding
-      # the two results back together gives left - right with no loss. It is the
-      # two-difference companion of two_sum and works for any two Floats.
+      # Subtracts right from left and also returns the rounding error.
       #
       # @api private
       # @param left [Float]
@@ -296,9 +263,7 @@ module Horologium
         (left - (difference - right_virtual)) - (right + right_virtual)
       end
 
-      # Dekker's fast-two-sum, a quicker version of two_sum. It is only correct
-      # when larger is at least as large as smaller in magnitude, so use it when
-      # you already know which part is bigger.
+      # Dekker's fast-two-sum, a quicker version of two_sum.
       #
       # @api private
       # @param larger [Float] the part with the larger magnitude
@@ -322,9 +287,7 @@ module Horologium
       end
 
       # Multiplies left and right and also returns the rounding error of the
-      # product. Adding the two results back together gives left * right with
-      # no loss. Ruby has no fused multiply-add, so each operand is split in
-      # two and the partial products stay exact.
+      # product.
       #
       # @api private
       # @param left [Float]
@@ -356,9 +319,8 @@ module Horologium
           left_low * right_low
       end
 
-      # Splits a Float into a high and a low half that add back to the value
-      # and each multiply with no rounding. It is Dekker's method, cutting the
-      # mantissa in two with {SPLIT_FACTOR}.
+      # Splits a Float into a high and a low half that add back to the value and
+      # each multiply with no rounding.
       #
       # @api private
       # @param value [Float]
@@ -389,9 +351,7 @@ module Horologium
 
       private
 
-      # A plain number, as a Float. Multiplying or dividing by another
-      # two-part value would collapse it to one Float and lose the low part,
-      # so it is refused rather than silently rounded.
+      # A plain number, as a Float.
       #
       # @param scalar [Integer, Float, Rational] the number to check
       # @return [Float] the number as a Float
