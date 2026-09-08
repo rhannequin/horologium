@@ -114,7 +114,7 @@ module Horologium
         #   a Float
         def finite_float!(value)
           number = number!(value)
-          float = number.to_f
+          float = out_of_float_range?(number) ? Float::INFINITY : number.to_f
           return float if float.finite? && !(float.zero? && !number.zero?)
 
           raise InvalidValueError,
@@ -157,6 +157,18 @@ module Horologium
           end
           NAMES.each { |precision| table[precision] = build(value, precision) }
           table.freeze
+        end
+
+        # Whether an Integer is too large to become a Float. It is asked
+        # before the conversion rather than after it, because +Integer#to_f+
+        # warns on its way out of range where +Float#to_f+ and
+        # +Rational#to_f+ answer with an Infinity and say nothing, and a
+        # library has no business writing to a caller's stderr (§4.2).
+        #
+        # @param number [Integer, Float, Rational] the number to measure
+        # @return [Boolean]
+        def out_of_float_range?(number)
+          number.is_a?(Integer) && number.abs > Float::MAX
         end
 
         # Adds two values. Two standard values add as two-part floats; if

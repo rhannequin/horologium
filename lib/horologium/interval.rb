@@ -257,9 +257,6 @@ module Horologium
 
     private
 
-    # @param other [Object] the value to check
-    # @return [void]
-    # @raise [DimensionalError] when it is not an interval
     def validate_interval!(other)
       return if other.is_a?(self.class)
 
