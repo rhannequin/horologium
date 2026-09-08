@@ -2,9 +2,6 @@
 
 require "test_helper"
 
-# An interval is a span between two instants, holding its start and excluding
-# its end. Its length is elapsed SI seconds, which is what makes a window
-# across a leap second a second longer than the clock suggests.
 class TestInterval < Minitest::Test
   def setup
     @start = Horologium::Instant.from_utc(2025, 5, 1, precision: :exact)
@@ -23,8 +20,6 @@ class TestInterval < Minitest::Test
       @window.duration
   end
 
-  # The showcase. The clock says two hours; two hours and a second went by,
-  # because a leap second was inserted inside the window.
   def test_a_window_across_a_leap_second_is_a_second_longer
     window = Horologium::Interval.parse(
       "2016-12-31T23:00Z/2017-01-01T01:00Z",
@@ -47,8 +42,6 @@ class TestInterval < Minitest::Test
     assert @window.cover?(@start)
   end
 
-  # Half open, so one window runs into the next without the two overlapping on
-  # the moment they share.
   def test_it_excludes_its_end
     refute @window.cover?(@finish)
   end
@@ -70,9 +63,6 @@ class TestInterval < Minitest::Test
     refute empty.cover?(@start)
   end
 
-  # It covers no instant, so there is no instant for it to share with
-  # anything, even a span that surrounds it. Reporting an overlap there would
-  # hand back an intersection of no time as though it were one.
   def test_a_span_of_no_time_overlaps_nothing
     empty = Horologium::Interval.new(@middle, @middle)
 
@@ -152,7 +142,6 @@ class TestInterval < Minitest::Test
       )
   end
 
-  # Repetition is scheduling, and scheduling is not what this library is for.
   def test_a_repeating_interval_is_not_read
     assert_raises(Horologium::ParseError) do
       Horologium::Interval.parse(
@@ -210,13 +199,13 @@ class TestInterval < Minitest::Test
 
   def test_two_intervals_with_the_same_ends_are_equal
     assert_equal Horologium::Interval.new(@start, @finish), @window
-    assert_equal 1,
-      {Horologium::Interval.new(@start, @finish) => 1, @window => 2}.size
+    intervals = {}
+    intervals[Horologium::Interval.new(@start, @finish)] = 1
+    intervals[@window] = 2
+
+    assert_equal 1, intervals.size
   end
 
-  # +eql?+ has to be at least as strict as +hash+, or a pair that is +eql?+
-  # with different hashes sits twice in a Hash. The ends carry their precision
-  # into their hashes, so +eql?+ reads it too, and +==+ stays loose.
   def test_eql_is_stricter_than_equality_and_matches_hash
     ends = [2_460_796.5, 2_460_797.5]
     standard = Horologium::Interval.new(
@@ -230,12 +219,12 @@ class TestInterval < Minitest::Test
 
     assert_equal exact, standard
     refute standard.eql?(exact)
-    assert_equal 2, {standard => 1, exact => 2}.size
+    values = {standard => 1, exact => 2}
+
+    assert_equal 1, values[standard]
+    assert_equal 2, values[exact]
   end
 
-  # Only where the two precisions denote the same instant. A Julian Date on a
-  # half day is exact in both; a civil time converted through UTC is not, and
-  # two intervals built that way are a fraction of a yoctosecond apart.
   def test_the_ends_compare_across_precisions
     ends = [2_460_796.5, 2_460_797.5]
     standard = Horologium::Interval.new(
