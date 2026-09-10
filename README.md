@@ -29,7 +29,6 @@ Horologium is made for.
   - [Compare instants](#compare-instants)
 - [Intervals](#intervals)
 - [Precision](#precision)
-- [Status](#status)
 - [Development](#development)
 - [Contributing](#contributing)
 - [License](#license)
@@ -573,13 +572,6 @@ denominator that grows when hundreds of different fractions are added, and
 expensive case, because converting a `:standard` value into a `Rational` costs
 more than the operation it is converted for. In a loop, it is better to keep a
 single precision. `bin/benchmark` measures all of this on your own machine.
-
-## Status
-
-This library is still in early development and has not been publicly released
-yet. The public API is not stable, please be aware new versions will probably
-lead to breaking changes until a 1.0 release. Changes are documented in the
-[CHANGELOG].
 
 ## Development
 
