@@ -511,7 +511,7 @@ module Horologium
     # @return [Horologium::ScaleReading]
     # @raise [UnknownScaleError] when no scale is registered under that name
     # @raise [OutOfRangeError] when the scale does not reach the instant, such
-    #   as UTC before 1972
+    #   as UTC before 1961
     # @raise [OutOfDataRangeError] when UTC is past the leap second data
     #   horizon and +leap_second_horizon+ is +:raise+
     def to(scale)

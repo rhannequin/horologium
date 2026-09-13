@@ -268,7 +268,8 @@ second was slightly longer than an SI one and the difference was adjusted
 regularly. An earlier UTC date raises `Horologium::OutOfRangeError`. The instant
 itself is still available, and the error mentions the continuous scales, which
 are defined at this date. The leap seconds and the rate adjustments come from
-the [iers] gem. There is no network access, the data is shipped with the gem.
+the [iers] gem. The data is shipped with the gem, so there is no network
+access.
 
 ```rb
 Horologium::Instant.from_utc(1960, 12, 31)                  # => OutOfRangeError
