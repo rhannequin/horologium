@@ -15,8 +15,10 @@ Gem::Specification.new do |spec|
   spec.required_ruby_version = ">= 3.2.0"
 
   spec.metadata["homepage_uri"] = spec.homepage
-  spec.metadata["source_code_uri"] = spec.homepage
+  spec.metadata["source_code_uri"] = "#{spec.homepage}/tree/v#{spec.version}"
   spec.metadata["changelog_uri"] = "#{spec.homepage}/blob/main/CHANGELOG.md"
+  spec.metadata["documentation_uri"] =
+    "https://rubydoc.info/gems/#{spec.name}/#{spec.version}"
   spec.metadata["bug_tracker_uri"] = "#{spec.homepage}/issues"
   spec.metadata["rubygems_mfa_required"] = "true"
 
@@ -33,8 +35,8 @@ Gem::Specification.new do |spec|
       (f == gemspec) ||
         f.start_with?(
           *%w[
-            bin/ Gemfile .gitignore test/ .github/ .rubocop.yml Steepfile
-            sig-vendor/
+            bin/ Gemfile Rakefile .gitignore test/ .github/ .rubocop.yml
+            Steepfile sig-vendor/
           ]
         )
     end
