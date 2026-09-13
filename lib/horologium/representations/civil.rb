@@ -10,7 +10,8 @@ module Horologium
     #  Notes: the proleptic Gregorian calendar, astronomical year numbering
     #  Implementation: ERFA eraJd2cal and eraCal2jd
     class Civil
-      # The types the fraction of a second can come out as. A Julian Date's
+      # The types the fraction of a second can come out as, the first being
+      # what it comes out as when none is asked for. A Julian Date's
       # +:two_part+ is not among them: the fraction is smaller than 1, where
       # the split exists to hold a number too large for one Float.
       OUTPUTS = %i[float rational].freeze
@@ -86,14 +87,14 @@ module Horologium
         #
         # @param reading [Horologium::ScaleReading] the instant, read in a
         #   scale
-        # @param output [Symbol] one of {OUTPUTS}
+        # @param output [Symbol, nil] one of {OUTPUTS}, or nil for a Float
         # @return [Horologium::Representations::CivilTime]
         # @raise [UnknownOutputError] when the output type is not one of
         #   {OUTPUTS}
         # @raise [InvalidCivilTimeError] before {MINIMUM_YEAR}, where the
         #   calendar conversion stops
         def render(reading, output)
-          validate_output!(output)
+          output = validate_output!(output)
 
           scale = Horologium.configuration.scale(reading.scale)
           shifted = reading.value.to_r + HALF_DAY
@@ -516,13 +517,15 @@ module Horologium
           (year % 4).zero? && (!(year % 100).zero? || (year % 400).zero?)
         end
 
-        # Checks that the output type is one a civil time comes out as.
+        # Checks that the output type is one a civil time comes out as, and
+        # settles on the first of {OUTPUTS} when none was asked for.
         #
-        # @param output [Symbol] the output type asked for
-        # @return [Symbol] the same output type
+        # @param output [Symbol, nil] the output type asked for
+        # @return [Symbol] the output type to render in
         # @raise [UnknownOutputError] when it is not one of {OUTPUTS}
         def validate_output!(output)
-          return output if OUTPUTS.include?(output)
+          chosen = output || OUTPUTS.first
+          return chosen if OUTPUTS.include?(chosen)
 
           raise UnknownOutputError.new(output, OUTPUTS)
         end

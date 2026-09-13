@@ -63,15 +63,17 @@ module Horologium
     # The reading, in the representation asked for.
     #
     # @param representation [Symbol] one of the keys of {REPRESENTATIONS}
-    # @param as [Symbol] the type to come out as, passed on to the
-    #   representation; +:float+, +:rational+, or +:two_part+ for a Julian
-    #   Date
+    # @param as [Symbol, nil] the type to come out as, passed on to the
+    #   representation: +:float+, +:rational+ or +:two_part+ for a Julian
+    #   Date, +:float+ or +:rational+ for a civil time, and +:string+ for an
+    #   ISO 8601 reading, which has no second shape. Omitted, each
+    #   representation answers in the type it is usually read in.
     # @return [Object] the reading, in that representation
     # @raise [UnknownRepresentationError] when the representation is not one
     #   the library has
     # @raise [UnknownOutputError] when the representation does not come out in
     #   the type asked for
-    def as(representation, as: :float)
+    def as(representation, as: nil)
       REPRESENTATIONS.fetch(representation) {
         raise UnknownRepresentationError.new(
           representation,

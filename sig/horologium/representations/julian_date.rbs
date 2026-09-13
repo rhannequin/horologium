@@ -5,11 +5,11 @@ module Horologium
 
       DECIMAL: Regexp
 
-      def self.render: (ScaleReading reading, Symbol output) -> (Float | Rational | Numeric::TwoPartFloat)
+      def self.render: (ScaleReading reading, Symbol? output) -> (Float | Rational | Numeric::TwoPartFloat)
 
       def self.parse: (Instant::julian_date value, Instant::julian_date_part? low, singleton(Scales::Base) scale, Symbol precision) -> (Numeric::TwoPartFloat | Numeric::Exact)
 
-      def self.render_value: (Numeric::TwoPartFloat | Numeric::Exact value, Symbol output) -> (Float | Rational | Numeric::TwoPartFloat)
+      def self.render_value: (Numeric::TwoPartFloat | Numeric::Exact value, Symbol? output) -> (Float | Rational | Numeric::TwoPartFloat)
 
       private def self.single: (Instant::julian_date value, Symbol precision) -> (Numeric::TwoPartFloat | Numeric::Exact)
 

@@ -525,12 +525,15 @@ module Horologium
     #
     # @param representation [Symbol] the representation, such as +:julian_date+
     # @param scale [Symbol] the name of a registered scale, such as +:tt+
-    # @param as [Symbol] the type to come out as
+    # @param as [Symbol, nil] the type to come out as, or nil to take the type
+    #   the representation is usually read in
     # @return [Object] the instant, in that representation
     # @raise [UnknownScaleError] when no scale is registered under that name
     # @raise [UnknownRepresentationError] when the representation is not one
     #   the library has
-    def as(representation, scale:, as: :float)
+    # @raise [UnknownOutputError] when the representation does not come out in
+    #   the type asked for
+    def as(representation, scale:, as: nil)
       to(scale).as(representation, as: as)
     end
 

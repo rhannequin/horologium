@@ -5,7 +5,7 @@ module Horologium
 
       OFFSETS: Hash[Symbol, Numeric::TwoPartFloat | Numeric::Exact]
 
-      def self.render: (ScaleReading reading, Symbol output) -> (Float | Rational | Numeric::TwoPartFloat)
+      def self.render: (ScaleReading reading, Symbol? output) -> (Float | Rational | Numeric::TwoPartFloat)
 
       def self.parse: (Instant::julian_date value, Instant::julian_date_part? low, singleton(Scales::Base) scale, Symbol precision) -> (Numeric::TwoPartFloat | Numeric::Exact)
     end
