@@ -53,8 +53,9 @@ module Horologium
         end
 
         # Where the delta T behind a reading came from: +:measured+ if the
-        # series observed it, +:extrapolated+ if the series predicts it, and
-        # +:estimated+ if the polynomial fit answered instead.
+        # series observed it, +:extrapolated+ if the series predicts it or the
+        # reading is past the series altogether, and +:estimated+ if the
+        # polynomial fit answered instead.
         #
         # @param value [Horologium::Numeric::TwoPartFloat,
         #   Horologium::Numeric::Exact] the Julian Date in UT1, in days

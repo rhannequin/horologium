@@ -48,11 +48,16 @@ module Horologium
     # @return [#delta_t_at]
     attr_reader :eop_source
 
-    # What UT1 does with a date past the point the Earth orientation data
-    # reaches. +:extrapolate+, the default, reads it with the last published
+    # What UT1 does with a date past the last entry of the Earth orientation
+    # series. +:extrapolate+, the default, reads it with the last published
     # delta T and marks the reading +:extrapolated+. +:raise+ refuses it with
-    # {OutOfDataRangeError}, for a pipeline that must not lean on a value the
-    # next bulletin could revise.
+    # {OutOfDataRangeError}.
+    #
+    # The series ends with about a year of prediction, since the rotation of
+    # the Earth is only known after the fact. A reading there is
+    # +:extrapolated+ too, and it is read either way: this setting guards the
+    # end of the file, not the end of the measured data.
+    # {ScaleReading#provenance} tells the two apart.
     #
     # @return [Symbol] +:extrapolate+ or +:raise+
     attr_reader :ut1_horizon

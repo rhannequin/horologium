@@ -35,7 +35,9 @@ module Horologium
           IERS::DeltaT.at(mjd: julian_date - MJD_OFFSET).delta_t
         end
 
-        # The Julian Date the published series vouches through, its last entry.
+        # The Julian Date of the last entry of the published series. The
+        # series runs about a year past the last measurement, so its last
+        # entry is a prediction rather than an observation.
         #
         # @return [Float, nil] the Julian Date of the last entry, or nil where
         #   the series has no entries and there is no horizon to report

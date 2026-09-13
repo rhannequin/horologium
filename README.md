@@ -197,20 +197,27 @@ used.
 ```rb
 Horologium::Instant.from_utc(2020, 1, 1).to(:ut1).provenance  # => :measured
 Horologium::Instant.from_ut1(1900, 1, 1).to(:ut1).provenance  # => :estimated
+Horologium::Instant.now.to(:ut1).provenance                   # => :extrapolated
 ```
 
-After the end of the published data, the last known delta T is used and the
-provenance is `:extrapolated`. This value is a projection and its error is not
-bounded. Delta T follows the rotation of the Earth, which drifts, and a leap
-second that has not been announced yet adds one more second. The data usually
-covers a few months ahead, and within these months the error is worth
-milliseconds. It grows with time and reaches seconds after a few years. Delta T
-has recently been changing by about 0.04 seconds a year, and by about 0.47
-seconds a year on average over the last fifty years. If your code must not
-compute on an extrapolated value, the conversion can raise an error instead.
+The rotation of the Earth is only known after the fact, so the series ends with
+about a year of prediction, and a reading in that year is already
+`:extrapolated`. Past the end of the series, the last known delta T is used, and
+a reading there is `:extrapolated` too.
+
+An extrapolated value is a projection and its error is not bounded. Delta T
+follows the rotation of the Earth, which drifts, and a leap second that has not
+been announced yet adds one more second. Within the predicted year the error is
+worth milliseconds. It grows with time and reaches seconds after a few years.
+Delta T has recently been changing by about 0.04 seconds a year, and by about
+0.47 seconds a year on average over the last fifty years.
+
+`ut1_horizon` only decides what happens past the end of the series. A prediction
+inside it is read either way, so `provenance` is what tells the two apart.
 
 ```rb
 Horologium.configure { |c| c.ut1_horizon = :raise }
+# => reading a date past the end of the series raises OutOfDataRangeError
 ```
 
 #### UTC and leap seconds
