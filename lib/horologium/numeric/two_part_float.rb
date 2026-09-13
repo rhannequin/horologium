@@ -212,19 +212,9 @@ module Horologium
         new(high, (value.to_r - high.to_r).to_f)
       end
 
-      # Adds left and right and also returns the rounding error of the addition.
-      #
-      # @api private
-      # @param left [Float]
-      # @param right [Float]
-      # @return [Array(Float, Float)] the sum and its rounding error
-      def self.two_sum(left, right)
-        sum = left + right
-
-        [sum, sum_error(left, right, sum)]
-      end
-
-      # The rounding error of an addition whose sum you already have.
+      # The rounding error of an addition whose sum you already have. The sum
+      # and this error add back to exactly what the two operands make, which
+      # is what lets a pair of Floats carry more precision than one.
       #
       # @api private
       # @param left [Float]
@@ -237,20 +227,8 @@ module Horologium
         (left - (sum - right_virtual)) + (right - right_virtual)
       end
 
-      # Subtracts right from left and also returns the rounding error.
-      #
-      # @api private
-      # @param left [Float]
-      # @param right [Float]
-      # @return [Array(Float, Float)] the difference and its rounding error
-      def self.two_diff(left, right)
-        difference = left - right
-
-        [difference, difference_error(left, right, difference)]
-      end
-
       # The rounding error of a subtraction whose difference you already have,
-      # the {two_diff} companion of {sum_error}.
+      # what {sum_error} is to an addition.
       #
       # @api private
       # @param left [Float]
@@ -263,19 +241,9 @@ module Horologium
         (left - (difference - right_virtual)) - (right + right_virtual)
       end
 
-      # Dekker's fast-two-sum, a quicker version of two_sum.
-      #
-      # @api private
-      # @param larger [Float] the part with the larger magnitude
-      # @param smaller [Float] the part with the smaller magnitude
-      # @return [Array(Float, Float)] the sum and its rounding error
-      def self.fast_two_sum(larger, smaller)
-        sum = larger + smaller
-
-        [sum, fast_sum_error(larger, smaller, sum)]
-      end
-
-      # The rounding error of a {fast_two_sum} whose sum you already have.
+      # The rounding error of an addition whose sum you already have, where the
+      # first operand is known to be the larger. Dekker's fast-two-sum, which
+      # buys its speed over {sum_error} with that assumption.
       #
       # @api private
       # @param larger [Float] the part with the larger magnitude
@@ -286,21 +254,8 @@ module Horologium
         smaller - (sum - larger)
       end
 
-      # Multiplies left and right and also returns the rounding error of the
-      # product.
-      #
-      # @api private
-      # @param left [Float]
-      # @param right [Float]
-      # @return [Array(Float, Float)] the product and its rounding error
-      def self.two_product(left, right)
-        product = left * right
-
-        [product, product_error(left, right, product)]
-      end
-
       # The rounding error of a multiplication whose product you already have,
-      # the {two_product} companion of {sum_error}.
+      # what {sum_error} is to an addition.
       #
       # @api private
       # @param left [Float]
@@ -319,19 +274,9 @@ module Horologium
           left_low * right_low
       end
 
-      # Splits a Float into a high and a low half that add back to the value and
-      # each multiply with no rounding.
-      #
-      # @api private
-      # @param value [Float]
-      # @return [Array(Float, Float)] the high half and the low half
-      def self.split(value)
-        high = split_high(value)
-
-        [high, value - high]
-      end
-
-      # The high half of a split mantissa, which is {split} without the pair.
+      # The high half of a split mantissa. It and the remainder under it add
+      # back to the value, and each multiplies with no rounding, which is what
+      # {product_error} needs.
       #
       # @api private
       # @param value [Float]
