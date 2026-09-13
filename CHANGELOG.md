@@ -1,5 +1,41 @@
 # Changelog
 
+## 0.1.0 - 2026-09-13
+
+### Breaking changes
+
+- An ISO 8601 zone offset moves the clock face, where it used to take a count
+  of SI seconds off the Julian Date. `2017-01-01T00:59:60+01:00` is the leap
+  second at the end of 2016, read by a clock an hour ahead of UTC, and
+  `2016-12-31T23:59:60+01:00` is refused, because 22:59:60 is not a time
+- A representation refuses an output type it does not have.
+  `as(:iso8601, as: :float)` answered with a String and ignored the type it
+  was asked for, where a Julian Date and a civil time have always refused one
+  they cannot produce. Leaving `as:` out asks for the type the representation
+  is usually read in, which is what every caller was already getting
+- Remove `Numeric::TwoPartFloat.two_sum`, `.two_diff`, `.fast_two_sum`,
+  `.two_product` and `.split`. Each returned a value and its rounding error as
+  a pair, and nothing called them: the arithmetic works the value out itself
+  and asks only for the error. The `_error` halves they wrapped are all still
+  there
+
+### Fixes
+
+- Stop writing warnings to a caller's stderr, which 0.0.5 set out to do and
+  did not finish. The six that were left came from `iers` reading its Modified
+  Julian Date through `Kernel#Float`, which announces a magnitude out of Float
+  range. The dependency asks for iers 0.3.1 now, where the size is measured
+  before the conversion
+- Say what `ut1_horizon` guards. The published series ends with about a year
+  of prediction, so a reading of today is already `:extrapolated`, and
+  `:raise` refuses a date past the end of the series rather than every
+  extrapolated value. The documentation promised the second
+- Write the lower bound of a UTC reading as 1961, where UTC starts.
+  `Instant#to` gave it as 1972, which is where whole leap seconds start, and
+  the bound itself has always been the earlier one
+
+**Full Changelog**: https://github.com/rhannequin/horologium/compare/v0.0.5...v0.1.0
+
 ## 0.0.5 - 2026-09-08
 
 All eight scales are in, so an instant reads in any of them, and the domain
