@@ -37,23 +37,13 @@ module Horologium
 
       def self.from_real: (scalar value) -> TwoPartFloat
 
-      def self.two_sum: (Float left, Float right) -> [ Float, Float ]
-
       def self.sum_error: (Float left, Float right, Float sum) -> Float
-
-      def self.two_diff: (Float left, Float right) -> [ Float, Float ]
 
       def self.difference_error: (Float left, Float right, Float difference) -> Float
 
-      def self.fast_two_sum: (Float larger, Float smaller) -> [ Float, Float ]
-
       def self.fast_sum_error: (Float larger, Float smaller, Float sum) -> Float
 
-      def self.two_product: (Float left, Float right) -> [ Float, Float ]
-
       def self.product_error: (Float left, Float right, Float product) -> Float
-
-      def self.split: (Float value) -> [ Float, Float ]
 
       def self.split_high: (Float value) -> Float
 

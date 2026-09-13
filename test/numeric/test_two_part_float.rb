@@ -49,29 +49,45 @@ class TestTwoPartFloat < Minitest::Test
     assert_equal :value, store[Horologium::Numeric::TwoPartFloat.new(1.0, 0.5)]
   end
 
-  def test_two_sum_reconstructs_the_exact_sum_of_its_operands
-    sum, error = Horologium::Numeric::TwoPartFloat.two_sum(0.1, 0.2)
+  def test_sum_error_reconstructs_the_exact_sum_of_its_operands
+    sum = 0.1 + 0.2
+    error = Horologium::Numeric::TwoPartFloat.sum_error(0.1, 0.2, sum)
 
-    assert_equal Rational(0.1) + Rational(0.2), Rational(sum) + Rational(error)
+    assert_equal Rational(0.1) + Rational(0.2),
+      Rational(sum) + Rational(error)
   end
 
-  def test_two_sum_leaves_no_error_for_exactly_representable_operands
-    assert_equal [3.0, 0.0], Horologium::Numeric::TwoPartFloat.two_sum(1.0, 2.0)
+  def test_sum_error_is_nothing_for_exactly_representable_operands
+    sum = 1.0 + 2.0
+    error = Horologium::Numeric::TwoPartFloat.sum_error(1.0, 2.0, sum)
+
+    assert_predicate error, :zero?
   end
 
-  def test_two_diff_reconstructs_the_exact_difference_of_its_operands
-    difference, error = Horologium::Numeric::TwoPartFloat.two_diff(1.0, 1e-16)
+  def test_difference_error_reconstructs_the_exact_difference
+    difference = 1.0 - 1e-16
+    error = Horologium::Numeric::TwoPartFloat.difference_error(
+      1.0, 1e-16, difference
+    )
 
     assert_equal Rational(1.0) - Rational(1e-16),
       Rational(difference) + Rational(error)
   end
 
-  def test_two_diff_captures_the_error_a_plain_subtraction_would_lose
-    assert_equal [1e16, -1.0], Horologium::Numeric::TwoPartFloat.two_diff(1e16, 1.0)
+  def test_difference_error_captures_what_a_plain_subtraction_would_lose
+    difference = 1e16 - 1.0
+    error = Horologium::Numeric::TwoPartFloat.difference_error(
+      1e16, 1.0, difference
+    )
+
+    assert_equal Rational(-1), Rational(error)
   end
 
-  def test_fast_two_sum_reconstructs_the_exact_sum_when_the_first_operand_dominates
-    assert_equal [1.0, 1e-16], Horologium::Numeric::TwoPartFloat.fast_two_sum(1.0, 1e-16)
+  def test_fast_sum_error_captures_the_error_when_the_first_operand_dominates
+    sum = 1.0 + 1e-16
+    error = Horologium::Numeric::TwoPartFloat.fast_sum_error(1.0, 1e-16, sum)
+
+    assert_equal Rational(1e-16), Rational(error)
   end
 
   def test_addition_adds_two_ordinary_values
@@ -165,26 +181,31 @@ class TestTwoPartFloat < Minitest::Test
     assert_in_delta value.to_r / 86_400, (value / 86_400).to_r, 1e-9
   end
 
-  def test_two_product_reconstructs_the_exact_product_of_its_operands
-    product, error = Horologium::Numeric::TwoPartFloat.two_product(0.1, 0.2)
+  def test_product_error_reconstructs_the_exact_product_of_its_operands
+    product = 0.1 * 0.2
+    error = Horologium::Numeric::TwoPartFloat.product_error(0.1, 0.2, product)
 
     assert_equal Rational(0.1) * Rational(0.2),
       Rational(product) + Rational(error)
   end
 
-  def test_two_product_leaves_no_error_for_exactly_representable_operands
-    assert_equal [6.0, 0.0],
-      Horologium::Numeric::TwoPartFloat.two_product(2.0, 3.0)
+  def test_product_error_is_nothing_for_exactly_representable_operands
+    product = 2.0 * 3.0
+    error = Horologium::Numeric::TwoPartFloat.product_error(2.0, 3.0, product)
+
+    assert_equal [6.0, 0.0], [product, error]
   end
 
-  def test_split_halves_add_back_to_the_original_value
-    high, low = Horologium::Numeric::TwoPartFloat.split(0.1)
+  def test_a_split_half_and_the_remainder_add_back_to_the_original_value
+    high = Horologium::Numeric::TwoPartFloat.split_high(0.1)
 
-    assert_equal Rational(0.1), Rational(high) + Rational(low)
+    assert_equal Rational(0.1), Rational(high) + Rational(0.1 - high)
   end
 
-  def test_split_returns_the_value_and_zero_for_a_small_integer
-    assert_equal [3.0, 0.0], Horologium::Numeric::TwoPartFloat.split(3.0)
+  def test_split_high_is_the_value_itself_for_a_small_integer
+    high = Horologium::Numeric::TwoPartFloat.split_high(3.0)
+
+    assert_equal [3.0, 0.0], [high, 3.0 - high]
   end
 
   def test_from_real_keeps_precision_a_single_float_would_lose
@@ -271,39 +292,5 @@ class TestTwoPartFloat < Minitest::Test
   def test_it_reads_its_sign_from_both_parts
     assert_predicate Horologium::Numeric::TwoPartFloat.new(1.0, -0.5), :positive?
     assert_predicate Horologium::Numeric::TwoPartFloat.new(-1.0, 0.5), :negative?
-  end
-
-  def test_sum_error_is_the_error_two_sum_reports
-    sum, error = Horologium::Numeric::TwoPartFloat.two_sum(0.1, 0.2)
-
-    assert_equal error,
-      Horologium::Numeric::TwoPartFloat.sum_error(0.1, 0.2, sum)
-  end
-
-  def test_difference_error_is_the_error_two_diff_reports
-    difference, error = Horologium::Numeric::TwoPartFloat.two_diff(1e16, 1.0)
-
-    assert_equal error,
-      Horologium::Numeric::TwoPartFloat.difference_error(1e16, 1.0, difference)
-  end
-
-  def test_fast_sum_error_is_the_error_fast_two_sum_reports
-    sum, error = Horologium::Numeric::TwoPartFloat.fast_two_sum(1.0, 1e-16)
-
-    assert_equal error,
-      Horologium::Numeric::TwoPartFloat.fast_sum_error(1.0, 1e-16, sum)
-  end
-
-  def test_product_error_is_the_error_two_product_reports
-    product, error = Horologium::Numeric::TwoPartFloat.two_product(0.1, 0.2)
-
-    assert_equal error,
-      Horologium::Numeric::TwoPartFloat.product_error(0.1, 0.2, product)
-  end
-
-  def test_split_high_is_the_high_half_split_reports
-    high, = Horologium::Numeric::TwoPartFloat.split(0.1)
-
-    assert_equal high, Horologium::Numeric::TwoPartFloat.split_high(0.1)
   end
 end
