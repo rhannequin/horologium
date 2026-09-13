@@ -58,7 +58,7 @@ module Horologium
 
     def to: (Symbol scale) -> ScaleReading
 
-    def as: (Symbol representation, scale: Symbol, ?as: Symbol) -> untyped
+    def as: (Symbol representation, scale: Symbol, ?as: Symbol?) -> untyped
 
     def equal_within?: (Instant other, Duration tolerance) -> bool
 

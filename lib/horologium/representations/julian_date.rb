@@ -8,7 +8,8 @@ module Horologium
     # the scale it is read in. Astronomy counts time with it, and an ephemeris
     # takes it as input.
     class JulianDate
-      # The types a Julian Date can come out as.
+      # The types a Julian Date can come out as. The first is what it comes
+      # out as when none is asked for.
       OUTPUTS = %i[float rational two_part].freeze
 
       # The shape a Julian Date written as a String takes: digits, with an
@@ -24,7 +25,7 @@ module Horologium
         #
         # @param reading [Horologium::ScaleReading] the instant, read in a
         #   scale
-        # @param output [Symbol] one of {OUTPUTS}
+        # @param output [Symbol, nil] one of {OUTPUTS}, or nil for a Float
         # @return [Float, Rational, Horologium::Numeric::TwoPartFloat]
         # @raise [UnknownOutputError] when the output type is not one of
         #   {OUTPUTS}
@@ -58,12 +59,12 @@ module Horologium
         # @api private
         # @param value [Horologium::Numeric::TwoPartFloat,
         #   Horologium::Numeric::Exact] the value, in days
-        # @param output [Symbol] one of {OUTPUTS}
+        # @param output [Symbol, nil] one of {OUTPUTS}, or nil for a Float
         # @return [Float, Rational, Horologium::Numeric::TwoPartFloat]
         # @raise [UnknownOutputError] when the output type is not one of
         #   {OUTPUTS}
         def render_value(value, output)
-          case output
+          case output || :float
           when :float
             value.to_f
           when :rational

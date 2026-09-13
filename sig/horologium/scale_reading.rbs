@@ -22,7 +22,7 @@ module Horologium
 
     def initialize: (Symbol scale, Numeric::TwoPartFloat | Numeric::Exact value, Symbol precision, singleton(Scales::Base) time_scale) -> void
 
-    def as: (Symbol representation, ?as: Symbol) -> untyped
+    def as: (Symbol representation, ?as: Symbol?) -> untyped
 
     def ==: (untyped other) -> bool
 

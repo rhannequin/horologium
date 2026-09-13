@@ -7,6 +7,11 @@ module Horologium
     # calendar date {Civil} reads. The two agree on every field, and the
     # string is what a log, a fixture, or another tool reads.
     class Iso8601
+      # The types an ISO 8601 reading comes out as. A date and time written
+      # out is a String and nothing else, so the list holds one, and asking
+      # for another is a mistake rather than something to ignore.
+      OUTPUTS = %i[string].freeze
+
       # The strict subset of ISO 8601 the parser reads: a full calendar date,
       # and an optional time of day after a +T+, down to an optional fraction
       # of a second and an optional +Z+ or numeric offset. The year is four
@@ -42,11 +47,15 @@ module Horologium
         #
         # @param reading [Horologium::ScaleReading] the instant, read in a
         #   scale
-        # @param _output [Symbol] ignored; an ISO 8601 reading is a String
+        # @param output [Symbol, nil] +:string+, or nil for the same
         # @return [String] the date and time, in extended ISO 8601
+        # @raise [UnknownOutputError] when the output type is not one of
+        #   {OUTPUTS}
         # @raise [InvalidCivilTimeError] before {Civil::MINIMUM_YEAR}, where
         #   the calendar conversion stops
-        def render(reading, _output = :string)
+        def render(reading, output = nil)
+          validate_output!(output)
+
           civil = Civil.render(nanosecond_reading(reading), :rational)
           nanoseconds =
             (civil.second_fraction * Duration::NANOSECONDS_PER_SECOND).round
@@ -104,6 +113,19 @@ module Horologium
         end
 
         private
+
+        # Checks that the output type is one an ISO 8601 reading comes out as,
+        # and settles on the first of {OUTPUTS} when none was asked for.
+        #
+        # @param output [Symbol, nil] the output type asked for
+        # @return [Symbol] the output type to render in
+        # @raise [UnknownOutputError] when it is not one of {OUTPUTS}
+        def validate_output!(output)
+          chosen = output || OUTPUTS.first
+          return chosen if OUTPUTS.include?(chosen)
+
+          raise UnknownOutputError.new(output, OUTPUTS)
+        end
 
         # The reading, rounded onto the nanosecond grid, so that reading its
         # civil fields gives a whole number of nanoseconds and any carry into

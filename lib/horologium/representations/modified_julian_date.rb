@@ -24,7 +24,8 @@ module Horologium
         #
         # @param reading [Horologium::ScaleReading] the instant, read in a
         #   scale
-        # @param output [Symbol] one of {JulianDate::OUTPUTS}
+        # @param output [Symbol, nil] one of {JulianDate::OUTPUTS}, or nil
+        #   for a Float
         # @return [Float, Rational, Horologium::Numeric::TwoPartFloat]
         # @raise [UnknownOutputError] when the output type is not one of
         #   {JulianDate::OUTPUTS}

@@ -66,11 +66,21 @@ class TestRepresentationsIso8601 < Minitest::Test
     assert_equal "10000-01-01T00:00:00.000000000", string
   end
 
-  def test_the_as_type_does_not_apply_and_a_string_comes_out_regardless
+  def test_it_comes_out_as_a_string_when_no_type_is_asked_for
     instant = Horologium::Instant.from_civil(2025, 5, 1, 12, scale: :tai)
 
     assert_equal instant.as(:iso8601, scale: :tai),
+      instant.as(:iso8601, scale: :tai, as: :string)
+  end
+
+  def test_a_type_it_does_not_come_out_as_is_refused
+    instant = Horologium::Instant.from_civil(2025, 5, 1, 12, scale: :tai)
+
+    error = assert_raises(Horologium::UnknownOutputError) do
       instant.as(:iso8601, scale: :tai, as: :rational)
+    end
+
+    assert_equal [:string], error.known_outputs
   end
 
   def test_it_reads_a_date_and_time
