@@ -170,7 +170,7 @@ class TestScalesUtc < Minitest::Test
     assert_equal Rational(3_975_354, 1_000_000), (utc - tai).to_r
   end
 
-  def test_an_iso_offset_in_the_drift_era_shifts_by_si_seconds
+  def test_an_iso_offset_in_the_drift_era_moves_the_clock_face
     shifted = Horologium::Instant.from_iso8601(
       "1965-07-01T12:00:00+01:00",
       scale: :utc,
@@ -178,9 +178,9 @@ class TestScalesUtc < Minitest::Test
     )
 
     assert_equal Horologium::Instant.from_utc(
-      1965, 7, 1, 12, 0, 0,
+      1965, 7, 1, 11, 0, 0,
       precision: :exact
-    ) - Horologium::Duration.seconds(3600),
+    ),
       shifted
   end
 
@@ -265,20 +265,27 @@ class TestScalesUtc < Minitest::Test
         civil.second]
   end
 
-  # A numeric offset shifts by SI seconds, even across a leap second.
+  # A numeric offset moves the clock face, so an hour of it spans an extra
+  # second where a leap second falls inside it.
 
-  def test_an_iso_offset_on_a_leap_day_shifts_by_si_seconds
+  def test_an_hour_of_iso_offset_across_a_leap_second_is_3601_si_seconds
     shifted = Horologium::Instant.from_iso8601(
-      "2016-12-31T23:59:60+01:00",
+      "2017-01-01T00:30:00+01:00",
+      scale: :utc,
+      precision: :exact
+    )
+    written = Horologium::Instant.from_iso8601(
+      "2017-01-01T00:30:00Z",
       scale: :utc,
       precision: :exact
     )
 
     assert_equal Horologium::Instant.from_utc(
-      2016, 12, 31, 23, 59, 60,
+      2016, 12, 31, 23, 30, 0,
       precision: :exact
-    ) - Horologium::Duration.seconds(3600),
+    ),
       shifted
+    assert_equal 3601, (written - shifted).in_seconds
   end
 
   # Provenance and the data horizon.

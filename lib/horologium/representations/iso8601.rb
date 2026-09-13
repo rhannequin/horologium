@@ -73,6 +73,11 @@ module Horologium
         # An ISO 8601 string, read as a Julian Date in days, at the precision
         # asked for.
         #
+        # A zone offset moves the clock face before the date is converted, so
+        # the second is read on the day it ends up on. That is what keeps a
+        # leap second a leap second: +2017-01-01T00:59:60+01:00+ is the one at
+        # the end of 2016, read by a clock an hour ahead of UTC.
+        #
         # @param value [String] the date and time, in extended ISO 8601
         # @param _low [nil] unused; an ISO 8601 string has no low part
         # @param scale [Class] the scale the string is read in, passed on to
@@ -87,17 +92,14 @@ module Horologium
         # @raise [UnknownPrecisionError] when the precision is not recognised
         def parse(value, _low, scale, precision)
           fields = fields(value)
-          in_scale = Civil.parse(fields.fetch(:civil), nil, scale, precision)
-          offset_seconds = fields.fetch(:offset_seconds)
-          return in_scale if offset_seconds.zero?
+          civil = fields.fetch(:civil)
+          minutes = fields.fetch(:offset_minutes)
 
-          day = (in_scale.to_r + HALF_DAY).floor
-          Numeric::Precision.subtract(
-            in_scale,
-            Numeric::Precision.build(
-              Rational(offset_seconds, scale.si_seconds_in_day(day)),
-              precision
-            )
+          Civil.parse(
+            minutes.zero? ? civil : Civil.shift_minutes(civil, minutes),
+            nil,
+            scale,
+            precision
           )
         end
 
@@ -143,12 +145,12 @@ module Horologium
           format("%s-%02d-%02d", year, civil.month, civil.day)
         end
 
-        # The fields an ISO 8601 string spells: a civil time, and the offset to
-        # subtract from it to reach the scale, in seconds.
+        # The fields an ISO 8601 string spells: a civil time, and the offset
+        # to move its clock face back by to reach the scale, in minutes.
         #
         # @param value [String] the date and time
         # @return [Hash] the civil time under +:civil+ and the offset in
-        #   seconds under +:offset_seconds+
+        #   minutes under +:offset_minutes+
         # @raise [ParseError] when the string is not in the subset it reads
         # @raise [InvalidValueError] when the value is not a String
         def fields(value)
@@ -169,7 +171,7 @@ module Horologium
               digits(match[:second]),
               fraction(match[:fraction])
             ),
-            offset_seconds: offset_seconds(match[:zone])
+            offset_minutes: offset_minutes(match[:zone])
           }
         end
 
@@ -191,19 +193,20 @@ module Horologium
           Rational(group.to_i, 10**group.length)
         end
 
-        # The offset a zone spells, in seconds, to subtract from the wall time
-        # to reach the scale.
+        # The offset a zone spells, in minutes, to move the clock face back by
+        # to reach the scale. ISO 8601 writes a zone as hours and minutes, so
+        # the second is never part of one.
         #
         # @param zone [String, nil] +Z+, a numeric offset, or nil
-        # @return [Integer] the offset, in seconds
-        def offset_seconds(zone)
+        # @return [Integer] the offset, in minutes
+        def offset_minutes(zone)
           return 0 if zone.nil? || zone == "Z"
 
           sign = (zone[0] == "-") ? -1 : 1
           hours = zone[1, 2].to_i
           minutes = zone[4, 2].to_i
 
-          sign * (hours * 3_600 + minutes * 60)
+          sign * (hours * 60 + minutes)
         end
 
         # Refuses a string the parser doesn't read, naming the subset and

@@ -162,6 +162,82 @@ class TestRepresentationsIso8601 < Minitest::Test
       )
   end
 
+  def test_an_offset_moves_the_clock_face_off_a_day_holding_a_leap_second
+    assert_equal Horologium::Instant.from_iso8601(
+      "2016-12-31T23:30:00Z",
+      scale: :utc,
+      precision: :exact
+    ),
+      Horologium::Instant.from_iso8601(
+        "2017-01-01T00:30:00+01:00",
+        scale: :utc,
+        precision: :exact
+      )
+  end
+
+  def test_an_offset_moves_the_clock_face_onto_the_day_after_a_leap_second
+    assert_equal Horologium::Instant.from_iso8601(
+      "2017-01-01T00:00:00Z",
+      scale: :utc,
+      precision: :exact
+    ),
+      Horologium::Instant.from_iso8601(
+        "2016-12-31T23:00:00-01:00",
+        scale: :utc,
+        precision: :exact
+      )
+  end
+
+  def test_a_leap_second_read_at_an_offset_is_the_leap_second_itself
+    assert_equal Horologium::Instant.from_iso8601(
+      "2016-12-31T23:59:60Z",
+      scale: :utc,
+      precision: :exact
+    ),
+      Horologium::Instant.from_iso8601(
+        "2017-01-01T00:59:60+01:00",
+        scale: :utc,
+        precision: :exact
+      )
+  end
+
+  def test_a_second_60_an_offset_moves_off_the_leap_second_is_refused
+    assert_raises(Horologium::InvalidCivilTimeError) do
+      Horologium::Instant.from_iso8601(
+        "2016-12-31T23:59:60+01:00",
+        scale: :utc,
+        precision: :exact
+      )
+    end
+  end
+
+  def test_an_hour_that_does_not_exist_is_refused_before_an_offset_moves_it
+    assert_raises(Horologium::InvalidCivilTimeError) do
+      Horologium::Instant.from_iso8601(
+        "2025-05-01T25:00:00+02:00",
+        scale: :tai
+      )
+    end
+  end
+
+  def test_a_minute_that_does_not_exist_is_refused_before_an_offset_moves_it
+    assert_raises(Horologium::InvalidCivilTimeError) do
+      Horologium::Instant.from_iso8601(
+        "2025-05-01T12:99:00+02:00",
+        scale: :tai
+      )
+    end
+  end
+
+  def test_an_offset_that_moves_a_date_past_the_calendar_is_refused
+    assert_raises(Horologium::InvalidCivilTimeError) do
+      Horologium::Instant.from_iso8601(
+        "2733193-12-31T23:00:00-02:00",
+        scale: :tai
+      )
+    end
+  end
+
   def test_it_reads_the_string_in_the_scale_it_is_given
     refute_equal Horologium::Instant.from_iso8601(
       "2025-05-01T12:00:00",
