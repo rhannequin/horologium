@@ -303,9 +303,25 @@ Horologium::Instant.from_iso8601("2025-05-01", scale: :tt)  # midnight
 
 The parser supports a strict subset: a calendar date, an optional time of day
 after a `T`, a fraction of a second with as many digits as you need, and an
-optional `Z` or numeric offset. The offset is applied as a simple arithmetic
-operation, no time zone data is used. A week date, an ordinal date, or anything
+optional `Z` or numeric offset. Only the offset written in the string is used,
+and no time zone data is read. A week date, an ordinal date, or anything
 outside of this subset raises a `ParseError`.
+
+An offset moves the hour and the minute on the clock face and leaves the second
+alone, so a leap second stays a leap second. A clock an hour ahead of UTC reads
+the leap second at the end of 2016 as `00:59:60` on the next day. An offset
+that moves a second 60 off the leap second raises an error.
+
+```rb
+leap = Horologium::Instant.from_iso8601(
+  "2017-01-01T00:59:60+01:00",
+  scale: :utc
+)
+leap.as(:iso8601, scale: :utc)  # => "2016-12-31T23:59:60.000000000Z"
+
+Horologium::Instant.from_iso8601("2016-12-31T23:59:60+01:00", scale: :utc)
+# => raises Horologium::InvalidCivilTimeError
+```
 
 ### Julian Dates
 

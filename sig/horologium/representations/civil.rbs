@@ -21,11 +21,17 @@ module Horologium
 
       SECONDS_PER_MINUTE: Integer
 
+      MINUTES_PER_HOUR: Integer
+
+      MINUTES_PER_DAY: Integer
+
       def self.render: (ScaleReading reading, Symbol output) -> CivilTime
 
       def self.parse: (untyped value, nil _low, singleton(Scales::Base) scale, Symbol precision) -> (Numeric::TwoPartFloat | Numeric::Exact)
 
       def self.from_fields: (untyped year, untyped month, untyped day, untyped hour, untyped minute, untyped second) -> CivilTime
+
+      def self.shift_minutes: (untyped civil, Integer minutes) -> CivilTime
 
       private def self.civil_at: (Integer day_number, Rational seconds, Integer seconds_in_day, Symbol output) -> CivilTime
 
@@ -48,6 +54,8 @@ module Horologium
       private def self.validate_date!: (CivilTime civil) -> void
 
       private def self.validate_time!: (CivilTime civil, Integer seconds_in_day) -> void
+
+      private def self.validate_clock!: (CivilTime civil) -> void
 
       private def self.validate_second!: (CivilTime civil, Integer seconds_in_day) -> void
 

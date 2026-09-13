@@ -19,7 +19,7 @@ module Horologium
 
       private def self.fraction: (String? group) -> (Rational | Integer)
 
-      private def self.offset_seconds: (String? zone) -> Integer
+      private def self.offset_minutes: (String? zone) -> Integer
 
       private def self.refuse: (String value) -> bot
     end

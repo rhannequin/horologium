@@ -68,6 +68,19 @@ module Horologium
       SECONDS_PER_MINUTE = 60
       private_constant :SECONDS_PER_MINUTE
 
+      # The minutes in an hour.
+      #
+      # @api private
+      MINUTES_PER_HOUR = 60
+      private_constant :MINUTES_PER_HOUR
+
+      # The minutes the clock face counts in a day. A leap second does not
+      # change it: it lengthens the last minute rather than adding one.
+      #
+      # @api private
+      MINUTES_PER_DAY = 1_440
+      private_constant :MINUTES_PER_DAY
+
       class << self
         # The reading, as a calendar date and a time of day.
         #
@@ -138,6 +151,45 @@ module Horologium
           whole, fraction = split_second(second)
 
           CivilTime.new(year, month, day, hour, minute, whole, fraction)
+        end
+
+        # A civil time moved back along the clock face by a whole number of
+        # minutes, which is what an ISO 8601 zone offset asks for. It moves the
+        # hour and the minute and leaves the second where it is, so a leap
+        # second stays one and lands on the day that holds it: 00:59:60 at
+        # +01:00 is 23:59:60 the day before, and 23:59:60 at +01:00 is
+        # 22:59:60, which no day has.
+        #
+        # @api private
+        # @param civil [Horologium::Representations::CivilTime] the civil time
+        #   as it was written
+        # @param minutes [Integer] the minutes to move back
+        # @return [Horologium::Representations::CivilTime] the same moment, on
+        #   the clock of the scale it is read in
+        # @raise [InvalidCivilTimeError] when the date written, or the one it
+        #   moves to, does not exist
+        # @raise [InvalidValueError] when the value is not a
+        #   {Horologium::Representations::CivilTime}
+        def shift_minutes(civil, minutes)
+          validate!(civil)
+          validate_clock!(civil)
+
+          on_the_face = civil.hour * MINUTES_PER_HOUR + civil.minute - minutes
+          days, moved = on_the_face.divmod(MINUTES_PER_DAY)
+          year, month, day = calendar(
+            day_number(civil.year, civil.month, civil.day) + days
+          )
+          hour, minute = moved.divmod(MINUTES_PER_HOUR)
+
+          CivilTime.new(
+            year,
+            month,
+            day,
+            hour,
+            minute,
+            civil.second,
+            civil.second_fraction
+          )
         end
 
         private
@@ -362,17 +414,29 @@ module Horologium
         # @return [void]
         # @raise [InvalidCivilTimeError] when the time does not exist
         def validate_time!(civil, seconds_in_day)
+          validate_clock!(civil)
+          validate_second!(civil, seconds_in_day)
+        end
+
+        # Checks the hour and the minute, the two fields the clock face shows
+        # whatever the day holds. How long the day is only bears on the second,
+        # so a zone offset can lean on this before it knows the day it lands
+        # on.
+        #
+        # @param civil [Horologium::Representations::CivilTime] the civil time
+        # @return [void]
+        # @raise [InvalidCivilTimeError] when the hour or the minute does not
+        #   exist
+        def validate_clock!(civil)
           unless (0..23).cover?(civil.hour)
             raise InvalidCivilTimeError,
               "#{civil.hour} is not an hour; an hour runs from 0 to 23"
           end
 
-          unless (0..59).cover?(civil.minute)
-            raise InvalidCivilTimeError,
-              "#{civil.minute} is not a minute; a minute runs from 0 to 59"
-          end
+          return if (0..59).cover?(civil.minute)
 
-          validate_second!(civil, seconds_in_day)
+          raise InvalidCivilTimeError,
+            "#{civil.minute} is not a minute; a minute runs from 0 to 59"
         end
 
         # Checks the second of a civil time.

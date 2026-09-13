@@ -33,6 +33,10 @@ class TestScalesBase < Minitest::Test
     assert_equal 86_400, Horologium::Scales::Base.seconds_in_day(2_451_545)
   end
 
+  def test_a_day_spans_the_seconds_it_counts_by_default
+    assert_equal 86_400, Horologium::Scales::Base.si_seconds_in_day(2_451_545)
+  end
+
   def test_a_scale_writes_no_zone_designator_by_default
     assert_equal "", Horologium::Scales::Base.zone_designator
   end
