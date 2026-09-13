@@ -114,15 +114,15 @@ module Horologium
 
         private
 
-        # Checks that the output type is one an ISO 8601 reading comes out as,
-        # and settles on the first of {OUTPUTS} when none was asked for.
+        # Checks that the output type is one an ISO 8601 reading comes out as.
+        # A date and time written out is a String and nothing else, so there
+        # is nothing to settle on: the check is the whole of it.
         #
         # @param output [Symbol, nil] the output type asked for
-        # @return [Symbol] the output type to render in
+        # @return [void]
         # @raise [UnknownOutputError] when it is not one of {OUTPUTS}
         def validate_output!(output)
-          chosen = output || OUTPUTS.first
-          return chosen if OUTPUTS.include?(chosen)
+          return if output.nil? || OUTPUTS.include?(output)
 
           raise UnknownOutputError.new(output, OUTPUTS)
         end

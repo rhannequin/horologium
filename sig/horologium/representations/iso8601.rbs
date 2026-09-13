@@ -9,7 +9,7 @@ module Horologium
 
       def self.render: (ScaleReading reading, ?Symbol? output) -> String
 
-      private def self.validate_output!: (Symbol? output) -> Symbol
+      private def self.validate_output!: (Symbol? output) -> void
 
       def self.parse: (untyped value, nil _low, singleton(Scales::Base) scale, Symbol precision) -> (Numeric::TwoPartFloat | Numeric::Exact)
 

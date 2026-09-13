@@ -64,7 +64,7 @@ module Horologium
         # @raise [UnknownOutputError] when the output type is not one of
         #   {OUTPUTS}
         def render_value(value, output)
-          case output || :float
+          case output || OUTPUTS.first
           when :float
             value.to_f
           when :rational
