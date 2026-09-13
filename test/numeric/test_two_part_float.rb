@@ -61,7 +61,7 @@ class TestTwoPartFloat < Minitest::Test
     sum = 1.0 + 2.0
     error = Horologium::Numeric::TwoPartFloat.sum_error(1.0, 2.0, sum)
 
-    assert_equal [3.0, 0.0], [sum, error]
+    assert_predicate error, :zero?
   end
 
   def test_difference_error_reconstructs_the_exact_difference
@@ -80,14 +80,14 @@ class TestTwoPartFloat < Minitest::Test
       1e16, 1.0, difference
     )
 
-    assert_equal [1e16, -1.0], [difference, error]
+    assert_equal Rational(-1), Rational(error)
   end
 
   def test_fast_sum_error_captures_the_error_when_the_first_operand_dominates
     sum = 1.0 + 1e-16
     error = Horologium::Numeric::TwoPartFloat.fast_sum_error(1.0, 1e-16, sum)
 
-    assert_equal [1.0, 1e-16], [sum, error]
+    assert_equal Rational(1e-16), Rational(error)
   end
 
   def test_addition_adds_two_ordinary_values
