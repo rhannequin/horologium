@@ -1,0 +1,105 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Samples TT - TDB from the INPOP21a time ephemeris and freezes the values into
+# test/fixtures/inpop_time.json. The test that reads the fixture measures how
+# far Horologium::Data::BarycentricModel is from the numerical integration.
+#
+# Ephem reads the ephemeris. It is only needed to build the fixture, so it is
+# loaded here with bundler/inline and Horologium does not depend on it.
+#
+# The ephemeris is downloaded from the LTE (Paris Observatory) into tmp/ the
+# first time the script runs.
+
+require "bundler/inline"
+
+EPHEM_REVISION = "0c92e38"
+
+gemfile do
+  source "https://rubygems.org"
+  gem "ephem",
+    git: "https://github.com/rhannequin/ruby-ephem",
+    ref: EPHEM_REVISION
+end
+
+require "digest"
+require "json"
+
+KERNEL = "inpop21a_time.bsp"
+KERNEL_PATH = File.expand_path("../tmp/#{KERNEL}", __dir__)
+KERNEL_SHA256 =
+  "b39d3faab00cd609685430e8f7f6c39c174341db24b387cad117199e11768687"
+FIXTURE_PATH = File.expand_path("../test/fixtures/inpop_time.json", __dir__)
+
+# 1900-01-01 and 2100-01-01 at 0h TDB, inside the range of the file.
+FIRST_JULIAN_DATE = 2_415_020.5
+LAST_JULIAN_DATE = 2_488_069.5
+
+# 1977-01-01 at 0h, the date TDB_0 refers to. The step does not land on it.
+TDB_0_JULIAN_DATE = 2_443_144.5
+
+# Ten days. The shortest terms of the series with an amplitude above a
+# microsecond have a period of about a month, and the step does not divide it,
+# so the samples fall on every part of it across the range.
+STEP_IN_DAYS = 10
+
+# The ephemeris is good to well below a nanosecond. Picoseconds are enough to
+# keep the file small without losing anything the test can see.
+DIGITS = 12
+
+unless File.exist?(KERNEL_PATH)
+  puts "Downloading #{KERNEL} into tmp/"
+  Ephem::Download.call(name: KERNEL, target: KERNEL_PATH)
+end
+
+sha256 = Digest::SHA256.file(KERNEL_PATH).hexdigest
+unless sha256 == KERNEL_SHA256
+  abort "#{KERNEL_PATH} has SHA-256 #{sha256}, expected #{KERNEL_SHA256}. " \
+    "Delete it to download it again, or check whether LTE republished it."
+end
+
+bodies = Ephem::Core::Constants::Bodies
+julian_dates = (
+  FIRST_JULIAN_DATE.step(LAST_JULIAN_DATE, STEP_IN_DAYS).to_a +
+  [TDB_0_JULIAN_DATE, LAST_JULIAN_DATE]
+).uniq.sort
+
+cases = Ephem::SPK.open(KERNEL_PATH) do |spk|
+  julian_dates.map do |julian_date|
+    tt_minus_tdb = spk.position_at(
+      target: bodies::TT_MINUS_TDB,
+      center: bodies::TIME_CENTER,
+      tdb: julian_date
+    ).x
+    [julian_date, tt_minus_tdb.round(DIGITS)]
+  end
+end
+
+description = "TT - TDB from the INPOP21a time ephemeris, from 1900 to " \
+  "2100 every #{STEP_IN_DAYS} days, plus 1977-01-01 and 2100-01-01, built " \
+  "by bin/inpop_fixture. Each case is a TDB Julian Date and TT - TDB at " \
+  "that date, in seconds. The ephemeris is indexed by TDB, and its sign is " \
+  "opposite to Horologium::Data::BarycentricModel.tdb_minus_tt. The values " \
+  "are rounded to the picosecond."
+
+source = {
+  "ephemeris" => "INPOP21a, TDB version, 1900-2100 (#{KERNEL})",
+  "publisher" => "LTE, Paris Observatory",
+  "url" => "https://ftp.imcce.fr/pub/ephem/planets/inpop21a/",
+  "sha256" => KERNEL_SHA256,
+  "reader" => "ephem, unreleased, rhannequin/ruby-ephem@#{EPHEM_REVISION}",
+  "method" => "Ephem::SPK#position_at(target: 1000000001, " \
+    "center: 1000000000, tdb: julian_date).x"
+}
+
+File.write(FIXTURE_PATH, <<~JSON)
+  {
+    "description": #{JSON.generate(description)},
+    "source": #{JSON.generate(source)},
+    "cases": [
+  #{cases.map { |c| "    #{JSON.generate(c)}" }.join(",\n")}
+    ]
+  }
+JSON
+
+puts "Wrote #{cases.size} cases to #{FIXTURE_PATH}"

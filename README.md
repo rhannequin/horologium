@@ -597,6 +597,17 @@ expensive case, because converting a `:standard` value into a `Rational` costs
 more than the operation it is converted for. In a loop, it is better to keep a
 single precision. `bin/benchmark` measures all of this on your own machine.
 
+The nanoseconds above are about the arithmetic. TDB, and TCB through it, also
+depends on the model behind it. The Fairhead and Bretagnon series is compared
+with the time ephemeris of [INPOP]21a, the planetary ephemeris of Paris
+Observatory, which gives TT - TDB from a numerical integration of the solar
+system. Between 1900 and 2100, the two differ by at most 66 nanoseconds, with
+an RMS of 33 nanoseconds. Between 2000 and 2050, they differ by at most 44
+nanoseconds. Most of the difference is a slow drift of about 50 nanoseconds per
+century. On 1977-01-01, they differ by 3 nanoseconds, so there is no constant
+offset between them, such as the -65.5 µs of TDB_0 in the IAU definition of
+TDB.
+
 ## Development
 
 After checking out the repo, run `bin/setup` to install dependencies. Then, run
@@ -652,6 +663,7 @@ rooms and mailing lists is expected to follow the [code of conduct].
 [Julian Dates]: https://en.wikipedia.org/wiki/Julian_day
 [Bundler]: https://bundler.io
 [ERFA]: https://github.com/liberfa/erfa
+[INPOP]: https://www.imcce.fr/inpop
 [ice_cube]: https://github.com/ice-cube-ruby/ice_cube
 [iers]: https://github.com/rhannequin/iers
 [CHANGELOG]: https://github.com/rhannequin/horologium/blob/main/CHANGELOG.md
